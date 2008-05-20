@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Mon May 19 12:03:57 2008 -->
+<!--Generated with glade3 3.4.5 on Tue May 20 19:20:20 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="topwindow">
     <signal name="destroy" handler="gtk_main_quit"/>
@@ -33,6 +33,7 @@
                         <property name="spacing">4</property>
                         <child>
                           <widget class="GtkVBox" id="vbox8">
+                            <property name="width_request">100</property>
                             <property name="visible">True</property>
                             <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                             <property name="spacing">3</property>
@@ -88,6 +89,7 @@
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                        <property name="width_chars">7</property>
                                         <property name="adjustment">0 0 99999 0.10000000000000001 10 10</property>
                                         <property name="digits">3</property>
                                         <property name="numeric">True</property>
@@ -114,6 +116,7 @@
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                        <property name="width_chars">7</property>
                                         <property name="adjustment">0 0 99999 0.10000000000000001 10 10</property>
                                         <property name="digits">3</property>
                                         <property name="numeric">True</property>
@@ -256,24 +259,14 @@ Sets A-D</property>
                             <property name="n_rows">2</property>
                             <property name="n_columns">2</property>
                             <child>
-                              <widget class="GtkDrawingArea" id="eeg_scope">
+                              <widget class="GtkLabel" id="label5">
                                 <property name="visible">True</property>
+                                <property name="label" translatable="yes">EEG Channels</property>
+                                <property name="justify">GTK_JUSTIFY_CENTER</property>
+                                <property name="angle">90</property>
                               </widget>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="right_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <widget class="GtkDrawingArea" id="trigger_scope">
-                                <property name="height_request">64</property>
-                                <property name="visible">True</property>
-                              </widget>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="right_attach">2</property>
-                                <property name="top_attach">1</property>
-                                <property name="bottom_attach">2</property>
+                                <property name="x_options">GTK_FILL</property>
                                 <property name="y_options">GTK_FILL</property>
                               </packing>
                             </child>
@@ -292,15 +285,25 @@ Sets A-D</property>
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkLabel" id="label5">
+                              <widget class="GtkDrawingArea" id="trigger_scope">
+                                <property name="height_request">64</property>
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">EEG Channels</property>
-                                <property name="justify">GTK_JUSTIFY_CENTER</property>
-                                <property name="angle">90</property>
                               </widget>
                               <packing>
-                                <property name="x_options">GTK_FILL</property>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
                                 <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkDrawingArea" id="eeg_scope">
+                                <property name="visible">True</property>
+                              </widget>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
                               </packing>
                             </child>
                           </widget>
@@ -334,6 +337,7 @@ Sets A-D</property>
                         <property name="visible">True</property>
                         <child>
                           <widget class="GtkVBox" id="vbox7">
+                            <property name="width_request">100</property>
                             <property name="visible">True</property>
                             <child>
                               <widget class="GtkFrame" id="frame9">
@@ -372,10 +376,17 @@ Sets A-D</property>
                                   <widget class="GtkVBox" id="vbox10">
                                     <property name="visible">True</property>
                                     <child>
-                                      <placeholder/>
+                                      <widget class="GtkDrawingArea" id="exg_offset_scope1">
+                                        <property name="visible">True</property>
+                                      </widget>
                                     </child>
                                     <child>
-                                      <placeholder/>
+                                      <widget class="GtkDrawingArea" id="exg_offset_scope2">
+                                        <property name="visible">True</property>
+                                      </widget>
+                                      <packing>
+                                        <property name="position">1</property>
+                                      </packing>
                                     </child>
                                   </widget>
                                 </child>
@@ -404,10 +415,17 @@ Sets A-D</property>
                           <widget class="GtkVBox" id="vbox11">
                             <property name="visible">True</property>
                             <child>
-                              <placeholder/>
+                              <widget class="GtkDrawingArea" id="eeg_offset_scope1">
+                                <property name="visible">True</property>
+                              </widget>
                             </child>
                             <child>
-                              <placeholder/>
+                              <widget class="GtkDrawingArea" id="eeg_offset_scope2">
+                                <property name="visible">True</property>
+                              </widget>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
                             </child>
                           </widget>
                           <packing>
@@ -444,39 +462,24 @@ Sets A-D</property>
                         <property name="visible">True</property>
                         <child>
                           <widget class="GtkVBox" id="vbox5">
+                            <property name="width_request">100</property>
                             <property name="visible">True</property>
                             <child>
-                              <widget class="GtkFrame" id="frame3">
+                              <widget class="GtkFrame" id="frame12">
                                 <property name="visible">True</property>
+                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                                 <property name="label_xalign">0</property>
                                 <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
                                 <child>
-                                  <widget class="GtkVBox" id="vbox6">
+                                  <widget class="GtkComboBox" id="eeg_scale_combo1">
                                     <property name="visible">True</property>
-                                    <child>
-                                      <widget class="GtkComboBox" id="exg_reftype_combo">
-                                        <property name="visible">True</property>
-                                        <property name="items" translatable="yes">None
-Ei vs Ei+1
-Electrode</property>
-                                      </widget>
-                                    </child>
-                                    <child>
-                                      <widget class="GtkComboBox" id="exg_elecref_combo">
-                                        <property name="visible">True</property>
-                                        <property name="items" translatable="yes">A1</property>
-                                      </widget>
-                                      <packing>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
                                   </widget>
                                 </child>
                                 <child>
-                                  <widget class="GtkLabel" id="label12">
+                                  <widget class="GtkLabel" id="label28">
                                     <property name="visible">True</property>
-                                    <property name="label" translatable="yes">Reference</property>
-                                    <property name="use_markup">True</property>
+                                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                    <property name="label" translatable="yes">Scale</property>
                                   </widget>
                                   <packing>
                                     <property name="type">label_item</property>
@@ -486,6 +489,86 @@ Electrode</property>
                               <packing>
                                 <property name="expand">False</property>
                                 <property name="fill">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkFrame" id="frame3">
+                                <property name="visible">True</property>
+                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                <property name="label_xalign">0</property>
+                                <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
+                                <child>
+                                  <widget class="GtkVBox" id="vbox6">
+                                    <property name="visible">True</property>
+                                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                    <child>
+                                      <widget class="GtkCheckButton" id="eeg_lowpass_check1">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                        <property name="label" translatable="yes">Low pass</property>
+                                        <property name="response_id">0</property>
+                                        <property name="draw_indicator">True</property>
+                                      </widget>
+                                    </child>
+                                    <child>
+                                      <widget class="GtkSpinButton" id="eeg_lowpass_spin1">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                        <property name="width_chars">7</property>
+                                        <property name="adjustment">0 0 99999 0.10000000000000001 10 10</property>
+                                        <property name="digits">3</property>
+                                        <property name="numeric">True</property>
+                                      </widget>
+                                      <packing>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <widget class="GtkCheckButton" id="eeg_highpass_check2">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                        <property name="label" translatable="yes">High pass</property>
+                                        <property name="response_id">0</property>
+                                        <property name="draw_indicator">True</property>
+                                      </widget>
+                                      <packing>
+                                        <property name="position">2</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <widget class="GtkSpinButton" id="eeg_highpass_check3">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                        <property name="width_chars">7</property>
+                                        <property name="adjustment">0 0 99999 0.10000000000000001 10 10</property>
+                                        <property name="digits">3</property>
+                                        <property name="numeric">True</property>
+                                      </widget>
+                                      <packing>
+                                        <property name="position">3</property>
+                                      </packing>
+                                    </child>
+                                  </widget>
+                                </child>
+                                <child>
+                                  <widget class="GtkLabel" id="label12">
+                                    <property name="visible">True</property>
+                                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                                    <property name="label" translatable="yes">Filtering</property>
+                                  </widget>
+                                  <packing>
+                                    <property name="type">label_item</property>
+                                  </packing>
+                                </child>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">1</property>
                               </packing>
                             </child>
                             <child>
@@ -522,7 +605,7 @@ Electrode</property>
                                 </child>
                               </widget>
                               <packing>
-                                <property name="position">1</property>
+                                <property name="position">2</property>
                               </packing>
                             </child>
                           </widget>
@@ -532,7 +615,12 @@ Electrode</property>
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
+                          <widget class="GtkDrawingArea" id="exg_scope">
+                            <property name="visible">True</property>
+                          </widget>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
                         </child>
                       </widget>
                     </child>
@@ -544,7 +632,7 @@ Electrode</property>
                 <child>
                   <widget class="GtkLabel" id="label3">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">EXG</property>
+                    <property name="label" translatable="yes">Bipolar leads</property>
                   </widget>
                   <packing>
                     <property name="type">tab</property>
@@ -576,26 +664,10 @@ Electrode</property>
                             <property name="n_rows">2</property>
                             <property name="n_columns">2</property>
                             <child>
-                              <widget class="GtkLabel" id="led2">
+                              <widget class="GtkLabel" id="led1">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">led2</property>
+                                <property name="label" translatable="yes">led1</property>
                               </widget>
-                              <packing>
-                                <property name="top_attach">1</property>
-                                <property name="bottom_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <widget class="GtkLabel" id="label8">
-                                <property name="visible">True</property>
-                                <property name="sensitive">False</property>
-                                <property name="xalign">0</property>
-                                <property name="label" translatable="yes">CMS in range</property>
-                              </widget>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="right_attach">2</property>
-                              </packing>
                             </child>
                             <child>
                               <widget class="GtkLabel" id="label9">
@@ -613,10 +685,26 @@ Electrode</property>
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkLabel" id="led1">
+                              <widget class="GtkLabel" id="label8">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">led1</property>
+                                <property name="sensitive">False</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">CMS in range</property>
                               </widget>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="led2">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">led2</property>
+                              </widget>
+                              <packing>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                              </packing>
                             </child>
                           </widget>
                         </child>
@@ -793,7 +881,135 @@ Electrode</property>
                     <property name="label_xalign">0</property>
                     <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
                     <child>
-                      <placeholder/>
+                      <widget class="GtkVBox" id="vbox17">
+                        <property name="visible">True</property>
+                        <property name="spacing">5</property>
+                        <child>
+                          <widget class="GtkHBox" id="hbox5">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkLabel" id="led3">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">led1</property>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="label24">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Recording</property>
+                                <property name="wrap_mode">PANGO_WRAP_WORD_CHAR</property>
+                              </widget>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkVBox" id="vbox18">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkLabel" id="label25">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Time limit :</property>
+                                <property name="wrap_mode">PANGO_WRAP_WORD_CHAR</property>
+                              </widget>
+                            </child>
+                            <child>
+                              <widget class="GtkHBox" id="hbox6">
+                                <property name="visible">True</property>
+                                <child>
+                                  <widget class="GtkEntry" id="recording_limit_entry">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="max_length">5</property>
+                                    <property name="width_chars">5</property>
+                                    <property name="text" translatable="yes">-1</property>
+                                    <property name="xalign">0.5</property>
+                                  </widget>
+                                </child>
+                                <child>
+                                  <widget class="GtkLabel" id="label26">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">secs</property>
+                                  </widget>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">False</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </widget>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkButton" id="start_recording_button">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="label" translatable="yes">Start</property>
+                            <property name="response_id">0</property>
+                          </widget>
+                          <packing>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkToggleButton" id="pause_recording_button">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="label" translatable="yes">Pause</property>
+                            <property name="response_id">0</property>
+                          </widget>
+                          <packing>
+                            <property name="position">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkVBox" id="vbox19">
+                            <property name="visible">True</property>
+                            <child>
+                              <widget class="GtkLabel" id="label27">
+                                <property name="visible">True</property>
+                                <property name="xalign">0.10000000149011612</property>
+                                <property name="label" translatable="yes">Length recorded :</property>
+                              </widget>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="file_length_label">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">0 sec</property>
+                              </widget>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </widget>
+                          <packing>
+                            <property name="position">4</property>
+                          </packing>
+                        </child>
+                      </widget>
                     </child>
                     <child>
                       <widget class="GtkLabel" id="label16">
@@ -807,6 +1023,8 @@ Electrode</property>
                     </child>
                   </widget>
                   <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
                     <property name="position">2</property>
                   </packing>
                 </child>

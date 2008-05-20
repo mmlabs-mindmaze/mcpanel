@@ -5,10 +5,32 @@ const char* led_image_filename[NUM_COLORS_LED] = {"led_gray.png", "led_red.png",
 
 enum {
 	DUMMY_PROP,
-	STATE_PROP
+	STATE_PROP,
+	COLOR_ON_PROP,
+	COLOR_OFF_PROP
 };
 
 void gtk_led_expose_event_callback(GtkLed* self, GdkEventExpose* event, gpointer data);
+
+GType led_color_get_type(void)
+{
+	static GType type = 0;
+
+	if (!type) {
+		static const GEnumValue values[] = {
+			{GRAY_LED, "GRAY_LED", "gray-led"},
+			{RED_LED, "RED_LED", "red-led"},
+			{GREEN_LED, "GREEN_LED", "green-led"},
+			{BLUE_LED, "BLUE_LED", "blue-led"},
+			{0, NULL, NULL}
+		};
+
+		type = g_enum_register_static("LedColors", values);
+	}
+
+	return type;
+}
+
 
 
 G_DEFINE_TYPE (GtkLed, gtk_led, GTK_TYPE_WIDGET);
@@ -24,9 +46,21 @@ gtk_led_set_property (GObject *object, guint property_id,
 		gtk_led_set_state(self, g_value_get_boolean(value));
 		break;
 
+	
+	case COLOR_ON_PROP:
+		self->color_on = g_value_get_enum(value);
+		break;
+
+	case COLOR_OFF_PROP:
+		self->color_off = g_value_get_enum(value);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
+
+	if (GTK_WIDGET_DRAWABLE(self))
+		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
 
 static void
@@ -128,6 +162,26 @@ static void gtk_led_class_init (GtkLedClass *klass)
 							"State",
 							"The state of the LED",
 							FALSE,
+							G_PARAM_WRITABLE | 
+							G_PARAM_STATIC_STRINGS));
+
+	g_object_class_install_property(G_OBJECT_CLASS(klass),
+					COLOR_ON_PROP,
+					g_param_spec_enum("color-on",
+							"Color on",
+							"The color of the LED in the on state",
+							TYPE_LED_COLOR,
+							RED_LED,
+							G_PARAM_WRITABLE | 
+							G_PARAM_STATIC_STRINGS));
+	
+	g_object_class_install_property(G_OBJECT_CLASS(klass),
+					COLOR_OFF_PROP,
+					g_param_spec_enum("color-off",
+							"Color off",
+							"The color of the LED in the off state",
+							TYPE_LED_COLOR,
+							GRAY_LED,
 							G_PARAM_WRITABLE | 
 							G_PARAM_STATIC_STRINGS));
 }

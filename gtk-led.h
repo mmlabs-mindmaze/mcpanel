@@ -33,6 +33,8 @@ typedef enum {
 	NUM_COLORS_LED
 } LedColor;
 
+#define TYPE_LED_COLOR led_color_get_type()
+
 typedef struct {
 	GtkWidget parent;
 	GtkIconSize size;
