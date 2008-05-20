@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Tue May 20 19:20:20 2008 -->
+<!--Generated with glade3 3.4.5 on Tue May 20 19:43:20 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="topwindow">
     <signal name="destroy" handler="gtk_main_quit"/>
@@ -346,7 +346,7 @@ Sets A-D</property>
                                 <property name="label_xalign">0</property>
                                 <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
                                 <child>
-                                  <widget class="GtkComboBox" id="exg_scale_combo">
+                                  <widget class="GtkComboBox" id="offset_scale_combo">
                                     <property name="visible">True</property>
                                   </widget>
                                 </child>
@@ -471,7 +471,7 @@ Sets A-D</property>
                                 <property name="label_xalign">0</property>
                                 <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
                                 <child>
-                                  <widget class="GtkComboBox" id="eeg_scale_combo1">
+                                  <widget class="GtkComboBox" id="exg_scale_combo">
                                     <property name="visible">True</property>
                                   </widget>
                                 </child>
@@ -502,7 +502,7 @@ Sets A-D</property>
                                     <property name="visible">True</property>
                                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                                     <child>
-                                      <widget class="GtkCheckButton" id="eeg_lowpass_check1">
+                                      <widget class="GtkCheckButton" id="exg_lowpass_check">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -512,7 +512,7 @@ Sets A-D</property>
                                       </widget>
                                     </child>
                                     <child>
-                                      <widget class="GtkSpinButton" id="eeg_lowpass_spin1">
+                                      <widget class="GtkSpinButton" id="exg_lowpass_spin">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -526,7 +526,7 @@ Sets A-D</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <widget class="GtkCheckButton" id="eeg_highpass_check2">
+                                      <widget class="GtkCheckButton" id="exg_highpass_check">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -539,7 +539,7 @@ Sets A-D</property>
                                       </packing>
                                     </child>
                                     <child>
-                                      <widget class="GtkSpinButton" id="eeg_highpass_check3">
+                                      <widget class="GtkSpinButton" id="exg_highpass_spin">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
