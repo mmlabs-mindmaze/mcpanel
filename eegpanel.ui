@@ -717,8 +717,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkDrawingArea" id="exg_scope">
-                            <property name="visible">True</property>
+                          <object class="Scope" id="exg_scope">
                           </object>
                           <packing>
                             <property name="position">1</property>
