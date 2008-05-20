@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Tue May 20 19:43:20 2008 -->
+<!--Generated with glade3 3.4.5 on Tue May 20 19:45:16 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="topwindow">
     <signal name="destroy" handler="gtk_main_quit"/>
@@ -664,7 +664,7 @@ Sets A-D</property>
                             <property name="n_rows">2</property>
                             <property name="n_columns">2</property>
                             <child>
-                              <widget class="GtkLabel" id="led1">
+                              <widget class="GtkLabel" id="cms_led">
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">led1</property>
                               </widget>
@@ -697,7 +697,7 @@ Sets A-D</property>
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkLabel" id="led2">
+                              <widget class="GtkLabel" id="connect_led">
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">led2</property>
                               </widget>
@@ -888,7 +888,7 @@ Sets A-D</property>
                           <widget class="GtkHBox" id="hbox5">
                             <property name="visible">True</property>
                             <child>
-                              <widget class="GtkLabel" id="led3">
+                              <widget class="GtkLabel" id="recording_led">
                                 <property name="visible">True</property>
                                 <property name="label" translatable="yes">led1</property>
                               </widget>
