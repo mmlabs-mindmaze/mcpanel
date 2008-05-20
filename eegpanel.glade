@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Tue May 20 19:49:59 2008 -->
+<!--Generated with glade3 3.4.5 on Tue May 20 20:11:24 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="topwindow">
     <signal name="destroy" handler="gtk_main_quit"/>
@@ -789,7 +789,6 @@ Sets A-D</property>
                             <child>
                               <widget class="GtkComboBox" id="decimation_combo">
                                 <property name="visible">True</property>
-                                <property name="active">0</property>
                                 <property name="items" translatable="yes">1/1
 1/2
 1/4
@@ -838,7 +837,6 @@ Sets A-D</property>
                             <child>
                               <widget class="GtkComboBox" id="time_window_combo">
                                 <property name="visible">True</property>
-                                <property name="active">0</property>
                                 <property name="items" translatable="yes">1s
 2s
 5s
