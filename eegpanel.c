@@ -44,6 +44,15 @@ typedef enum {
 	EXG_HIGHPASS_CHECK,
 	EXG_HIGHPASS_SPIN,
 	EXG_TREEVIEW,
+	STARTACQUISITION_BUTTON,
+	NATIVE_FREQ_LABEL,
+	DECIMATION_COMBO,
+	DISPLAYED_FREQ_LABEL,
+	TIME_WINDOW_COMBO,
+	RECORDING_LIMIT_ENTRY,
+	START_RECORDING_BUTTON,
+	PAUSE_RECORDING_BUTTON,
+	FILE_LENGTH_LABEL,
 	NUM_PANEL_WIDGETS_DEFINED
 } PanelWidgetEnum;
 
@@ -84,6 +93,15 @@ const LinkWidgetName widget_name_table[] = {
 //	{EXG_HIGHPASS_CHECK, "exg_highpass_check", "GtkCheckButton"},
 //	{EXG_HIGHPASS_SPIN, "exg_highpass_spin", "GtkSpinButton"},
 //	{EXG_TREEVIEW, "exg_treeview", "GtkTreeView"}
+	{STARTACQUISITION_BUTTON, "startacquisition_button", "GtkToggleButton"},  
+	{NATIVE_FREQ_LABEL, "native_freq_label", "GtkLabel"},
+	{DECIMATION_COMBO, "decimation_combo", "GtkComboBox"},
+	{DISPLAYED_FREQ_LABEL, "displayed_freq_label", "GtkLabel"},
+	{TIME_WINDOW_COMBO, "time_window_combo", "GtkComboBox"},
+	{RECORDING_LIMIT_ENTRY, "recording_limit_entry", "GtkEntry"},
+	{START_RECORDING_BUTTON, "start_recording_button", "GtkButton"},
+	{PAUSE_RECORDING_BUTTON, "pause_recording_button", "GtkToggleButton"},
+	{FILE_LENGTH_LABEL, "file_length_label", "GtkLabel"}
 };
 
 #define NUM_PANEL_WIDGETS_REGISTERED (sizeof(widget_name_table)/sizeof(widget_name_table[0]))
@@ -101,7 +119,9 @@ struct _EEGPanelPrivateData {
 	GThread* main_loop_thread;
 
 	//
-	unsigned int sampling_rate, nmax_eeg, nmax_exg, nlines_tri;
+	unsigned int sampling_rate;
+	unsigned int decimation_factor;
+	unsigned int nmax_eeg, nmax_exg, nlines_tri;
 	unsigned int num_eeg_channels, num_exg_channels;
 	unsigned int num_samples;
 	unsigned int display_length;
@@ -237,6 +257,7 @@ EEGPanel* eegpanel_create(void)
 	
 		// Needed initializations
 		priv->display_length = 1;
+		priv->decimation_factor = 1;
 	
 		// Initialize the content of the widgets
 		initialize_widgets(panel, builder);
@@ -370,6 +391,8 @@ int eegpanel_define_input(EEGPanel* panel, unsigned int num_eeg_channels,
 				unsigned int num_exg_channels, unsigned int num_tri_lines,
 				unsigned int sampling_rate)
 {
+	char tempstr[32];
+	int num_samples;
 	EEGPanelPrivateData* priv = panel->priv;
 	ChannelSelection chann_selec;
 	
@@ -377,20 +400,25 @@ int eegpanel_define_input(EEGPanel* panel, unsigned int num_eeg_channels,
 	priv->nmax_exg = num_exg_channels;
 	priv->nlines_tri = num_tri_lines;
 	priv->sampling_rate = sampling_rate;
-
+	num_samples = (sampling_rate*priv->display_length)/priv->decimation_factor;
 	// 
 
 	// Add default channel labels if not available
 	priv->eeg_labels = add_default_labels(priv->eeg_labels, num_eeg_channels, "EEG");
 	priv->exg_labels = add_default_labels(priv->exg_labels, num_eeg_channels, "EXG");
 
+	// Update widgets
 	fill_treeview(GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]), priv->nmax_eeg, (const char**)priv->eeg_labels);
+	sprintf(tempstr,"%u Hz",sampling_rate);
+	gtk_label_set_text(GTK_LABEL(priv->widgets[NATIVE_FREQ_LABEL]), tempstr);
+	sprintf(tempstr,"%u Hz",sampling_rate/priv->decimation_factor); 
+	gtk_label_set_text(GTK_LABEL(priv->widgets[DISPLAYED_FREQ_LABEL]), tempstr);
 
 	// Reset all data buffer;
 	chann_selec.num_chann = 0;
 	chann_selec.selection = NULL;
 	chann_selec.labels = NULL;
-	return set_data_input(panel, sampling_rate * priv->display_length, &chann_selec, &chann_selec);
+	return set_data_input(panel, num_samples, &chann_selec, &chann_selec);
 }
 
 GtkListStore* initialize_list_treeview(GtkTreeView* treeview, const gchar* attr_name)
@@ -724,5 +752,4 @@ char** add_default_labels(char** labels, unsigned int requested_num_labels, cons
 
 	return labels;
 }
-
 
