@@ -24,12 +24,15 @@ static gboolean timerfunc(gpointer user_data)
 
 	static gfloat t=0;
 	static guint32 triggers=0;
+	static int isample = 0;
 	gint i, j;
 	for (i=0; i<NUM_POINTS; i++) {
 		for (j=0; j<NUM_CH; j++)
-			data[NUM_CH*i +j] = cos(2.0*M_PI*t*(j+1));
+			//data[NUM_CH*i +j] = cos(2.0*M_PI*t*(j+1));
+			data[NUM_CH*i +j] = (isample % SAMPLING_RATE) ? 0 : 1;
 		trigg[i] = triggers;
 		t += 1.0 / (float)SAMPLING_RATE;
+		isample++;
 	}
 	triggers++;
 
@@ -68,7 +71,8 @@ int main(int argc, char* argv[])
 	//filt = create_filter_mean(120, NUM_CH);
 	fc = 20.0 / (float) SAMPLING_RATE;
 	fc2 = 30.0 / (float) SAMPLING_RATE;
-	filt = create_filter_bandpass(fc, fc2, 100, NUM_CH, HAMMING_WINDOW);
+	//filt = create_fir_filter_bandpass(fc, fc2, 20, NUM_CH, HAMMING_WINDOW);
+	filt = create_fir_filter_lowpass(fc, 100, NUM_CH, RECT_WINDOW);
 
 	g_thread_init(NULL);
 	gdk_threads_init();
@@ -76,6 +80,9 @@ int main(int argc, char* argv[])
 	
 	
 	panel = eegpanel_create();
+	if (!panel)
+		return 0;
+
 	eegpanel_define_input(panel, NUM_CH, 8, 16, SAMPLING_RATE);
 	panel->process_selection = ProcessSelection;
 

@@ -13,6 +13,80 @@
 
 #define GET_PANEL_FROM(widget)  (EEGPanel*)(g_object_get_data(G_OBJECT(gtk_widget_get_toplevel(GTK_WIDGET(widget))), "eeg_panel"))
 
+typedef enum {
+	TOP_WINDOW,
+	EEG_SCOPE,
+	EXG_SCOPE,
+	TRI_SCOPE,
+	EEG_OFFSET_SCOPE1,
+	EEG_OFFSET_SCOPE2,
+	EXG_OFFSET_SCOPE1,
+	EXG_OFFSET_SCOPE2,
+	EEG_AXES,
+	EXG_AXES,
+	TRI_AXES,
+	EEG_OFFSET_AXES1,
+	EEG_OFFSET_AXES2,
+	EXG_OFFSET_AXES1,
+	EXG_OFFSET_AXES2,
+	EEG_SCALE_COMBO,
+	EEG_LOWPASS_CHECK,
+	EEG_LOWPASS_SPIN,
+	EEG_HIGHPASS_CHECK,
+	EEG_HIGHPASS_SPIN,
+	REFTYPE_COMBO,
+	ELECREF_COMBO,
+	EEG_TREEVIEW,
+	OFFSET_SCALE_COMBO,
+	EXG_SCALE_COMBO,
+	EXG_LOWPASS_CHECK,
+	EXG_LOWPASS_SPIN,
+	EXG_HIGHPASS_CHECK,
+	EXG_HIGHPASS_SPIN,
+	EXG_TREEVIEW,
+	NUM_PANEL_WIDGETS_DEFINED
+} PanelWidgetEnum;
+
+typedef struct _LinkWidgetName {
+	PanelWidgetEnum id;
+	const char* name;
+	const char* type;
+} LinkWidgetName;
+
+const LinkWidgetName widget_name_table[] = {
+	{TOP_WINDOW, "topwindow", "GtkWindow"},
+	{EEG_SCOPE, "eeg_scope", "Scope"},
+//	{EXG_SCOPE, "exg_scope", "Scope"},
+	{TRI_SCOPE, "tri_scope", "BinaryScope"},
+//	{EEG_OFFSET_SCOPE1, "eeg_offset_scope1", "Bargraph"},
+//	{EEG_OFFSET_SCOPE2, "eeg_offset_scope2", "Bargraph"},
+//	{EXG_OFFSET_SCOPE1, "exg_offset_scope1", "Bargraph"},
+//	{EXG_OFFSET_SCOPE2, "exg_offset_scope2", "Bargraph"},
+	{EEG_AXES, "eeg_axes", "LabelizedPlot"},
+//	{EXG_AXES, "exg_axes", "LabelizedPlot"},
+	{TRI_AXES, "tri_axes", "LabelizedPlot"},
+//	{EEG_OFFSET_AXES1, "eeg_offset_axes1", "LabelizedPlot"},
+//	{EEG_OFFSET_AXES2, "eeg_offset_axes2", "LabelizedPlot"},
+//	{EXG_OFFSET_AXES1, "exg_offset_axes1", "LabelizedPlot"},
+//	{EXG_OFFSET_AXES2, "exg_offset_axes2", "LabelizedPlot"},
+	{EEG_SCALE_COMBO, "eeg_scale_combo", "GtkComboBox"},
+	{EEG_LOWPASS_CHECK, "eeg_lowpass_check", "GtkCheckButton"},
+	{EEG_LOWPASS_SPIN, "eeg_lowpass_spin", "GtkSpinButton"},
+	{EEG_HIGHPASS_CHECK, "eeg_highpass_check", "GtkCheckButton"},
+	{EEG_HIGHPASS_SPIN, "eeg_highpass_spin", "GtkSpinButton"},
+	{REFTYPE_COMBO, "reftype_combo", "GtkComboBox"},
+	{ELECREF_COMBO, "elecref_combo", "GtkComboBox"},
+	{EEG_TREEVIEW, "eeg_treeview", "GtkTreeView"},
+//	{OFFSET_SCALE_COMBO, "offset_scale_combo", "GtkComboBox"},
+//	{EXG_SCALE_COMBO, "exg_scale_combo", "GtkComboBox"},
+//	{EXG_LOWPASS_CHECK, "exg_lowpass_check", "GtkCheckButton"},
+//	{EXG_LOWPASS_SPIN, "exg_lowpass_spin", "GtkSpinButton"},
+//	{EXG_HIGHPASS_CHECK, "exg_highpass_check", "GtkCheckButton"},
+//	{EXG_HIGHPASS_SPIN, "exg_highpass_spin", "GtkSpinButton"},
+//	{EXG_TREEVIEW, "exg_treeview", "GtkTreeView"}
+};
+
+#define NUM_PANEL_WIDGETS_REGISTERED (sizeof(widget_name_table)/sizeof(widget_name_table[0]))
 
 struct _EEGPanelPrivateData {
 	GtkWindow* window;
@@ -20,10 +94,9 @@ struct _EEGPanelPrivateData {
 	Scope* exg_scope;
 	BinaryScope* tri_scope;
 	Bargraph* eeg_bargraph;
-	LabelizedPlot *eeg_axes, *exg_axes, *tri_axes, *bar_axes;
+	//LabelizedPlot *eeg_axes, *exg_axes, *tri_axes, *bar_axes;
 
-	GtkTreeView* eeg_treeview;
-	GtkComboBox *reftype_combo, *elecref_combo, *electrodesets_combo;
+	GObject* widgets[NUM_PANEL_WIDGETS_DEFINED];
 
 	GThread* main_loop_thread;
 
@@ -44,6 +117,7 @@ struct _EEGPanelPrivateData {
 	uint32_t *triggers;
 };
 
+void eegpanel_destroy(EEGPanel* panel);
 int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec, ChannelSelection* exg_selec);
 int fill_selec_from_treeselec(ChannelSelection* selection, GtkTreeSelection* tree_sel, char** labels);
 int poll_widgets(EEGPanel* panel, GtkBuilder* builder);
@@ -82,9 +156,10 @@ extern gboolean startacquisition_button_toggled_cb(GtkButton* button, gpointer d
 extern void reftype_combo_changed_cb(GtkComboBox* combo, gpointer data)
 {
 	EEGPanel* panel = GET_PANEL_FROM(combo);
+	EEGPanelPrivateData* priv = panel->priv;
 	int selec = gtk_combo_box_get_active(combo);
 
-	gtk_widget_set_sensitive(GTK_WIDGET(panel->priv->elecref_combo), (selec==2)? TRUE : FALSE);
+	gtk_widget_set_sensitive(GTK_WIDGET(priv->widgets[ELECREF_COMBO]), (selec==2)? TRUE : FALSE);
 }
 
 extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer user_data)
@@ -157,15 +232,19 @@ EEGPanel* eegpanel_create(void)
 	gtk_builder_connect_signals(builder, panel);
 
 	// Get the pointers of the control widgets
-	poll_widgets(panel, builder);
+	if (poll_widgets(panel, builder)) {
 
 	
-	// Needed initializations
-	priv->display_length = 1;
-
-	// Initialize the content of the widgets
-	initialize_widgets(panel, builder);
-	eegpanel_define_input(panel, 128, 8, 16, 2048);
+		// Needed initializations
+		priv->display_length = 1;
+	
+		// Initialize the content of the widgets
+		initialize_widgets(panel, builder);
+		eegpanel_define_input(panel, 128, 8, 16, 2048);
+	} else {
+		eegpanel_destroy(panel);
+		panel = NULL;
+	}
 
 	g_object_unref(builder);
 
@@ -234,10 +313,25 @@ void eegpanel_destroy(EEGPanel* panel)
 
 int poll_widgets(EEGPanel* panel, GtkBuilder* builder)
 {
+	int i;
 	EEGPanelPrivateData* priv = panel->priv;
 
-	// Get the root window
-	priv->window = GTK_WINDOW(gtk_builder_get_object(builder, "topwindow"));
+	// Get the list of mandatory widgets and check their type;
+	for (i=0; i<NUM_PANEL_WIDGETS_REGISTERED; i++) {
+		int id = widget_name_table[i].id;
+		const char* name = widget_name_table[i].name;
+		GType type = g_type_from_name(widget_name_table[i].type);
+
+		priv->widgets[id] = gtk_builder_get_object(builder, name);
+		if (!priv->widgets[id] || !g_type_is_a(G_OBJECT_TYPE(priv->widgets[id]), type)) {
+			fprintf(stderr, "Widget \"%s\" not found or is not a derived type of %s\n", name, widget_name_table[i].type);
+			return 0;
+		}
+	}
+
+	// Get the root window and pointer to the panel as internal
+	// data to retrieve it later easily in the callbacks
+	priv->window = GTK_WINDOW(priv->widgets[TOP_WINDOW]);
 	g_object_set_data(G_OBJECT(priv->window), "eeg_panel", panel);
 	
 	// Get the plot widgets
@@ -245,26 +339,23 @@ int poll_widgets(EEGPanel* panel, GtkBuilder* builder)
 	priv->exg_scope = SCOPE(gtk_builder_get_object(builder, "exg_scope"));
 	priv->eeg_bargraph = BARGRAPH(gtk_builder_get_object(builder, "eeg_bargraph"));
 	priv->tri_scope = BINARY_SCOPE(gtk_builder_get_object(builder, "tri_scope"));
-	priv->eeg_axes = LABELIZED_PLOT(gtk_builder_get_object(builder, "eeg_axes"));
+/*	priv->eeg_axes = LABELIZED_PLOT(gtk_builder_get_object(builder, "eeg_axes"));
 	priv->exg_axes = LABELIZED_PLOT(gtk_builder_get_object(builder, "exg_axes"));
 	priv->tri_axes = LABELIZED_PLOT(gtk_builder_get_object(builder, "tri_axes"));
 	priv->bar_axes = LABELIZED_PLOT(gtk_builder_get_object(builder, "bar_axes"));
-
-	// Get the control widgets
-	priv->eeg_treeview = GTK_TREE_VIEW(gtk_builder_get_object(builder, "eeg_elecselec_treeview"));
-	priv->reftype_combo = GTK_COMBO_BOX(gtk_builder_get_object(builder, "reftype_combo"));
-	priv->elecref_combo = GTK_COMBO_BOX(gtk_builder_get_object(builder, "elecref_combo"));
-	priv->electrodesets_combo = GTK_COMBO_BOX(gtk_builder_get_object(builder, "electrodesets_combo"));
+*/
 
 	return 1;	
 }
 
 int initialize_widgets(EEGPanel* panel, GtkBuilder* builder)
 {
+	GtkTreeView* treeview;
 	EEGPanelPrivateData* priv = panel->priv;
 	
-	initialize_list_treeview(priv->eeg_treeview, "channels");
-	g_signal_connect_after(gtk_tree_view_get_selection(priv->eeg_treeview),
+	treeview = GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]);
+	initialize_list_treeview(treeview, "channels");
+	g_signal_connect_after(gtk_tree_view_get_selection(treeview),
 				"changed",
 				(GCallback)channel_selection_changed_cb,
 				EEG);
@@ -293,7 +384,7 @@ int eegpanel_define_input(EEGPanel* panel, unsigned int num_eeg_channels,
 	priv->eeg_labels = add_default_labels(priv->eeg_labels, num_eeg_channels, "EEG");
 	priv->exg_labels = add_default_labels(priv->exg_labels, num_eeg_channels, "EXG");
 
-	fill_treeview(priv->eeg_treeview, priv->nmax_eeg, (const char**)priv->eeg_labels);
+	fill_treeview(GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]), priv->nmax_eeg, (const char**)priv->eeg_labels);
 
 	// Reset all data buffer;
 	chann_selec.num_chann = 0;
@@ -549,7 +640,7 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 		memcpy(priv->selected_eeg, eeg_selec->selection, num_eeg*sizeof(*(priv->selected_eeg)));
 
 		if (eeg_selec->labels)	
-			g_object_set(G_OBJECT(priv->eeg_axes), "ytick-labelv", eeg_selec->labels, NULL);
+			g_object_set(G_OBJECT(priv->widgets[EEG_AXES]), "ytick-labelv", eeg_selec->labels, NULL);
 	}
 
 
@@ -563,7 +654,7 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 		memcpy(priv->selected_exg, exg_selec->selection, num_exg*sizeof(*(priv->selected_exg)));
 
 		if (exg_selec->labels)	
-			g_object_set(G_OBJECT(priv->exg_axes), "ytick-labelv", exg_selec->labels, NULL);
+			g_object_set(G_OBJECT(priv->widgets[EXG_AXES]), "ytick-labelv", exg_selec->labels, NULL);
 	}
 
 	priv->current_sample = 0;

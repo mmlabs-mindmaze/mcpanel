@@ -227,7 +227,7 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkSpinButton" id="eeg_highpass_check1">
+                                      <object class="GtkSpinButton" id="eeg_highpass_spin">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
@@ -339,7 +339,7 @@
                                         <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
                                         <property name="shadow_type">GTK_SHADOW_IN</property>
                                         <child>
-                                          <object class="GtkTreeView" id="eeg_elecselec_treeview">
+                                          <object class="GtkTreeView" id="eeg_treeview">
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="headers_visible">False</property>
@@ -688,7 +688,7 @@
                                     <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
                                     <property name="shadow_type">GTK_SHADOW_IN</property>
                                     <child>
-                                      <object class="GtkTreeView" id="exg_elecselec_treeview">
+                                      <object class="GtkTreeView" id="exg_treeview">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="headers_visible">False</property>
