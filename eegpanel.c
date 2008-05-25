@@ -11,7 +11,7 @@
 #include "filter.h"
 #include <memory.h>
 
-#define GET_PANEL_FROM(widget)  (EEGPanel*)(g_object_get_data(G_OBJECT(gtk_widget_get_toplevel(GTK_WIDGET(widget))), "eeg_panel"))
+#define GET_PANEL_FROM(widget)  ((EEGPanel*)(g_object_get_data(G_OBJECT(gtk_widget_get_toplevel(GTK_WIDGET(widget))), "eeg_panel")))
 
 typedef enum {
 	TOP_WINDOW,
@@ -56,6 +56,12 @@ typedef enum {
 	NUM_PANEL_WIDGETS_DEFINED
 } PanelWidgetEnum;
 
+typedef enum {
+	ELEC_TYPE,
+	BIPOLE_TYPE,
+	OFFSET_TYPE
+} ScopeType;
+
 typedef struct _LinkWidgetName {
 	PanelWidgetEnum id;
 	const char* name;
@@ -65,14 +71,14 @@ typedef struct _LinkWidgetName {
 const LinkWidgetName widget_name_table[] = {
 	{TOP_WINDOW, "topwindow", "GtkWindow"},
 	{EEG_SCOPE, "eeg_scope", "Scope"},
-//	{EXG_SCOPE, "exg_scope", "Scope"},
+	{EXG_SCOPE, "exg_scope", "Scope"},
 	{TRI_SCOPE, "tri_scope", "BinaryScope"},
 //	{EEG_OFFSET_SCOPE1, "eeg_offset_scope1", "Bargraph"},
 //	{EEG_OFFSET_SCOPE2, "eeg_offset_scope2", "Bargraph"},
 //	{EXG_OFFSET_SCOPE1, "exg_offset_scope1", "Bargraph"},
 //	{EXG_OFFSET_SCOPE2, "exg_offset_scope2", "Bargraph"},
 	{EEG_AXES, "eeg_axes", "LabelizedPlot"},
-//	{EXG_AXES, "exg_axes", "LabelizedPlot"},
+	{EXG_AXES, "exg_axes", "LabelizedPlot"},
 	{TRI_AXES, "tri_axes", "LabelizedPlot"},
 //	{EEG_OFFSET_AXES1, "eeg_offset_axes1", "LabelizedPlot"},
 //	{EEG_OFFSET_AXES2, "eeg_offset_axes2", "LabelizedPlot"},
@@ -87,12 +93,12 @@ const LinkWidgetName widget_name_table[] = {
 	{ELECREF_COMBO, "elecref_combo", "GtkComboBox"},
 	{EEG_TREEVIEW, "eeg_treeview", "GtkTreeView"},
 //	{OFFSET_SCALE_COMBO, "offset_scale_combo", "GtkComboBox"},
-//	{EXG_SCALE_COMBO, "exg_scale_combo", "GtkComboBox"},
-//	{EXG_LOWPASS_CHECK, "exg_lowpass_check", "GtkCheckButton"},
-//	{EXG_LOWPASS_SPIN, "exg_lowpass_spin", "GtkSpinButton"},
-//	{EXG_HIGHPASS_CHECK, "exg_highpass_check", "GtkCheckButton"},
-//	{EXG_HIGHPASS_SPIN, "exg_highpass_spin", "GtkSpinButton"},
-//	{EXG_TREEVIEW, "exg_treeview", "GtkTreeView"}
+	{EXG_SCALE_COMBO, "exg_scale_combo", "GtkComboBox"},
+	{EXG_LOWPASS_CHECK, "exg_lowpass_check", "GtkCheckButton"},
+	{EXG_LOWPASS_SPIN, "exg_lowpass_spin", "GtkSpinButton"},
+	{EXG_HIGHPASS_CHECK, "exg_highpass_check", "GtkCheckButton"},
+	{EXG_HIGHPASS_SPIN, "exg_highpass_spin", "GtkSpinButton"},
+	{EXG_TREEVIEW, "exg_treeview", "GtkTreeView"},
 	{STARTACQUISITION_BUTTON, "startacquisition_button", "GtkToggleButton"},  
 	{NATIVE_FREQ_LABEL, "native_freq_label", "GtkLabel"},
 	{DECIMATION_COMBO, "decimation_combo", "GtkComboBox"},
@@ -112,7 +118,6 @@ struct _EEGPanelPrivateData {
 	Scope* exg_scope;
 	BinaryScope* tri_scope;
 	Bargraph* eeg_bargraph;
-	//LabelizedPlot *eeg_axes, *exg_axes, *tri_axes, *bar_axes;
 
 	GObject* widgets[NUM_PANEL_WIDGETS_DEFINED];
 
@@ -121,6 +126,7 @@ struct _EEGPanelPrivateData {
 	//
 	unsigned int sampling_rate;
 	unsigned int decimation_factor;
+	unsigned int decimation_offset;
 	unsigned int nmax_eeg, nmax_exg, nlines_tri;
 	unsigned int num_eeg_channels, num_exg_channels;
 	unsigned int num_samples;
@@ -130,6 +136,7 @@ struct _EEGPanelPrivateData {
 	// Labels
 	char** eeg_labels;
 	char** exg_labels;
+	char** bipole_labels;
 
 	// data
 	unsigned int *selected_eeg, *selected_exg;
@@ -147,6 +154,7 @@ void initialize_combo(GtkComboBox* combo, const char* labels);
 void fill_treeview(GtkTreeView* treeview, unsigned int num_labels, const char** labels);
 void fill_combo(GtkComboBox* combo, const char* labels);
 char** add_default_labels(char** labels, unsigned int requested_num_labels, const char* prefix);
+void set_bipole_labels(EEGPanelPrivateData* priv);
 
 gpointer loop_thread(gpointer user_data)
 {
@@ -187,7 +195,7 @@ extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer u
 	ChannelSelection select;
 	ChannelType type = (ChannelType)user_data;
 	EEGPanel* panel = GET_PANEL_FROM(gtk_tree_selection_get_tree_view(selection));
-	char** labels = (type == EEG) ? panel->priv->eeg_labels : panel->priv->exg_labels;
+	char** labels = (type == EEG) ? panel->priv->eeg_labels : panel->priv->bipole_labels;
 	
 	// Prepare the channel selection structure to be passed
 	fill_selec_from_treeselec(&select, selection, labels);
@@ -207,6 +215,58 @@ extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer u
 	g_free(select.labels);
 }
 
+extern void decimation_combo_changed_cb(GtkComboBox* combo, gpointer data)
+{
+	char tempstr[32];
+	GtkTreeIter iter;
+	GValue value = {0};
+	GtkTreeModel* model;
+	EEGPanel* panel = GET_PANEL_FROM(combo);
+	EEGPanelPrivateData* priv = panel->priv;
+
+	// Get the value set
+	model = gtk_combo_box_get_model(combo);
+	gtk_combo_box_get_active_iter(combo, &iter);
+	gtk_tree_model_get_value(model, &iter, 1, &value);
+
+	// Reset the internals
+	priv->decimation_factor = g_value_get_uint(&value);
+	set_data_input(panel, (priv->sampling_rate*priv->display_length)/priv->decimation_factor, NULL, NULL);
+	
+	// update the display
+	sprintf(tempstr,"%u Hz",priv->sampling_rate/priv->decimation_factor); 
+	gtk_label_set_text(GTK_LABEL(priv->widgets[DISPLAYED_FREQ_LABEL]), tempstr);
+
+}
+
+extern void scale_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
+{
+	GtkTreeModel* model;
+	GtkTreeIter iter;
+	GValue value = {0};
+	double scale;
+	ScopeType type = (ChannelType)user_data;
+	EEGPanelPrivateData* priv = GET_PANEL_FROM(combo)->priv;
+	
+	
+	// Get the value set
+	model = gtk_combo_box_get_model(combo);
+	gtk_combo_box_get_active_iter(combo, &iter);
+	gtk_tree_model_get_value(model, &iter, 1, &value);
+
+	switch (type) {
+	case ELEC_TYPE:
+		g_object_set(priv->widgets[EEG_SCOPE], "scale", scale, NULL);
+		break;
+
+	case BIPOLE_TYPE:
+		g_object_set(priv->widgets[EXG_SCOPE], "scale", scale, NULL);
+		break;
+
+	case OFFSET_TYPE:
+		break;
+	}
+}
 
 
 /*extern void destroy( GtkWidget *widget,
@@ -320,6 +380,7 @@ void eegpanel_destroy(EEGPanel* panel)
 
 	g_strfreev(priv->eeg_labels);
 	g_strfreev(priv->exg_labels);
+	g_strfreev(priv->bipole_labels);
 	
 	g_free(priv->eeg);
 	g_free(priv->exg);
@@ -360,11 +421,6 @@ int poll_widgets(EEGPanel* panel, GtkBuilder* builder)
 	priv->exg_scope = SCOPE(gtk_builder_get_object(builder, "exg_scope"));
 	priv->eeg_bargraph = BARGRAPH(gtk_builder_get_object(builder, "eeg_bargraph"));
 	priv->tri_scope = BINARY_SCOPE(gtk_builder_get_object(builder, "tri_scope"));
-/*	priv->eeg_axes = LABELIZED_PLOT(gtk_builder_get_object(builder, "eeg_axes"));
-	priv->exg_axes = LABELIZED_PLOT(gtk_builder_get_object(builder, "exg_axes"));
-	priv->tri_axes = LABELIZED_PLOT(gtk_builder_get_object(builder, "tri_axes"));
-	priv->bar_axes = LABELIZED_PLOT(gtk_builder_get_object(builder, "bar_axes"));
-*/
 
 	return 1;	
 }
@@ -379,10 +435,20 @@ int initialize_widgets(EEGPanel* panel, GtkBuilder* builder)
 	g_signal_connect_after(gtk_tree_view_get_selection(treeview),
 				"changed",
 				(GCallback)channel_selection_changed_cb,
-				EEG);
-	//initialize_combo(priv->reftype_combo, "None\nAverage\nElectrode");
-	//initialize_combo(priv->elecref_combo, "EXG1\nAF1");
-	//initialize_combo(priv->electrodesets_combo, "set A\nsets AB\nsets A-D\nall");
+				(gpointer)EEG);
+
+	treeview = GTK_TREE_VIEW(priv->widgets[EXG_TREEVIEW]);
+	initialize_list_treeview(treeview, "channels");
+	g_signal_connect_after(gtk_tree_view_get_selection(treeview),
+				"changed",
+				(GCallback)channel_selection_changed_cb,
+				(gpointer)EXG);
+
+	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[DECIMATION_COMBO]), 0);
+	g_signal_connect_after(priv->widgets[DECIMATION_COMBO],
+				"changed",
+				(GCallback)decimation_combo_changed_cb,
+				NULL);
 
 	return 1;
 }
@@ -405,10 +471,12 @@ int eegpanel_define_input(EEGPanel* panel, unsigned int num_eeg_channels,
 
 	// Add default channel labels if not available
 	priv->eeg_labels = add_default_labels(priv->eeg_labels, num_eeg_channels, "EEG");
-	priv->exg_labels = add_default_labels(priv->exg_labels, num_eeg_channels, "EXG");
+	priv->exg_labels = add_default_labels(priv->exg_labels, num_exg_channels, "EXG");
+	set_bipole_labels(priv);
 
 	// Update widgets
 	fill_treeview(GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]), priv->nmax_eeg, (const char**)priv->eeg_labels);
+	fill_treeview(GTK_TREE_VIEW(priv->widgets[EXG_TREEVIEW]), priv->nmax_exg, (const char**)priv->bipole_labels);
 	sprintf(tempstr,"%u Hz",sampling_rate);
 	gtk_label_set_text(GTK_LABEL(priv->widgets[NATIVE_FREQ_LABEL]), tempstr);
 	sprintf(tempstr,"%u Hz",sampling_rate/priv->decimation_factor); 
@@ -503,9 +571,9 @@ void fill_combo(GtkComboBox* combo, const char* labels)
 }
 
 
-void eegpanel_add_selected_samples(EEGPanel* panel, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples)
+void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples)
 {
-	unsigned int num_eeg_ch, num_exg_ch, nmax_eeg, nmax_exg, i,j;
+	unsigned int num_eeg_ch, num_exg_ch, nmax_eeg, nmax_exg, i,j,k;
 	unsigned int num_samples_written = 0;
 	EEGPanelPrivateData* priv = panel->priv;
 	unsigned int pointer = priv->current_sample;
@@ -524,7 +592,7 @@ void eegpanel_add_selected_samples(EEGPanel* panel, const float* eeg, const floa
 	if (num_samples+pointer > priv->num_samples) {
 		num_samples_written = num_samples+pointer - priv->num_samples;
 		
-		eegpanel_add_selected_samples(panel, eeg, exg, triggers, num_samples_written);
+		eegpanel_add_samples(panel, eeg, exg, triggers, num_samples_written);
 
 		eeg += nmax_eeg*num_samples_written;
 		exg += nmax_exg*num_samples_written;
@@ -535,17 +603,24 @@ void eegpanel_add_selected_samples(EEGPanel* panel, const float* eeg, const floa
 
 	// copy data
 	if (eeg) {
-		for (i=0; i<num_samples; i++)
+		for (i=0; i<num_samples; i++) {
 			for (j=0; j<num_eeg_ch; j++)
 				priv->eeg[(pointer+i)*num_eeg_ch+j] = eeg[i*nmax_eeg+eeg_sel[j]];
+		}
 	}
 	if (exg) {
-		for (i=0; i<num_samples; i++)
-			for (j=0; j<num_exg_ch; j++)
-				priv->exg[(pointer+i)*num_exg_ch+j] = exg[i*nmax_exg+exg_sel[j]];
+		for (i=0; i<num_samples; i++) {
+			for (j=0; j<num_exg_ch; j++) {
+				k = (exg_sel[j]+1)%num_exg_ch;
+				priv->exg[(pointer+i)*num_exg_ch+j] = exg[i*nmax_exg+exg_sel[j]] - exg[i*nmax_exg+k];
+			}
+		}
 	}
-	if (triggers)
-		memcpy(priv->triggers + pointer, triggers, num_samples*sizeof(*triggers));
+	if (triggers) {
+		for (i=0; i<num_samples; i++) {
+			priv->triggers[pointer+i] = triggers[i];
+		}
+	}
 
 	// Update current pointer
 	pointer += num_samples;
@@ -567,7 +642,7 @@ void eegpanel_add_selected_samples(EEGPanel* panel, const float* eeg, const floa
 		gdk_threads_leave();
 }
 
-void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples)
+/*void eegpanel_add_selected_samples(EEGPanel* panel, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples)
 {
 	unsigned int num_eeg_ch, num_exg_ch;
 	unsigned int num_samples_written = 0;
@@ -582,7 +657,7 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 	if (num_samples+pointer > priv->num_samples) {
 		num_samples_written = num_samples+pointer - priv->num_samples;
 		
-		eegpanel_add_samples(panel, eeg, exg, triggers, num_samples_written);
+		eegpanel_add_selected_samples(panel, eeg, exg, triggers, num_samples_written);
 
 		eeg += num_eeg_ch*num_samples_written;
 		exg += num_exg_ch*num_samples_written;
@@ -618,7 +693,7 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 	binary_scope_update_data(priv->tri_scope, pointer);
 	if (lock_res)
 		gdk_threads_leave();
-}
+}*/
 
 
 int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec, ChannelSelection* exg_selec)
@@ -627,6 +702,8 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 	float *eeg, *exg;
 	uint32_t *triggers;
 	EEGPanelPrivateData* priv = panel->priv;
+
+	priv->decimation_offset = 0;
 
 	// Use the previous values if unspecified
 	num_samples = (num_samples>=0) ? num_samples : priv->num_samples;
@@ -753,3 +830,55 @@ char** add_default_labels(char** labels, unsigned int requested_num_labels, cons
 	return labels;
 }
 
+void set_bipole_labels(EEGPanelPrivateData* priv)
+{
+	unsigned int i, j;
+	char** bip_labels = NULL;
+	unsigned int num_labels = priv->nmax_exg;
+
+	g_strfreev(priv->bipole_labels);
+	bip_labels = g_malloc0((num_labels+1)*sizeof(char*));
+
+	for (i=0; i<num_labels;i++) {
+		j = (i+1)%num_labels;
+		bip_labels[i] = g_strconcat(priv->exg_labels[i],
+					    "-",
+					    priv->exg_labels[j],
+					    NULL);
+	}
+
+	priv->bipole_labels = bip_labels;
+}
+
+
+void set_scopes_xticks(EEGPanelPrivateData* priv)
+{
+	char tempstr[32];
+	int i;
+	int* ticks;
+	char** labels;
+	unsigned int inc, num_ticks;
+	unsigned int disp_len = priv->display_length;
+	unsigned int sampling_rate = priv->sampling_rate / priv->decimation->factor;
+
+	inc = 1
+	if (disp_len > 5)
+		inc = 2;
+	if (disp_len > 10)
+		inc = 5;
+	if (disp_len > 30)
+		inc = 10;
+	
+	num_ticks = disp_len / inc;
+	ticks = g_malloc(num_ticks*sizeof(*ticks));
+	labels = g_malloc(num_ticks*sizeof(*labels));
+
+	// set the ticks and ticks labels
+	for (i=0; i<num_ticks; i++) {
+		ticks[i] = (i+1)*sampling_rate -1;
+		g_sprintf(tempstr, 
+	}
+
+	g_free(ticks);
+	g_strfreev(labels);
+}

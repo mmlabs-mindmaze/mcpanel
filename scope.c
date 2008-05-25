@@ -2,6 +2,10 @@
 #include <memory.h>
 #include "scope.h"
 
+enum {
+	DUMMY_PROP,
+	SCALE_PROP
+};
 
 static void scope_calculate_drawparameters(Scope* self);
 static void scope_draw_samples(const Scope* self, unsigned int first, unsigned int last);
@@ -13,7 +17,7 @@ G_DEFINE_TYPE (Scope, scope, TYPE_PLOT_AREA)
 	(G_TYPE_INSTANCE_GET_PRIVATE ((o), TYPE_SCOPE, ScopePrivate))
 
 
-
+/*
 static void
 scope_get_property (GObject *object, guint property_id,
                               GValue *value, GParamSpec *pspec)
@@ -23,14 +27,26 @@ scope_get_property (GObject *object, guint property_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
 }
+*/
 
 static void
 scope_set_property (GObject *object, guint property_id,
                               const GValue *value, GParamSpec *pspec)
 {
+	Scope* self = SCOPE(object);
+
 	switch (property_id) {
+	case SCALE_PROP:
+		self->phys_scale = (data_t)g_value_get_double(value);
+		break;
+
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+	}
+
+	if (GTK_WIDGET_DRAWABLE(self)) {
+		scope_calculate_drawparameters(self);
+		gtk_widget_queue_draw(GTK_WIDGET(self));
 	}
 }
 
@@ -54,9 +70,21 @@ scope_class_init (ScopeClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	object_class->get_property = scope_get_property;
+//	object_class->get_property = scope_get_property;
 	object_class->set_property = scope_set_property;
 	object_class->finalize = scope_finalize;
+
+
+	g_object_class_install_property(G_OBJECT_CLASS(klass),
+					SCALE_PROP,
+					g_param_spec_double("scale",
+							"Scale",
+							"The scale of the divisions",
+							0.0,
+							1.7E308,
+							1.0,
+							G_PARAM_WRITABLE | 
+							G_PARAM_STATIC_STRINGS));
 }
 
 static void
