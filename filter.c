@@ -26,6 +26,8 @@ void apply_window(float* fir, unsigned int length, KernelWindow window)
 }
 
 
+
+
 void normalize_fir(float* fir, unsigned int length)
 {
 	int i;
@@ -72,6 +74,114 @@ void reverse_fir(float* fir, unsigned int length)
 	fir[length-1] += 1.0;
 }
 
+// inspired by DSP guide ch33
+int compute_cheby_iir(float* num, float* den, unsigned int num_pole, int highpass, float ripple, float cutoff_freq)
+{
+	double *a, *b, *ta, *tb;
+	double a0, a1, a2, b1, b2;
+	double rp, ip, es, vx, kx, t, w, m, d, x0, x1, x2, y1, y2, k;
+	double sa, sb, gain;
+	double np = num_pole;
+	int i, p;
+	double fc = cutoff_freq, r = ripple;
+	int retval = 1;
+	
+	// Allocate temporary arrays
+	a = malloc((np+2)*sizeof(*a));
+	b = malloc((np+2)*sizeof(*b));
+	ta = malloc((np+2)*sizeof(*ta));
+	tb = malloc((np+2)*sizeof(*tb));
+	if (!a || !b || !ta || !tb) {
+		retval = 0;
+		goto exit;
+	}
+	memset(a, 0, (np+2)*sizeof(*a));
+	memset(b, 0, (np+2)*sizeof(*b));
+
+	for (p=0; p<np/2; i++) {
+		// calculate pole locate on the unit circle
+		rp = -cos(M_PI/(np*2.0) + ((double)(p-1))*M_PI/np);
+		ip = sin(M_PI/(np*2.0) + ((double)(p-1))*M_PI/np);
+
+		// Warp from a circle to an ellipse
+		if (r != 0.0) {
+			es = sqrt(pow(1.0/(1.0-r),2)-1.0);
+			vx = (1.0/np)*log( (1.0/es) + sqrt((1.0/(es*es))+1.0) );
+			kx = (1.0/np)*log( (1.0/es) + sqrt((1.0/(es*es))-1.0) );
+			kx = (exp(kx)+exp(-kx))/2.0;
+			rp = rp * ((exp(vx)-exp(-vx))/2.0)/kx;
+			ip = ip * ((exp(vx)+exp(-vx))/2.0)/kx;
+		}
+
+		// s to z domains conversion
+		t = 2.0*tan(0.5);
+		w = 2.0*M_PI*fc;
+		m = rp*rp + ip*ip;
+		d = 4.0 - 4.0*rp*t + m*t*t;
+		x0 = t*t/d;
+		x1 = 2.0*t*t/d;
+		x2 = t*t/d;
+		y1 = (8.0 - 2.0*m*t*t)/d;
+		y2 = (-4.0 - 4.0*rp*t - m*t*t)/d;
+
+		// LP(s) to LP(z) or LP(s) to HP(z)
+		if (highpass)
+			k = -cos(w/2.0 + 0.5)/cos(w/2.0 - 0.5);
+		else
+			k = sin(0.5 - w/2.0)/sin(0.5 + w/2.0);
+		d = 1.0 + y1*k - y2*k*k;
+		a0 = (x0 - x1*k + x2*k*k)/d;
+		a1 = (-2.0*x0*k + x1 + x1*k*k - 2.0*x2*k)/d;
+		a2 = (x0*k*k - x1*k +x2)/d;
+		b1 = (2.0*k + y1 + y1*k*k - 2.0*y2*k)/d;
+		b2 = (-k*k - y1*k + y2)/d;
+		if (highpass) {
+			a1 *= 1.0;
+			b1 *= 1.0;
+		}
+
+		// Add coefficients to the cascade
+		memcpy(ta, a, (num_pole+2)*sizeof(*a));
+		memcpy(tb, b, (num_pole+2)*sizeof(*b));
+		for (i=2; i<num_pole+2; i++) {
+			a[i] = a0*ta[i] + a1*ta[i-1] + a2*ta[i-2];
+			b[i] = tb[i] + b1*tb[i-1] + b2*tb[i-2];
+		}
+	}
+
+	// Finish combining coefficients
+	b[2] = 0;
+	for (i=0; i<num_pole; i++) {
+		a[i] = a[i+2];
+		b[i] = -b[i+2];
+	}
+
+	// Normalize the gain
+	sa = sb = 0.0;
+	for (i=0; i<num_pole; i++) {
+		sa += a[i] * ((highpass && i%2) ? -1.0 : 1.0);
+		sb += b[i] * ((highpass && i%2) ? -1.0 : 1.0);
+	}
+	gain = sa / (1.0-sb);
+	for (i=0; i<num_pole; i++) 
+		a[i] /= gain;
+
+	
+	// Copy the results to the num and den
+	num[0] = a[0];
+	for (i=1; i<num_pole; i++) {
+		num[i] = a[i];
+		den[i-1] = b[i];
+	}
+
+exit:
+	free(a);
+	free(b);
+	free(ta);
+	free(tb);
+	return retval;
+}
+
 
 dfilter* create_fir_filter(unsigned int fir_length, unsigned int nchann, float** fir_out)
 {
@@ -102,6 +212,52 @@ dfilter* create_fir_filter(unsigned int fir_length, unsigned int nchann, float**
 	
 	if (fir_out)
 		*fir_out = fir;
+
+	return filt;
+}
+
+dfilter* create_iir_filter(int a_len, int b_len, unsigned int nchann, float** a_out, float** b_out)
+{
+	dfilter* filt = NULL;
+	float* a = NULL;
+	float* xoff = NULL;
+	float* b = NULL;
+	float* yoff = NULL;
+
+	filt = malloc(sizeof(*filt));
+	a = (a_len>0) ? malloc(a_len*sizeof(*a)) : NULL;
+	xoff = (a_len-1>0) ? malloc((a_len-1)*nchann*sizeof(*xoff)) : NULL;
+	b = (b_len>0) ? malloc(b_len*sizeof(*b)) : NULL;
+	yoff = (b_len>0) ? malloc((b_len)*nchann*sizeof(*yoff)): NULL;
+
+	// handle memory allocation problem
+	if (!filt || ((a_len>0) && !a) || ((a_len-1>0) && !xoff) 
+		  || ((b_len>0) && !b) || ((b_len>0) && !yoff)) {
+		free(filt);
+		free(a);
+		free(xoff);
+		free(b);
+		free(yoff);
+		return NULL;
+	}
+
+	memset(filt, 0, sizeof(*filt));
+	memset(xoff, 0, (a_len-1)*nchann*sizeof(*xoff)); 
+	memset(yoff, 0, b_len*nchann*sizeof(*yoff)); 
+	
+	// prepare the filt struct
+	filt->a = a;
+	filt->num_chann = nchann;
+	filt->a_len = a_len;
+	filt->xoff = xoff;
+	filt->b = b;
+	filt->b_len = b_len;
+	filt->yoff = yoff;
+	
+	if (a_out)
+		*a_out = a;
+	if (b_out)
+		*b_out = b;
 
 	return filt;
 }
