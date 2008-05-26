@@ -32,6 +32,7 @@ static void
 labelized_plot_set_property (GObject *object, guint property_id,
                               const GValue *value, GParamSpec *pspec)
 {
+	char** labels = NULL;
 	LabelizedPlot* self = LABELIZED_PLOT(object);
 
 	switch (property_id) {
@@ -42,7 +43,8 @@ labelized_plot_set_property (GObject *object, guint property_id,
 		
 	case XTICK_LABELV:
 		g_strfreev(self->xtick_labels);
-		self->xtick_labels = g_strdupv(g_value_get_boxed(value));
+		labels = g_value_get_boxed(value);
+		self->xtick_labels = g_strdupv(labels);
 		break;
 	
 	case YTICK_LABELS:
@@ -52,7 +54,8 @@ labelized_plot_set_property (GObject *object, guint property_id,
 		
 	case YTICK_LABELV:
 		g_strfreev(self->ytick_labels);
-		self->ytick_labels = g_strdupv(g_value_get_boxed(value));
+		labels = g_value_get_boxed(value);
+		self->ytick_labels = g_strdupv(labels);
 		break;
 	
 	default:

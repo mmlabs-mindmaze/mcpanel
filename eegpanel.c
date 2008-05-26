@@ -155,6 +155,7 @@ void fill_treeview(GtkTreeView* treeview, unsigned int num_labels, const char** 
 void fill_combo(GtkComboBox* combo, const char* labels);
 char** add_default_labels(char** labels, unsigned int requested_num_labels, const char* prefix);
 void set_bipole_labels(EEGPanelPrivateData* priv);
+void set_scopes_xticks(EEGPanelPrivateData* priv);
 
 gpointer loop_thread(gpointer user_data)
 {
@@ -215,7 +216,7 @@ extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer u
 	g_free(select.labels);
 }
 
-extern void decimation_combo_changed_cb(GtkComboBox* combo, gpointer data)
+void decimation_combo_changed_cb(GtkComboBox* combo, gpointer data)
 {
 	char tempstr[32];
 	GtkTreeIter iter;
@@ -239,7 +240,7 @@ extern void decimation_combo_changed_cb(GtkComboBox* combo, gpointer data)
 
 }
 
-extern void scale_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
+void scale_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 {
 	GtkTreeModel* model;
 	GtkTreeIter iter;
@@ -269,6 +270,27 @@ extern void scale_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 	}
 }
 
+void time_window_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
+{
+	GtkTreeModel* model;
+	GtkTreeIter iter;
+	GValue value = {0};
+	unsigned int time_length, num_samples;
+	EEGPanel* panel = GET_PANEL_FROM(combo);
+	EEGPanelPrivateData* priv = panel->priv;
+	
+	
+	// Get the value set
+	model = gtk_combo_box_get_model(combo);
+	gtk_combo_box_get_active_iter(combo, &iter);
+	gtk_tree_model_get_value(model, &iter, 1, &value);
+	time_length = g_value_get_uint(&value);
+
+	priv->display_length = time_length;
+	num_samples = time_length * (priv->sampling_rate / priv->decimation_factor);
+	set_data_input(panel, num_samples, NULL, NULL);
+	set_scopes_xticks(priv);
+}
 
 /*extern void destroy( GtkWidget *widget,
                      gpointer   data )
@@ -323,6 +345,7 @@ EEGPanel* eegpanel_create(void)
 		// Initialize the content of the widgets
 		initialize_widgets(panel, builder);
 		eegpanel_define_input(panel, 128, 8, 16, 2048);
+		set_scopes_xticks(priv);
 	} else {
 		eegpanel_destroy(panel);
 		panel = NULL;
@@ -463,6 +486,12 @@ int initialize_widgets(EEGPanel* panel, GtkBuilder* builder)
 				(gpointer)BIPOLE_TYPE);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[EXG_SCALE_COMBO]), 0);
 
+	// Time window combo
+	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[TIME_WINDOW_COMBO]), 0);
+	g_signal_connect_after(priv->widgets[TIME_WINDOW_COMBO],
+				"changed",
+				(GCallback)time_window_combo_changed_cb,
+				(gpointer)ELEC_TYPE);
 
 
 	return 1;
@@ -868,9 +897,8 @@ void set_bipole_labels(EEGPanelPrivateData* priv)
 
 void set_scopes_xticks(EEGPanelPrivateData* priv)
 {
-	char tempstr[32];
-	int i;
-	int* ticks;
+	int i, value;
+	unsigned int* ticks;
 	char** labels;
 	unsigned int inc, num_ticks;
 	unsigned int disp_len = priv->display_length;
@@ -886,15 +914,23 @@ void set_scopes_xticks(EEGPanelPrivateData* priv)
 	
 	num_ticks = disp_len / inc;
 	ticks = g_malloc(num_ticks*sizeof(*ticks));
-	labels = g_malloc(num_ticks*sizeof(*labels));
+	labels = g_malloc0((num_ticks+1)*sizeof(*labels));
 
 	// set the ticks and ticks labels
 	for (i=0; i<num_ticks; i++) {
-		ticks[i] = (i+1)*sampling_rate -1;
-		g_sprintf(tempstr, "%is",(i+1)); 
+		value = (i+1)*inc;
+		ticks[i] = value*sampling_rate -1;
+		labels[i] = g_strdup_printf("%is",value);
 	}
 
 	// Set the ticks to the scope widgets
+	scope_set_ticks(priv->eeg_scope, num_ticks, ticks);
+	g_object_set(priv->widgets[EEG_AXES], "xtick-labelv", labels, NULL);
+	binary_scope_set_ticks(priv->tri_scope, num_ticks, ticks);
+	g_object_set(priv->widgets[TRI_AXES], "xtick-labelv", labels, NULL);
+	scope_set_ticks(priv->exg_scope, num_ticks, ticks);
+	g_object_set(priv->widgets[EXG_AXES], "xtick-labelv", labels, NULL);
+
 
 	g_free(ticks);
 	g_strfreev(labels);
