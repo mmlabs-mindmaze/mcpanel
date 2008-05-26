@@ -253,6 +253,7 @@ extern void scale_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 	model = gtk_combo_box_get_model(combo);
 	gtk_combo_box_get_active_iter(combo, &iter);
 	gtk_tree_model_get_value(model, &iter, 1, &value);
+	scale = g_value_get_double(&value);
 
 	switch (type) {
 	case ELEC_TYPE:
@@ -449,6 +450,20 @@ int initialize_widgets(EEGPanel* panel, GtkBuilder* builder)
 				"changed",
 				(GCallback)decimation_combo_changed_cb,
 				NULL);
+	
+	// Scale combos
+	g_signal_connect_after(priv->widgets[EEG_SCALE_COMBO],
+				"changed",
+				(GCallback)scale_combo_changed_cb,
+				(gpointer)ELEC_TYPE);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[EEG_SCALE_COMBO]), 0);
+	g_signal_connect_after(priv->widgets[EXG_SCALE_COMBO],
+				"changed",
+				(GCallback)scale_combo_changed_cb,
+				(gpointer)BIPOLE_TYPE);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[EXG_SCALE_COMBO]), 0);
+
+
 
 	return 1;
 }
@@ -859,9 +874,9 @@ void set_scopes_xticks(EEGPanelPrivateData* priv)
 	char** labels;
 	unsigned int inc, num_ticks;
 	unsigned int disp_len = priv->display_length;
-	unsigned int sampling_rate = priv->sampling_rate / priv->decimation->factor;
+	unsigned int sampling_rate = priv->sampling_rate / priv->decimation_factor;
 
-	inc = 1
+	inc = 1;
 	if (disp_len > 5)
 		inc = 2;
 	if (disp_len > 10)
@@ -876,8 +891,10 @@ void set_scopes_xticks(EEGPanelPrivateData* priv)
 	// set the ticks and ticks labels
 	for (i=0; i<num_ticks; i++) {
 		ticks[i] = (i+1)*sampling_rate -1;
-		g_sprintf(tempstr, 
+		g_sprintf(tempstr, "%is",(i+1)); 
 	}
+
+	// Set the ticks to the scope widgets
 
 	g_free(ticks);
 	g_strfreev(labels);
