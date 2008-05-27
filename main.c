@@ -41,9 +41,12 @@ static gboolean timerfunc(gpointer user_data)
 	}
 	triggers++;
 
+	/*
 	filter(filt, eeg_data, filtered_eeg_data, NUM_POINTS); 
-//	filter(exg_filt, exg_data, filtered_exg_data, NUM_POINTS); 
+	filter(exg_filt, exg_data, filtered_exg_data, NUM_POINTS); 
 	eegpanel_add_samples(panel, filtered_eeg_data, filtered_exg_data, trigg, NUM_POINTS);
+	*/
+	eegpanel_add_samples(panel, eeg_data, exg_data, trigg, NUM_POINTS);
 
 	return TRUE;
 }
@@ -73,17 +76,18 @@ int main(int argc, char* argv[])
 	EEGPanel* panel;
 	//int i = 20;
 
-	//filt = create_filter_mean(120, NUM_CH);
+	/*//filt = create_filter_mean(120, NUM_CH);
 	fc = 20.0 / (float) SAMPLING_RATE;
 	fc2 = 30.0 / (float) SAMPLING_RATE;
 	//filt = create_fir_filter_bandpass(fc, fc2, 20, NUM_CH, HAMMING_WINDOW);
 	//filt = create_fir_filter_lowpass(fc, 100, NUM_CH, RECT_WINDOW);
-	//exg_filt = create_fir_filter_lowpass(fc, 100, NUM_EXG_CH, RECT_WINDOW);
-	filt = create_butterworth_filter(fc, 2, NUM_CH, 1);
+	exg_filt = create_fir_filter_lowpass(fc, 100, NUM_EXG_CH, RECT_WINDOW);
+	//filt = create_butterworth_filter(fc, 2, NUM_CH, 1);
 	//filt = create_adhoc_filter(NUM_CH);
 	//filt = create_integrate_filter(NUM_CH);
 	//filt = create_fir_filter_mean(2,NUM_CH);
-	exg_filt = create_chebychev_filter(0.1/*fc*/, 4, NUM_EXG_CH, 1, 0.1);
+	exg_filt = create_chebychev_filter(fc, 4, NUM_EXG_CH, 1, 0.1);
+*/
 
 	g_thread_init(NULL);
 	gdk_threads_init();

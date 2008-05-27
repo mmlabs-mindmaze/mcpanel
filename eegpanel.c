@@ -11,12 +11,6 @@
 #include "filter.h"
 #include <memory.h>
 
-#define SWAP_POINTERS(pointer1, pointer2) do{	\
-	void* temp;				\
-	temp = pointer1;			\
-	pointer1 = pointer2;			\
-	pointer2 = temp;			\
-} while(0)
 
 #define GET_PANEL_FROM(widget)  ((EEGPanel*)(g_object_get_data(G_OBJECT(gtk_widget_get_toplevel(GTK_WIDGET(widget))), "eeg_panel")))
 
@@ -182,6 +176,9 @@ char** add_default_labels(char** labels, unsigned int requested_num_labels, cons
 void set_bipole_labels(EEGPanelPrivateData* priv);
 void set_scopes_xticks(EEGPanelPrivateData* priv);
 void set_all_filters(EEGPanelPrivateData* priv);
+void process_eeg(EEGPanelPrivateData* priv, const float* eeg, float* temp_buff, unsigned int n_samples);
+void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, unsigned int n_samples);
+void process_tri(EEGPanelPrivateData* priv, const uint32_t* tri, uint32_t* temp_buff, unsigned int n_samples);
 
 gpointer loop_thread(gpointer user_data)
 {
@@ -658,15 +655,13 @@ void fill_combo(GtkComboBox* combo, const char* labels)
 
 void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples)
 {
-	unsigned int num_eeg_ch, num_exg_ch, nmax_eeg, nmax_exg, i,j,k;
+	unsigned int num_eeg_ch, num_exg_ch, nmax_eeg, nmax_exg;
 	unsigned int num_samples_written = 0;
 	EEGPanelPrivateData* priv = panel->priv;
 	unsigned int pointer = priv->current_sample;
 	unsigned int *eeg_sel, *exg_sel; 
 	unsigned int lock_res = 0;
 	void* buff = NULL;
-	float *incoming_eeg, *incoming_exg;
-	uint32_t *incoming_tri;
 	unsigned int buff_len;
 
 	num_eeg_ch = priv->num_eeg_channels;
@@ -684,7 +679,7 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 
 	// if we need to wrap, first add the tail
 	if (num_samples+pointer > priv->num_samples) {
-		num_samples_written = num_samples+pointer - priv->num_samples;
+		num_samples_written = priv->num_samples - pointer;
 		
 		eegpanel_add_samples(panel, eeg, exg, triggers, num_samples_written);
 
@@ -692,30 +687,16 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 		exg += nmax_exg*num_samples_written;
 		triggers += num_samples_written;
 		num_samples -= num_samples_written;
-		pointer = 0;
+		pointer = priv->current_sample;
 	}
 
 	// copy data
-	if (eeg) {
-		incoming_eeg = buff;
-		for (i=0; i<num_samples; i++) {
-			for (j=0; j<num_eeg_ch; j++)
-				priv->eeg[(pointer+i)*num_eeg_ch+j] = eeg[i*nmax_eeg+eeg_sel[j]];
-		}
-	}
-	if (exg) {
-		for (i=0; i<num_samples; i++) {
-			for (j=0; j<num_exg_ch; j++) {
-				k = (exg_sel[j]+1)%num_exg_ch;
-				priv->exg[(pointer+i)*num_exg_ch+j] = exg[i*nmax_exg+exg_sel[j]] - exg[i*nmax_exg+k];
-			}
-		}
-	}
-	if (triggers) {
-		for (i=0; i<num_samples; i++) {
-			priv->triggers[pointer+i] = triggers[i];
-		}
-	}
+	if (eeg) 
+		process_eeg(priv, eeg, buff, num_samples);
+	if (exg) 
+		process_exg(priv, exg, buff, num_samples);
+	if (triggers)
+		process_tri(priv, triggers, buff, num_samples);
 
 	g_free(buff);
 
@@ -1056,25 +1037,41 @@ void set_all_filters(EEGPanelPrivateData* priv)
 	set_one_filter(priv, EXG_OFFSET_FILTER, 1, offset_fc, num_exg, 0);
 }
 
+#define SWAP_POINTERS(pointer1, pointer2)	do {	\
+	void* temp = pointer2;				\
+	pointer2 = pointer1;				\
+	pointer1 = temp;				\
+} while(0)
 
-void process_eeg(EEGPanelPrivateData* priv, float* eeg, unsigned int n_samples)
+
+void process_eeg(EEGPanelPrivateData* priv, const float* eeg, float* temp_buff, unsigned int n_samples)
 {
-	int i;
+	int i, j;
 	unsigned int nchann = priv->num_eeg_channels;
 	dfilter* filt;
 	float* buff1, *buff2, *curr_eeg;
+	unsigned int *sel = priv->selected_eeg;
+	unsigned int num_ch = priv->num_eeg_channels;
+	unsigned int nmax_ch = priv->nmax_eeg;
 	
-	buff1 = eeg;
+	buff1 = temp_buff;
 	curr_eeg = priv->eeg + priv->current_sample*nchann;
 	buff2 = curr_eeg;
  
 
+	// Copy data of the selected channels
+	for (i=0; i<n_samples; i++) {
+		for (j=0; j<num_ch; j++)
+			buff2[i*num_ch+j] = eeg[i*nmax_ch + sel[j]];
+	}
+	SWAP_POINTERS(buff1, buff2);
+
 	
 	filt = priv->filt[EEG_OFFSET_FILTER];
 	if (filt) {
-		filter(filt, buff2, buff1, n_samples);
+		filter(filt, buff1, buff2, n_samples);
 		// copy last samples
-		for (i=0; i<n_samples; i++)
+		for (i=0; i<num_ch; i++)
 			priv->eeg_offset[i] = buff2[nchann*(n_samples-1)+i];
 	}
 
@@ -1083,17 +1080,86 @@ void process_eeg(EEGPanelPrivateData* priv, float* eeg, unsigned int n_samples)
 
 	filt = priv->filt[EEG_LOWPASS_FILTER];
 	if (filt) {
-		filter(filt, buff2, buff1, n_samples);
+		filter(filt, buff1, buff2, n_samples);
 		SWAP_POINTERS(buff1, buff2);		
 	}
 
 	filt = priv->filt[EEG_HIGHPASS_FILTER];
 	if (filt) {
-		filter(filt, buff2, buff1, n_samples);
+		filter(filt, buff1, buff2, n_samples);
 		SWAP_POINTERS(buff1, buff2);
 	}
 	
 	// copy data to the destination buffer
 	if (buff1 != curr_eeg)
-		memcpy(curr_eeg, buff1, priv->current_sample*nchann*sizeof(*buff1));
+		memcpy(curr_eeg, buff1, n_samples*nchann*sizeof(*buff1));
 }
+
+
+void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, unsigned int n_samples)
+{
+	int i, j;
+	unsigned int nchann = priv->num_exg_channels;
+	dfilter* filt;
+	float* buff1, *buff2, *curr_exg;
+	unsigned int *sel = priv->selected_exg;
+	unsigned int num_ch = priv->num_exg_channels;
+	unsigned int nmax_ch = priv->nmax_exg;
+	
+	buff1 = temp_buff;
+	curr_exg = priv->exg + priv->current_sample*nchann;
+	buff2 = curr_exg;
+ 
+
+	// Copy data of the selected channels
+	for (i=0; i<n_samples; i++) {
+		for (j=0; j<num_ch; j++)
+			buff2[i*num_ch+j] = exg[i*nmax_ch + sel[j]];
+	}
+	SWAP_POINTERS(buff1, buff2);
+
+	
+	filt = priv->filt[EXG_OFFSET_FILTER];
+	if (filt) {
+		filter(filt, buff1, buff2, n_samples);
+		// copy last samples
+		for (i=0; i<num_ch; i++)
+			priv->exg_offset[i] = buff2[nchann*(n_samples-1)+i];
+	}
+
+	// Process decimation
+	// TODO
+
+	filt = priv->filt[EXG_LOWPASS_FILTER];
+	if (filt) {
+		filter(filt, buff1, buff2, n_samples);
+		SWAP_POINTERS(buff1, buff2);		
+	}
+
+	filt = priv->filt[EXG_HIGHPASS_FILTER];
+	if (filt) {
+		filter(filt, buff1, buff2, n_samples);
+		SWAP_POINTERS(buff1, buff2);
+	}
+	
+	// copy data to the destination buffer
+	if (buff1 != curr_exg)
+		memcpy(curr_exg, buff1, n_samples*nchann*sizeof(*buff1));
+}
+
+void process_tri(EEGPanelPrivateData* priv, const uint32_t* tri, uint32_t* temp_buff, unsigned int n_samples)
+{
+	int i;
+	uint32_t* buff1, *buff2, *curr_tri;
+	
+	buff1 = temp_buff;
+	curr_tri = priv->triggers + priv->current_sample;
+	buff2 = curr_tri;
+ 
+
+	// Copy data
+	for (i=0; i<n_samples; i++) {
+		buff2[i] = tri[i];
+	}
+}
+
