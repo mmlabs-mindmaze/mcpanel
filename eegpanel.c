@@ -64,6 +64,12 @@ typedef enum {
 } ScopeType;
 
 typedef enum {
+	NONE_REF,
+	AVERAGE_REF,
+	ELECTRODE_REF
+} RefType;
+
+typedef enum {
 	EEG_LOWPASS_FILTER,
 	EEG_HIGHPASS_FILTER,
 	EEG_DECIMATION_FILTER,
@@ -157,6 +163,7 @@ struct _EEGPanelPrivateData {
 	float *eeg, *exg;
 	float *eeg_offset, *exg_offset;
 	uint32_t *triggers;
+	RefType eeg_ref_type;
 
 	// filters
 	dfilter *filt[NUM_FILTERS];
@@ -179,6 +186,8 @@ void set_all_filters(EEGPanelPrivateData* priv);
 void process_eeg(EEGPanelPrivateData* priv, const float* eeg, float* temp_buff, unsigned int n_samples);
 void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, unsigned int n_samples);
 void process_tri(EEGPanelPrivateData* priv, const uint32_t* tri, uint32_t* temp_buff, unsigned int n_samples);
+void remove_electrode_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples, unsigned int elec_ref);
+void remove_common_avg_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples);
 
 gpointer loop_thread(gpointer user_data)
 {
@@ -207,11 +216,21 @@ extern gboolean startacquisition_button_toggled_cb(GtkButton* button, gpointer d
 
 extern void reftype_combo_changed_cb(GtkComboBox* combo, gpointer data)
 {
-	EEGPanel* panel = GET_PANEL_FROM(combo);
-	EEGPanelPrivateData* priv = panel->priv;
-	int selec = gtk_combo_box_get_active(combo);
+	GtkTreeIter iter;
+	GValue value = {0};
+	GtkTreeModel* model;
+	RefType type;
+	EEGPanelPrivateData* priv = GET_PANEL_FROM(combo)->priv;
+	
+	// Get the value set
+	model = gtk_combo_box_get_model(combo);
+	gtk_combo_box_get_active_iter(combo, &iter);
+	gtk_tree_model_get_value(model, &iter, 1, &value);
+	type = g_value_get_uint(&value);
 
-	gtk_widget_set_sensitive(GTK_WIDGET(priv->widgets[ELECREF_COMBO]), (selec==2)? TRUE : FALSE);
+	gtk_widget_set_sensitive(GTK_WIDGET(priv->widgets[ELECREF_COMBO]), (type==ELECTRODE_REF)? TRUE : FALSE);
+
+	priv->eeg_ref_type = type;
 }
 
 extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer user_data)
@@ -1074,9 +1093,17 @@ void process_eeg(EEGPanelPrivateData* priv, const float* eeg, float* temp_buff, 
 		for (i=0; i<num_ch; i++)
 			priv->eeg_offset[i] = buff2[nchann*(n_samples-1)+i];
 	}
+	
+	// Do referencing
+	if (priv->eeg_ref_type == AVERAGE_REF)
+		remove_common_avg_ref(buff1, nchann, eeg, nmax_ch, n_samples);
+	else if (priv->eeg_ref_type == ELECTRODE_REF)
+		remove_electrode_ref(buff1, nchann, eeg, nmax_ch, n_samples, 0);
 
 	// Process decimation
 	// TODO
+	
+	
 
 	filt = priv->filt[EEG_LOWPASS_FILTER];
 	if (filt) {
@@ -1098,7 +1125,7 @@ void process_eeg(EEGPanelPrivateData* priv, const float* eeg, float* temp_buff, 
 
 void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, unsigned int n_samples)
 {
-	int i, j;
+	int i, j, k;
 	unsigned int nchann = priv->num_exg_channels;
 	dfilter* filt;
 	float* buff1, *buff2, *curr_exg;
@@ -1113,19 +1140,21 @@ void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, 
 
 	// Copy data of the selected channels
 	for (i=0; i<n_samples; i++) {
-		for (j=0; j<num_ch; j++)
-			buff2[i*num_ch+j] = exg[i*nmax_ch + sel[j]];
+		for (j=0; j<num_ch; j++) {
+			k = (sel[j]-1)%nmax_ch;
+			buff2[i*num_ch+j] = exg[i*nmax_ch + sel[j]] - exg[i*nmax_ch + k];
+		}
 	}
 	SWAP_POINTERS(buff1, buff2);
 
 	
-	filt = priv->filt[EXG_OFFSET_FILTER];
+	/*filt = priv->filt[EXG_OFFSET_FILTER];
 	if (filt) {
 		filter(filt, buff1, buff2, n_samples);
 		// copy last samples
 		for (i=0; i<num_ch; i++)
 			priv->exg_offset[i] = buff2[nchann*(n_samples-1)+i];
-	}
+	}*/
 
 	// Process decimation
 	// TODO
@@ -1163,3 +1192,31 @@ void process_tri(EEGPanelPrivateData* priv, const uint32_t* tri, uint32_t* temp_
 	}
 }
 
+void remove_common_avg_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples)
+{
+	int i, j;
+	float sum;
+
+	for (i=0; i<num_samples; i++) {
+		// calculate the sum
+		sum = 0;
+		for (j=0; j<nchann_full; j++)
+			sum += fullset[i*nchann_full+j];
+		sum /= (float)nchann_full;
+
+		// reference the data
+		for (j=0; j<nchann; j++)
+			data[i*nchann+j] -= sum;
+	}
+}
+
+void remove_electrode_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples, unsigned int elec_ref)
+{
+	int i, j;
+
+	for (i=0; i<num_samples; i++) {
+		// reference the data
+		for (j=0; j<nchann; j++)
+			data[i*nchann+j] -= fullset[i*nchann_full+elec_ref];
+	}
+}
