@@ -30,7 +30,9 @@ static gboolean timerfunc(gpointer user_data)
 	gint i, j;
 	for (i=0; i<NUM_POINTS; i++) {
 		for (j=0; j<NUM_CH; j++)
-			eeg_data[NUM_CH*i +j] = 10.0*cos(2.0*M_PI*t*(j+1));
+			eeg_data[NUM_CH*i +j] = cos(2.0*M_PI*t*(j+1));
+			//eeg_data[NUM_CH*i +j] = ((isample/SAMPLING_RATE)%2) ? 0 : 1;
+			//eeg_data[NUM_CH*i +j] = (isample%SAMPLING_RATE) ? 0 : 1;
 		for (j=0; j<NUM_EXG_CH; j++)
 			exg_data[NUM_EXG_CH*i +j] = cos(2.0*M_PI*t*(j+1));
 		trigg[i] = triggers;
@@ -40,7 +42,7 @@ static gboolean timerfunc(gpointer user_data)
 	triggers++;
 
 	filter(filt, eeg_data, filtered_eeg_data, NUM_POINTS); 
-	filter(exg_filt, exg_data, filtered_exg_data, NUM_POINTS); 
+//	filter(exg_filt, exg_data, filtered_exg_data, NUM_POINTS); 
 	eegpanel_add_samples(panel, filtered_eeg_data, filtered_exg_data, trigg, NUM_POINTS);
 
 	return TRUE;
@@ -75,8 +77,13 @@ int main(int argc, char* argv[])
 	fc = 20.0 / (float) SAMPLING_RATE;
 	fc2 = 30.0 / (float) SAMPLING_RATE;
 	//filt = create_fir_filter_bandpass(fc, fc2, 20, NUM_CH, HAMMING_WINDOW);
-	filt = create_fir_filter_lowpass(fc, 100, NUM_CH, RECT_WINDOW);
-	exg_filt = create_fir_filter_lowpass(fc, 100, NUM_EXG_CH, RECT_WINDOW);
+	//filt = create_fir_filter_lowpass(fc, 100, NUM_CH, RECT_WINDOW);
+	//exg_filt = create_fir_filter_lowpass(fc, 100, NUM_EXG_CH, RECT_WINDOW);
+	filt = create_chebychev_filter(0.25/*fc*/, 4, NUM_CH, 0, 0.00);
+	//filt = create_adhoc_filter(NUM_CH);
+	//filt = create_integrate_filter(NUM_CH);
+	//filt = create_fir_filter_mean(2,NUM_CH);
+	exg_filt = create_chebychev_filter(0.1/*fc*/, 4, NUM_EXG_CH, 1, 0.1);
 
 	g_thread_init(NULL);
 	gdk_threads_init();

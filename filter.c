@@ -87,18 +87,21 @@ int compute_cheby_iir(float* num, float* den, unsigned int num_pole, int highpas
 	int retval = 1;
 	
 	// Allocate temporary arrays
-	a = malloc((np+2)*sizeof(*a));
-	b = malloc((np+2)*sizeof(*b));
-	ta = malloc((np+2)*sizeof(*ta));
-	tb = malloc((np+2)*sizeof(*tb));
+	a = malloc((num_pole+3)*sizeof(*a));
+	b = malloc((num_pole+3)*sizeof(*b));
+	ta = malloc((num_pole+3)*sizeof(*ta));
+	tb = malloc((num_pole+3)*sizeof(*tb));
 	if (!a || !b || !ta || !tb) {
 		retval = 0;
 		goto exit;
 	}
-	memset(a, 0, (np+2)*sizeof(*a));
-	memset(b, 0, (np+2)*sizeof(*b));
+	memset(a, 0, (num_pole+3)*sizeof(*a));
+	memset(b, 0, (num_pole+3)*sizeof(*b));
 
-	for (p=0; p<np/2; i++) {
+	a[2] = 1.0;
+	b[2] = 1.0;
+
+	for (p=1; p<=num_pole/2; p++) {
 		// calculate pole locate on the unit circle
 		rp = -cos(M_PI/(np*2.0) + ((double)(p-1))*M_PI/np);
 		ip = sin(M_PI/(np*2.0) + ((double)(p-1))*M_PI/np);
@@ -136,14 +139,14 @@ int compute_cheby_iir(float* num, float* den, unsigned int num_pole, int highpas
 		b1 = (2.0*k + y1 + y1*k*k - 2.0*y2*k)/d;
 		b2 = (-k*k - y1*k + y2)/d;
 		if (highpass) {
-			a1 *= 1.0;
-			b1 *= 1.0;
+			a1 *= -1.0;
+			b1 *= -1.0;
 		}
 
 		// Add coefficients to the cascade
 		memcpy(ta, a, (num_pole+2)*sizeof(*a));
 		memcpy(tb, b, (num_pole+2)*sizeof(*b));
-		for (i=2; i<num_pole+2; i++) {
+		for (i=2; i<=num_pole+2; i++) {
 			a[i] = a0*ta[i] + a1*ta[i-1] + a2*ta[i-2];
 			b[i] = tb[i] + b1*tb[i-1] + b2*tb[i-2];
 		}
@@ -151,25 +154,25 @@ int compute_cheby_iir(float* num, float* den, unsigned int num_pole, int highpas
 
 	// Finish combining coefficients
 	b[2] = 0;
-	for (i=0; i<num_pole; i++) {
+	for (i=0; i<=num_pole; i++) {
 		a[i] = a[i+2];
-		b[i] = -b[i+2];
+		b[i] = b[i+2];
 	}
 
 	// Normalize the gain
 	sa = sb = 0.0;
-	for (i=0; i<num_pole; i++) {
+	for (i=0; i<=num_pole; i++) {
 		sa += a[i] * ((highpass && i%2) ? -1.0 : 1.0);
 		sb += b[i] * ((highpass && i%2) ? -1.0 : 1.0);
 	}
 	gain = sa / (1.0-sb);
-	for (i=0; i<num_pole; i++) 
+	for (i=0; i<=num_pole; i++) 
 		a[i] /= gain;
 
 	
 	// Copy the results to the num and den
 	num[0] = a[0];
-	for (i=1; i<num_pole; i++) {
+	for (i=1; i<=num_pole; i++) {
 		num[i] = a[i];
 		den[i-1] = b[i];
 	}
@@ -283,7 +286,7 @@ void filter(const dfilter* filt, const float* in, float* out, int nsamples)
 	const float* b = filt->b;
 	unsigned int nchann = filt->num_chann;
 	const float* xprev = filt->xoff + (a_len-1)*nchann;
-	const float* yprev = filt->yoff + (b_len-1)*nchann;
+	const float* yprev = filt->yoff + b_len*nchann;
 
 	memset(out, 0, nchann*nsamples*sizeof(*out));
 
@@ -296,7 +299,7 @@ void filter(const dfilter* filt, const float* in, float* out, int nsamples)
 
 			// If the convolution must be done with samples not
 			// provided, use the stored ones
-			x = (i-k >= 0) ? in : xprev;
+			x = (ii >= 0) ? in : xprev;
 			
 			for (ichann=0; ichann<nchann; ichann++)
 				out[io+ichann] += a[k]*x[ii+ichann];
@@ -308,7 +311,7 @@ void filter(const dfilter* filt, const float* in, float* out, int nsamples)
 
 			// If the convolution must be done with samples not
 			// provided, use the stored ones
-			y = (i-k >= 0) ? out : yprev;
+			y = (ii>=0) ? out : yprev;
 			
 			for (ichann=0; ichann<nchann; ichann++)
 				out[io+ichann] += b[k]*y[ii+ichann];
@@ -327,12 +330,12 @@ void filter(const dfilter* filt, const float* in, float* out, int nsamples)
 
 	// store the last output
 	if (b_len) {
-		num = b_len-1 - nsamples;
+		num = b_len - nsamples;
 		if (num > 0)
 			memmove(filt->yoff, filt->yoff + nsamples*nchann, num*nchann*sizeof(*out));
 		else
 			num = 0;
-		memcpy(filt->yoff + num*nchann, in+(nsamples-b_len+1+num)*nchann, (b_len-1-num)*nchann*sizeof(*out));
+		memcpy(filt->yoff + num*nchann, out+(nsamples-b_len+num)*nchann, (b_len-num)*nchann*sizeof(*out));
 	}
 }
 
@@ -342,7 +345,7 @@ void filter(const dfilter* filt, const float* in, float* out, int nsamples)
 //			Create particular filters
 //
 ///////////////////////////////////////////////////////////////////////////////
-dfilter* create_fir_mean(unsigned int fir_length, unsigned int nchann)
+dfilter* create_fir_filter_mean(unsigned int fir_length, unsigned int nchann)
 {
 	int i;
 	float* fir = NULL;
@@ -425,5 +428,83 @@ dfilter* create_fir_filter_bandpass(float fc_low, float fc_high, unsigned int ha
 	// compute the convolution product of the two FIR
 	compute_convolution(fir, fir_low, len, fir_high, len);
 
+	return filt;
+}
+
+
+dfilter* create_chebychev_filter(float fc, unsigned int num_pole, unsigned int nchann, int highpass, float ripple)
+{
+	float *a = NULL, *b = NULL;
+	dfilter* filt;
+	
+	if (num_pole%2 != 0)
+		return NULL;
+
+	filt = create_iir_filter(num_pole+1, num_pole, nchann, &a, &b);
+	if (!filt)
+		return NULL;
+
+	// prepare the filter
+	if (!compute_cheby_iir(a, b, num_pole, highpass, ripple, fc)) {
+		destroy_filter(filt);
+		return NULL;
+	}
+
+	return filt;
+}
+
+dfilter* create_butterworth_filter(float fc, unsigned int num_pole, unsigned int num_chann, int highpass)
+{
+	return create_chebychev_filter(fc, num_pole, num_chann, highpass, 0.0);
+}
+
+dfilter* create_integrate_filter(unsigned int nchann)
+{
+	float *a = NULL, *b = NULL;
+	dfilter* filt;
+	
+	filt = create_iir_filter(1, 1, nchann, &a, &b);
+	if (!filt)
+		return NULL;
+
+	// prepare the filter
+	a[0] = 1.0;
+	b[0] = 1.0;
+
+	return filt;
+}
+
+dfilter* create_adhoc_filter(unsigned int nchann)
+{
+	
+	float *a = NULL, *b = NULL;
+	dfilter* filt;
+	
+	filt = create_iir_filter(5, 4, nchann, &a, &b);
+	if (!filt)
+		return NULL;
+
+	/*a[0] = 1.0;
+	a[1] = 2.0;
+	a[1] = 1.0;
+	b[0] = 1.9948781315;
+	b[1] = -0.9968542274;*/
+
+	//works
+	/*a[0] = 0.3493e-4;
+	a[1] = 0.6987e-4;
+	a[2] = 0.3493e-4;
+	b[0] = 1.9949;
+	b[1] = -0.9969;*/
+
+	a[0] = 0.0862e-7;
+	a[1] = 0.3449e-7;
+	a[2] = 0.5173e-7;
+	a[3] = 0.3449e-7;
+	a[4] = 0.0862e-7;
+	b[0] = -3.9931;
+	b[1] = 5.9834;
+	b[2] = -3.9873;
+	b[3] = 0.9971;
 	return filt;
 }
