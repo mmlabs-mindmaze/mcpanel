@@ -4,6 +4,8 @@
 #include <math.h>
 
 
+// TODO change the data type used for filter function (use double) to improve stability of recursive filters
+
 void apply_window(float* fir, unsigned int length, KernelWindow window)
 {
 	int i;
@@ -267,6 +269,9 @@ dfilter* create_iir_filter(int a_len, int b_len, unsigned int nchann, float** a_
 
 void destroy_filter(dfilter* filt)
 {
+	if (!filt)
+		return;
+
 	free((void*)(filt->a));
 	free((void*)(filt->b));
 	free(filt->xoff);

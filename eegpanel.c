@@ -11,6 +11,13 @@
 #include "filter.h"
 #include <memory.h>
 
+#define SWAP_POINTERS(pointer1, pointer2) do{	\
+	void* temp;				\
+	temp = pointer1;			\
+	pointer1 = pointer2;			\
+	pointer2 = temp;			\
+} while(0)
+
 #define GET_PANEL_FROM(widget)  ((EEGPanel*)(g_object_get_data(G_OBJECT(gtk_widget_get_toplevel(GTK_WIDGET(widget))), "eeg_panel")))
 
 typedef enum {
@@ -61,6 +68,19 @@ typedef enum {
 	BIPOLE_TYPE,
 	OFFSET_TYPE
 } ScopeType;
+
+typedef enum {
+	EEG_LOWPASS_FILTER,
+	EEG_HIGHPASS_FILTER,
+	EEG_DECIMATION_FILTER,
+	EXG_LOWPASS_FILTER,
+	EXG_HIGHPASS_FILTER,
+	EXG_DECIMATION_FILTER,
+	EEG_OFFSET_FILTER,
+	EXG_OFFSET_FILTER,
+	NUM_FILTERS
+} EnumFilter;
+
 
 typedef struct _LinkWidgetName {
 	PanelWidgetEnum id;
@@ -141,7 +161,12 @@ struct _EEGPanelPrivateData {
 	// data
 	unsigned int *selected_eeg, *selected_exg;
 	float *eeg, *exg;
+	float *eeg_offset, *exg_offset;
 	uint32_t *triggers;
+
+	// filters
+	dfilter *filt[NUM_FILTERS];
+	float filter_fc[NUM_FILTERS];
 };
 
 void eegpanel_destroy(EEGPanel* panel);
@@ -156,6 +181,7 @@ void fill_combo(GtkComboBox* combo, const char* labels);
 char** add_default_labels(char** labels, unsigned int requested_num_labels, const char* prefix);
 void set_bipole_labels(EEGPanelPrivateData* priv);
 void set_scopes_xticks(EEGPanelPrivateData* priv);
+void set_all_filters(EEGPanelPrivateData* priv);
 
 gpointer loop_thread(gpointer user_data)
 {
@@ -290,6 +316,12 @@ void time_window_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 	num_samples = time_length * (priv->sampling_rate / priv->decimation_factor);
 	set_data_input(panel, num_samples, NULL, NULL);
 	set_scopes_xticks(priv);
+}
+
+void filter_button_changed_cb(GtkButton* button, gpointer user_data)
+{
+	EEGPanelPrivateData* priv = GET_PANEL_FROM(button)->priv;
+	set_all_filters(priv);
 }
 
 /*extern void destroy( GtkWidget *widget,
@@ -493,6 +525,15 @@ int initialize_widgets(EEGPanel* panel, GtkBuilder* builder)
 				(GCallback)time_window_combo_changed_cb,
 				(gpointer)ELEC_TYPE);
 
+	// filter buttons
+	g_signal_connect_after(priv->widgets[EEG_LOWPASS_CHECK], "toggled",(GCallback)filter_button_changed_cb, NULL);
+	g_signal_connect_after(priv->widgets[EEG_HIGHPASS_CHECK], "toggled",(GCallback)filter_button_changed_cb, NULL);
+	g_signal_connect_after(priv->widgets[EXG_LOWPASS_CHECK], "toggled",(GCallback)filter_button_changed_cb, NULL);
+	g_signal_connect_after(priv->widgets[EXG_HIGHPASS_CHECK], "toggled",(GCallback)filter_button_changed_cb, NULL);
+	g_signal_connect_after(priv->widgets[EEG_LOWPASS_SPIN], "value-changed",(GCallback)filter_button_changed_cb, NULL);
+	g_signal_connect_after(priv->widgets[EEG_HIGHPASS_SPIN], "value-changed",(GCallback)filter_button_changed_cb, NULL);
+	g_signal_connect_after(priv->widgets[EXG_LOWPASS_SPIN], "value-changed",(GCallback)filter_button_changed_cb, NULL);
+	g_signal_connect_after(priv->widgets[EXG_HIGHPASS_SPIN], "value-changed",(GCallback)filter_button_changed_cb, NULL);
 
 	return 1;
 }
@@ -623,6 +664,10 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 	unsigned int pointer = priv->current_sample;
 	unsigned int *eeg_sel, *exg_sel; 
 	unsigned int lock_res = 0;
+	void* buff = NULL;
+	float *incoming_eeg, *incoming_exg;
+	uint32_t *incoming_tri;
+	unsigned int buff_len;
 
 	num_eeg_ch = priv->num_eeg_channels;
 	num_exg_ch = priv->num_exg_channels;
@@ -631,6 +676,11 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 	eeg_sel = priv->selected_eeg;
 	exg_sel = priv->selected_exg;
 
+	// Create a buffer big enough to hold incoming eeg or exg data
+	buff_len = (num_eeg_ch > num_exg_ch) ? num_eeg_ch : num_exg_ch;
+	buff_len *= num_samples;
+	buff = g_malloc(buff_len*sizeof(*eeg));
+	
 
 	// if we need to wrap, first add the tail
 	if (num_samples+pointer > priv->num_samples) {
@@ -647,6 +697,7 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 
 	// copy data
 	if (eeg) {
+		incoming_eeg = buff;
 		for (i=0; i<num_samples; i++) {
 			for (j=0; j<num_eeg_ch; j++)
 				priv->eeg[(pointer+i)*num_eeg_ch+j] = eeg[i*nmax_eeg+eeg_sel[j]];
@@ -665,6 +716,8 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 			priv->triggers[pointer+i] = triggers[i];
 		}
 	}
+
+	g_free(buff);
 
 	// Update current pointer
 	pointer += num_samples;
@@ -783,7 +836,9 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 	if (eeg_selec) {
 		if (num_eeg != priv->num_eeg_channels) {
 			g_free(priv->selected_eeg);
+			g_free(priv->eeg_offset);
 			priv->selected_eeg = g_malloc(num_eeg*sizeof(*(priv->selected_eeg)));
+			priv->eeg_offset = g_malloc0(num_eeg*sizeof(*(priv->eeg_offset)));
 			priv->num_eeg_channels = num_eeg;
 		}
 		memcpy(priv->selected_eeg, eeg_selec->selection, num_eeg*sizeof(*(priv->selected_eeg)));
@@ -797,7 +852,9 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 	if (exg_selec) {
 		if (num_exg != priv->num_exg_channels) {
 			g_free(priv->selected_exg);
+			g_free(priv->exg_offset);
 			priv->selected_exg = g_malloc(num_exg*sizeof(*(priv->selected_exg)));
+			priv->exg_offset = g_malloc0(num_exg*sizeof(*(priv->exg_offset)));
 			priv->num_exg_channels = num_exg;
 		}
 		memcpy(priv->selected_exg, exg_selec->selection, num_exg*sizeof(*(priv->selected_exg)));
@@ -805,6 +862,8 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 		if (exg_selec->labels)	
 			g_object_set(G_OBJECT(priv->widgets[EXG_AXES]), "ytick-labelv", exg_selec->labels, NULL);
 	}
+
+	set_all_filters(priv);
 
 	priv->current_sample = 0;
 	priv->num_samples = num_samples;
@@ -934,4 +993,107 @@ void set_scopes_xticks(EEGPanelPrivateData* priv)
 
 	g_free(ticks);
 	g_strfreev(labels);
+}
+
+
+void set_one_filter(EEGPanelPrivateData* priv, EnumFilter type, int enable, float fc, int nchann, int highpass)
+{
+	dfilter* filt = priv->filt[type];
+	float current_fc = priv->filter_fc[type];
+
+	if (enable) {
+		if (!filt || (fc!=current_fc) || (filt->num_chann != nchann)) {
+			destroy_filter(filt);
+			filt = create_butterworth_filter(fc, 2, nchann, highpass);
+			priv->filter_fc[type] = fc;
+		}
+	} else {
+		destroy_filter(filt);
+		filt = NULL;
+	}
+
+	priv->filt[type] = filt;
+}
+
+void set_all_filters(EEGPanelPrivateData* priv)
+{
+	float eeg_lowpass_fc, eeg_highpass_fc;
+	float exg_lowpass_fc, exg_highpass_fc;
+	float dec_fc, offset_fc;
+	unsigned int eeg_low_state, eeg_high_state, exg_low_state, exg_high_state;
+
+	unsigned int num_eeg = priv->num_eeg_channels;
+	unsigned int num_exg = priv->num_exg_channels;
+	float fs = priv->sampling_rate;
+	unsigned int dec_state = (priv->decimation_factor != 1) ? 1 : 0;
+	float dec_factor = priv->decimation_factor;
+
+	// Set the cutoff frequencies of every filters
+	dec_fc = fs*0.4/dec_factor;
+	offset_fc = 1.0 / fs;
+	fs /= dec_factor;
+	eeg_lowpass_fc = gtk_spin_button_get_value(GTK_SPIN_BUTTON(priv->widgets[EEG_LOWPASS_SPIN]))/fs;
+	eeg_highpass_fc = gtk_spin_button_get_value(GTK_SPIN_BUTTON(priv->widgets[EEG_HIGHPASS_SPIN]))/fs;
+	exg_lowpass_fc = gtk_spin_button_get_value(GTK_SPIN_BUTTON(priv->widgets[EXG_LOWPASS_SPIN]))/fs;
+	exg_highpass_fc = gtk_spin_button_get_value(GTK_SPIN_BUTTON(priv->widgets[EXG_HIGHPASS_SPIN]))/fs;
+
+	// Retrieve the state of the check boxes
+	eeg_low_state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(priv->widgets[EEG_LOWPASS_CHECK]));
+	eeg_high_state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(priv->widgets[EEG_HIGHPASS_CHECK]));
+	exg_low_state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(priv->widgets[EXG_LOWPASS_CHECK]));
+	exg_high_state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(priv->widgets[EXG_HIGHPASS_CHECK]));
+
+	// Set the filters
+	set_one_filter(priv, EEG_LOWPASS_FILTER, eeg_low_state, eeg_lowpass_fc, num_eeg, 0);
+	set_one_filter(priv, EEG_HIGHPASS_FILTER, eeg_high_state, eeg_highpass_fc, num_eeg, 1);
+	set_one_filter(priv, EXG_LOWPASS_FILTER, exg_low_state, exg_lowpass_fc, num_exg, 0);
+	set_one_filter(priv, EXG_HIGHPASS_FILTER, exg_high_state, exg_highpass_fc, num_exg, 1);
+
+	set_one_filter(priv, EEG_DECIMATION_FILTER, dec_state, dec_fc, num_eeg, 0);
+	set_one_filter(priv, EXG_DECIMATION_FILTER, dec_state, dec_fc, num_exg, 0);
+
+	set_one_filter(priv, EEG_OFFSET_FILTER, 1, offset_fc, num_eeg, 0);
+	set_one_filter(priv, EXG_OFFSET_FILTER, 1, offset_fc, num_exg, 0);
+}
+
+
+void process_eeg(EEGPanelPrivateData* priv, float* eeg, unsigned int n_samples)
+{
+	int i;
+	unsigned int nchann = priv->num_eeg_channels;
+	dfilter* filt;
+	float* buff1, *buff2, *curr_eeg;
+	
+	buff1 = eeg;
+	curr_eeg = priv->eeg + priv->current_sample*nchann;
+	buff2 = curr_eeg;
+ 
+
+	
+	filt = priv->filt[EEG_OFFSET_FILTER];
+	if (filt) {
+		filter(filt, buff2, buff1, n_samples);
+		// copy last samples
+		for (i=0; i<n_samples; i++)
+			priv->eeg_offset[i] = buff2[nchann*(n_samples-1)+i];
+	}
+
+	// Process decimation
+	// TODO
+
+	filt = priv->filt[EEG_LOWPASS_FILTER];
+	if (filt) {
+		filter(filt, buff2, buff1, n_samples);
+		SWAP_POINTERS(buff1, buff2);		
+	}
+
+	filt = priv->filt[EEG_HIGHPASS_FILTER];
+	if (filt) {
+		filter(filt, buff2, buff1, n_samples);
+		SWAP_POINTERS(buff1, buff2);
+	}
+	
+	// copy data to the destination buffer
+	if (buff1 != curr_eeg)
+		memcpy(curr_eeg, buff1, priv->current_sample*nchann*sizeof(*buff1));
 }

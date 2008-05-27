@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 	//filt = create_fir_filter_bandpass(fc, fc2, 20, NUM_CH, HAMMING_WINDOW);
 	//filt = create_fir_filter_lowpass(fc, 100, NUM_CH, RECT_WINDOW);
 	//exg_filt = create_fir_filter_lowpass(fc, 100, NUM_EXG_CH, RECT_WINDOW);
-	filt = create_chebychev_filter(0.25/*fc*/, 4, NUM_CH, 0, 0.00);
+	filt = create_butterworth_filter(fc, 2, NUM_CH, 1);
 	//filt = create_adhoc_filter(NUM_CH);
 	//filt = create_integrate_filter(NUM_CH);
 	//filt = create_fir_filter_mean(2,NUM_CH);
