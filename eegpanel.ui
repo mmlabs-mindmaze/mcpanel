@@ -555,6 +555,12 @@
                                   <object class="GtkComboBox" id="offset_scale_combo">
                                     <property name="visible">True</property>
                                     <property name="model">scale_model</property>
+                                    <child>
+                                      <object class="GtkCellRendererText" id="offset_scale_renderer"/>
+                                      <attributes>
+                                        <attribute name="text">0</attribute>
+                                      </attributes>
+                                    </child>
                                   </object>
                                 </child>
                                 <child type="label">
@@ -616,13 +622,21 @@
                           <object class="GtkVBox" id="vbox11">
                             <property name="visible">True</property>
                             <child>
-                              <object class="GtkDrawingArea" id="eeg_offset_scope1">
+                              <object class="LabelizedPlot" id="eeg_offset_axes1">
                                 <property name="visible">True</property>
+                                <child>
+                                  <object class="Bargraph" id="eeg_offset_bar1">
+                                  </object>
+                                </child>
                               </object>
                             </child>
                             <child>
-                              <object class="GtkDrawingArea" id="eeg_offset_scope2">
+                              <object class="LabelizedPlot" id="eeg_offset_axes2">
                                 <property name="visible">True</property>
+                                <child>
+                                  <object class="Bargraph" id="eeg_offset_bar2">
+                                  </object>
+                                </child>
                               </object>
                               <packing>
                                 <property name="position">1</property>

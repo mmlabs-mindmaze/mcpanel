@@ -3,8 +3,8 @@ DEP := gcc -MM
 DEPEND_FILE := .depend
 CFLAGS := -g3 -Wall `pkg-config --cflags gtk+-2.0`
 LFLAGS := -g3 -Wall `pkg-config --libs gtk+-2.0 gmodule-2.0 gthread-2.0`
-CFLAGS_Debug := -Wall -g `pkg-config --cflags gtk+-2.0`
-LFLAGS_Debug := -Wall -g `pkg-config --libs gtk+-2.0`
+#CFLAGS := -O3 -Wall -D G_DISABLE_CAST_CHECKS `pkg-config --cflags gtk+-2.0`
+#LFLAGS := -O3 -Wall `pkg-config --libs gtk+-2.0 gmodule-2.0 gthread-2.0`
 
 
 SRC_FILES := $(wildcard *.c)

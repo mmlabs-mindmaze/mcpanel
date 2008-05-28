@@ -19,10 +19,10 @@ typedef enum {
 	EEG_SCOPE,
 	EXG_SCOPE,
 	TRI_SCOPE,
-	EEG_OFFSET_SCOPE1,
-	EEG_OFFSET_SCOPE2,
-	EXG_OFFSET_SCOPE1,
-	EXG_OFFSET_SCOPE2,
+	EEG_OFFSET_BAR1,
+	EEG_OFFSET_BAR2,
+	EXG_OFFSET_BAR1,
+	EXG_OFFSET_BAR2,
 	EEG_AXES,
 	EXG_AXES,
 	TRI_AXES,
@@ -94,15 +94,15 @@ const LinkWidgetName widget_name_table[] = {
 	{EEG_SCOPE, "eeg_scope", "Scope"},
 	{EXG_SCOPE, "exg_scope", "Scope"},
 	{TRI_SCOPE, "tri_scope", "BinaryScope"},
-//	{EEG_OFFSET_SCOPE1, "eeg_offset_scope1", "Bargraph"},
-//	{EEG_OFFSET_SCOPE2, "eeg_offset_scope2", "Bargraph"},
-//	{EXG_OFFSET_SCOPE1, "exg_offset_scope1", "Bargraph"},
-//	{EXG_OFFSET_SCOPE2, "exg_offset_scope2", "Bargraph"},
+	{EEG_OFFSET_BAR1, "eeg_offset_bar1", "Bargraph"},
+	{EEG_OFFSET_BAR2, "eeg_offset_bar2", "Bargraph"},
+//	{EXG_OFFSET_BAR1, "exg_offset_bar1", "Bargraph"},
+//	{EXG_OFFSET_BAR2, "exg_offset_bar2", "Bargraph"},
 	{EEG_AXES, "eeg_axes", "LabelizedPlot"},
 	{EXG_AXES, "exg_axes", "LabelizedPlot"},
 	{TRI_AXES, "tri_axes", "LabelizedPlot"},
-//	{EEG_OFFSET_AXES1, "eeg_offset_axes1", "LabelizedPlot"},
-//	{EEG_OFFSET_AXES2, "eeg_offset_axes2", "LabelizedPlot"},
+	{EEG_OFFSET_AXES1, "eeg_offset_axes1", "LabelizedPlot"},
+	{EEG_OFFSET_AXES2, "eeg_offset_axes2", "LabelizedPlot"},
 //	{EXG_OFFSET_AXES1, "exg_offset_axes1", "LabelizedPlot"},
 //	{EXG_OFFSET_AXES2, "exg_offset_axes2", "LabelizedPlot"},
 	{EEG_SCALE_COMBO, "eeg_scale_combo", "GtkComboBox"},
@@ -114,7 +114,7 @@ const LinkWidgetName widget_name_table[] = {
 	{ELECREF_COMBO, "elecref_combo", "GtkComboBox"},
 	{ELECSET_COMBO, "elecset_combo", "GtkComboBox"},
 	{EEG_TREEVIEW, "eeg_treeview", "GtkTreeView"},
-//	{OFFSET_SCALE_COMBO, "offset_scale_combo", "GtkComboBox"},
+	{OFFSET_SCALE_COMBO, "offset_scale_combo", "GtkComboBox"},
 	{EXG_SCALE_COMBO, "exg_scale_combo", "GtkComboBox"},
 	{EXG_LOWPASS_CHECK, "exg_lowpass_check", "GtkCheckButton"},
 	{EXG_LOWPASS_SPIN, "exg_lowpass_spin", "GtkSpinButton"},
@@ -139,7 +139,7 @@ struct _EEGPanelPrivateData {
 	Scope* eeg_scope;
 	Scope* exg_scope;
 	BinaryScope* tri_scope;
-	Bargraph* eeg_bargraph;
+	Bargraph *eeg_offset_bar1, *eeg_offset_bar2;
 
 	GObject* widgets[NUM_PANEL_WIDGETS_DEFINED];
 
@@ -185,6 +185,7 @@ void fill_combo(GtkComboBox* combo, char** labels, int num_labels);
 char** add_default_labels(char** labels, unsigned int requested_num_labels, const char* prefix);
 void set_bipole_labels(EEGPanelPrivateData* priv);
 void set_scopes_xticks(EEGPanelPrivateData* priv);
+void set_bargraphs_yticks(EEGPanelPrivateData* priv, float max);
 void set_all_filters(EEGPanelPrivateData* priv);
 void process_eeg(EEGPanelPrivateData* priv, const float* eeg, float* temp_buff, unsigned int n_samples);
 void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, unsigned int n_samples);
@@ -349,6 +350,9 @@ void scale_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 		break;
 
 	case OFFSET_TYPE:
+		g_object_set(priv->widgets[EEG_OFFSET_BAR1], "min-value", -scale, "max-value", scale, NULL);
+		g_object_set(priv->widgets[EEG_OFFSET_BAR2], "min-value", -scale, "max-value", scale, NULL);
+		set_bargraphs_yticks(priv, scale);
 		break;
 	}
 }
@@ -532,7 +536,8 @@ int poll_widgets(EEGPanel* panel, GtkBuilder* builder)
 	// Get the plot widgets
 	priv->eeg_scope = SCOPE(gtk_builder_get_object(builder, "eeg_scope"));
 	priv->exg_scope = SCOPE(gtk_builder_get_object(builder, "exg_scope"));
-	priv->eeg_bargraph = BARGRAPH(gtk_builder_get_object(builder, "eeg_bargraph"));
+	priv->eeg_offset_bar1 = BARGRAPH(gtk_builder_get_object(builder, "eeg_offset_bar1"));
+	priv->eeg_offset_bar2 = BARGRAPH(gtk_builder_get_object(builder, "eeg_offset_bar2"));
 	priv->tri_scope = BINARY_SCOPE(gtk_builder_get_object(builder, "tri_scope"));
 
 	return 1;	
@@ -555,9 +560,11 @@ int initialize_widgets(EEGPanel* panel, GtkBuilder* builder)
 	g_signal_connect_after(priv->widgets[DECIMATION_COMBO],	"changed", (GCallback)decimation_combo_changed_cb, NULL);
 	
 	// Scale combos
-	g_signal_connect_after(priv->widgets[EEG_SCALE_COMBO], "changed", (GCallback)scale_combo_changed_cb, (gpointer)ELEC_TYPE);
+	g_signal_connect(priv->widgets[EEG_SCALE_COMBO], "changed", (GCallback)scale_combo_changed_cb, (gpointer)ELEC_TYPE);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[EEG_SCALE_COMBO]), 0);
-	g_signal_connect_after(priv->widgets[EXG_SCALE_COMBO], "changed", (GCallback)scale_combo_changed_cb, (gpointer)BIPOLE_TYPE);
+	g_signal_connect(priv->widgets[OFFSET_SCALE_COMBO], "changed", (GCallback)scale_combo_changed_cb, (gpointer)OFFSET_TYPE);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[OFFSET_SCALE_COMBO]), 0);
+	g_signal_connect(priv->widgets[EXG_SCALE_COMBO], "changed", (GCallback)scale_combo_changed_cb, (gpointer)BIPOLE_TYPE);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[EXG_SCALE_COMBO]), 0);
 
 	// Time window combo
@@ -716,10 +723,6 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 	eeg_sel = priv->selected_eeg;
 	exg_sel = priv->selected_exg;
 
-	// Create a buffer big enough to hold incoming eeg or exg data
-	buff_len = (num_eeg_ch > num_exg_ch) ? num_eeg_ch : num_exg_ch;
-	buff_len *= num_samples;
-	buff = g_malloc(buff_len*sizeof(*eeg));
 	
 
 	// if we need to wrap, first add the tail
@@ -734,6 +737,11 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 		num_samples -= num_samples_written;
 		pointer = priv->current_sample;
 	}
+	
+	// Create a buffer big enough to hold incoming eeg or exg data
+	buff_len = (num_eeg_ch > num_exg_ch) ? num_eeg_ch : num_exg_ch;
+	buff_len *= num_samples;
+	buff = g_malloc(buff_len*sizeof(*eeg));
 
 	// copy data
 	if (eeg) 
@@ -761,6 +769,8 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 	scope_update_data(priv->eeg_scope, pointer);
 	scope_update_data(priv->exg_scope, pointer);
 	binary_scope_update_data(priv->tri_scope, pointer);
+	bargraph_update_data(priv->eeg_offset_bar1, 0);
+	bargraph_update_data(priv->eeg_offset_bar2, 0);
 	if (lock_res)
 		gdk_threads_leave();
 }
@@ -822,6 +832,7 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec, ChannelSelection* exg_selec)
 {
 	unsigned int num_eeg_points, num_exg_points, num_tri_points, num_eeg, num_exg;
+	unsigned int num_elec_bar1, num_elec_bar2;
 	float *eeg, *exg;
 	uint32_t *triggers;
 	EEGPanelPrivateData* priv = panel->priv;
@@ -836,6 +847,8 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 	num_eeg_points = num_samples*num_eeg;
 	num_exg_points = num_samples*num_exg;
 	num_tri_points = num_samples;
+	num_elec_bar2 = num_eeg/2;
+	num_elec_bar1 = num_eeg - num_elec_bar2;
 
 	if (num_eeg_points != priv->num_eeg_channels*priv->num_samples) {
 		eeg = g_malloc0(num_eeg_points * sizeof(*eeg));
@@ -869,8 +882,11 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 		}
 		memcpy(priv->selected_eeg, eeg_selec->selection, num_eeg*sizeof(*(priv->selected_eeg)));
 
-		if (eeg_selec->labels)	
-			g_object_set(G_OBJECT(priv->widgets[EEG_AXES]), "ytick-labelv", eeg_selec->labels, NULL);
+		if (eeg_selec->labels) {	
+			g_object_set(priv->widgets[EEG_AXES], "ytick-labelv", eeg_selec->labels, NULL);
+			g_object_set(priv->widgets[EEG_OFFSET_AXES1], "xtick-labelv", eeg_selec->labels, NULL);	
+			g_object_set(priv->widgets[EEG_OFFSET_AXES2], "xtick-labelv", eeg_selec->labels+num_elec_bar1, NULL);	
+		}
 	}
 
 
@@ -886,8 +902,12 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 		memcpy(priv->selected_exg, exg_selec->selection, num_exg*sizeof(*(priv->selected_exg)));
 
 		if (exg_selec->labels)	
-			g_object_set(G_OBJECT(priv->widgets[EXG_AXES]), "ytick-labelv", exg_selec->labels, NULL);
+			g_object_set(priv->widgets[EXG_AXES], "ytick-labelv", exg_selec->labels, NULL);
 	}
+
+	// Set bargraphs data
+	bargraph_set_data(priv->eeg_offset_bar1, priv->eeg_offset, num_elec_bar1);
+	bargraph_set_data(priv->eeg_offset_bar2, priv->eeg_offset+num_elec_bar1, num_elec_bar2);
 
 	set_all_filters(priv);
 
@@ -1015,6 +1035,61 @@ void set_scopes_xticks(EEGPanelPrivateData* priv)
 	g_object_set(priv->widgets[TRI_AXES], "xtick-labelv", labels, NULL);
 	scope_set_ticks(priv->exg_scope, num_ticks, ticks);
 	g_object_set(priv->widgets[EXG_AXES], "xtick-labelv", labels, NULL);
+
+
+	g_free(ticks);
+	g_strfreev(labels);
+}
+
+void set_bargraphs_yticks(EEGPanelPrivateData* priv, float max)
+{
+	char* unit = "uV";
+	int i, inc;
+	float value;
+	float* ticks;
+	char** labels;
+	int num_ticks;
+	unsigned int max_value;
+	
+	max_value = max;
+	if (max > 1000.0) {
+		max_value = max/1000.0;
+		unit = "mV";
+	}
+
+	
+	inc = 1;
+	if (max_value > 5)
+		inc = 2;
+	if (max_value > 10)
+		inc = 5;
+	if (max_value > 25)
+		inc = 10;
+	if (max_value > 50)
+		inc = 25;
+	if (max_value > 100)
+		inc = 50;
+	if (max_value > 200)
+		inc = 100;
+	if (max_value > 500)
+		inc = 250;
+	
+	num_ticks = 2*(max_value / inc)+1;
+	ticks = g_malloc(num_ticks*sizeof(*ticks));
+	labels = g_malloc0((num_ticks+1)*sizeof(*labels));
+
+	// set the ticks and ticks labels
+	for (i=0; i<num_ticks; i++) {
+		value = (i-(num_ticks-1)/2)*inc;
+		ticks[i] = (max >1000.0) ? value*1000 : value;
+		labels[i] = g_strdup_printf("%.0f%s",value,unit);
+	}
+
+	// Set the ticks to the scope widgets
+	bargraph_set_ticks(priv->eeg_offset_bar1, num_ticks, ticks);
+	bargraph_set_ticks(priv->eeg_offset_bar2, num_ticks, ticks);
+	g_object_set(priv->widgets[EEG_OFFSET_AXES1], "ytick-labelv", labels, NULL);
+	g_object_set(priv->widgets[EEG_OFFSET_AXES2], "ytick-labelv", labels, NULL);
 
 
 	g_free(ticks);
