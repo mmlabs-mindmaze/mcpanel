@@ -487,6 +487,7 @@
                             </child>
                             <child>
                               <object class="LabelizedPlot" id="tri_axes">
+                                <property name="left-padding">40</property>
                                 <child>
                                   <object class="BinaryScope" id="tri_scope">
                                     <property name="height-request">48</property>
@@ -503,6 +504,7 @@
                             </child>
                             <child>
                               <object class="LabelizedPlot" id="eeg_axes">
+                                <property name="left-padding">40</property>
                                 <child>
                                   <object class="Scope" id="eeg_scope">
                                   </object>
@@ -624,6 +626,7 @@
                             <child>
                               <object class="LabelizedPlot" id="eeg_offset_axes1">
                                 <property name="visible">True</property>
+                                <property name="left-padding">40</property>
                                 <child>
                                   <object class="Bargraph" id="eeg_offset_bar1">
                                   </object>
@@ -633,6 +636,7 @@
                             <child>
                               <object class="LabelizedPlot" id="eeg_offset_axes2">
                                 <property name="visible">True</property>
+                                <property name="left-padding">40</property>
                                 <child>
                                   <object class="Bargraph" id="eeg_offset_bar2">
                                   </object>
@@ -823,6 +827,7 @@
                         </child>
                         <child>
                           <object class="LabelizedPlot" id="exg_axes">
+                            <property name="left-padding">60</property>
                             <child>
                               <object class="Scope" id="exg_scope">
                               </object>

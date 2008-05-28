@@ -30,7 +30,7 @@ static gboolean timerfunc(gpointer user_data)
 	gint i, j;
 	for (i=0; i<NUM_POINTS; i++) {
 		for (j=0; j<NUM_CH; j++)
-			eeg_data[NUM_CH*i +j] = cos(2.0*M_PI*t*(j+1));
+			eeg_data[NUM_CH*i +j] = 200.0*cos(2.0*M_PI*t*(j+1));
 			//eeg_data[NUM_CH*i +j] = ((isample/SAMPLING_RATE)%2) ? 0 : 1;
 			//eeg_data[NUM_CH*i +j] = (isample%SAMPLING_RATE) ? 0 : 1;
 		for (j=0; j<NUM_EXG_CH; j++)

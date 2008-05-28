@@ -136,7 +136,7 @@ labelized_plot_init (LabelizedPlot* self)
 	self->xtick_labels = NULL;
 	self->ytick_labels = NULL;
 
-	gtk_alignment_set_padding(GTK_ALIGNMENT(self),1,20,30,1);
+	gtk_alignment_set_padding(GTK_ALIGNMENT(self),3,20,30,3);
 	
 	/* Connect the handled signal*/
 	g_signal_connect (G_OBJECT (self), "expose_event",  

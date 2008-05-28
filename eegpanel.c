@@ -144,6 +144,7 @@ struct _EEGPanelPrivateData {
 	GObject* widgets[NUM_PANEL_WIDGETS_DEFINED];
 
 	GThread* main_loop_thread;
+	GMutex* data_mutex;
 
 	//
 	unsigned int sampling_rate;
@@ -192,6 +193,7 @@ void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, 
 void process_tri(EEGPanelPrivateData* priv, const uint32_t* tri, uint32_t* temp_buff, unsigned int n_samples);
 void remove_electrode_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples, unsigned int elec_ref);
 void remove_common_avg_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples);
+void add_samples(EEGPanelPrivateData* priv, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples);
 
 gpointer loop_thread(gpointer user_data)
 {
@@ -240,7 +242,10 @@ void reftype_combo_changed_cb(GtkComboBox* combo, gpointer data)
 void refelec_combo_changed_cb(GtkComboBox* combo, gpointer data)
 {
 	EEGPanelPrivateData* priv = GET_PANEL_FROM(combo)->priv;
+
+	g_mutex_lock(priv->data_mutex);
 	priv->eeg_ref_elec = gtk_combo_box_get_active(combo);
+	g_mutex_unlock(priv->data_mutex);
 }
 
 void elecset_combo_changed_cb(GtkComboBox* combo, gpointer data)
@@ -277,10 +282,14 @@ void elecset_combo_changed_cb(GtkComboBox* combo, gpointer data)
 
 extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer user_data)
 {
+	char** labels;
 	ChannelSelection select;
 	ChannelType type = (ChannelType)user_data;
 	EEGPanel* panel = GET_PANEL_FROM(gtk_tree_selection_get_tree_view(selection));
-	char** labels = (type == EEG) ? panel->priv->eeg_labels : panel->priv->bipole_labels;
+	EEGPanelPrivateData* priv = panel->priv;
+
+	g_mutex_lock(priv->data_mutex);
+	labels = (type == EEG) ? priv->eeg_labels : priv->bipole_labels;
 	
 	// Prepare the channel selection structure to be passed
 	fill_selec_from_treeselec(&select, selection, labels);
@@ -298,6 +307,7 @@ extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer u
 	// free everything holded by the selection struct
 	g_free(select.selection);
 	g_free(select.labels);
+	g_mutex_unlock(priv->data_mutex);
 }
 
 void decimation_combo_changed_cb(GtkComboBox* combo, gpointer data)
@@ -314,6 +324,8 @@ void decimation_combo_changed_cb(GtkComboBox* combo, gpointer data)
 	gtk_combo_box_get_active_iter(combo, &iter);
 	gtk_tree_model_get_value(model, &iter, 1, &value);
 
+
+	g_mutex_lock(priv->data_mutex);
 	// Reset the internals
 	priv->decimation_factor = g_value_get_uint(&value);
 	set_data_input(panel, (priv->sampling_rate*priv->display_length)/priv->decimation_factor, NULL, NULL);
@@ -321,6 +333,8 @@ void decimation_combo_changed_cb(GtkComboBox* combo, gpointer data)
 	// update the display
 	sprintf(tempstr,"%u Hz",priv->sampling_rate/priv->decimation_factor); 
 	gtk_label_set_text(GTK_LABEL(priv->widgets[DISPLAYED_FREQ_LABEL]), tempstr);
+
+	g_mutex_unlock(priv->data_mutex);
 
 }
 
@@ -365,7 +379,8 @@ void time_window_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 	unsigned int time_length, num_samples;
 	EEGPanel* panel = GET_PANEL_FROM(combo);
 	EEGPanelPrivateData* priv = panel->priv;
-	
+
+	g_mutex_lock(priv->data_mutex);
 	
 	// Get the value set
 	model = gtk_combo_box_get_model(combo);
@@ -377,12 +392,17 @@ void time_window_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 	num_samples = time_length * (priv->sampling_rate / priv->decimation_factor);
 	set_data_input(panel, num_samples, NULL, NULL);
 	set_scopes_xticks(priv);
+
+	g_mutex_unlock(priv->data_mutex);
 }
 
 void filter_button_changed_cb(GtkButton* button, gpointer user_data)
 {
 	EEGPanelPrivateData* priv = GET_PANEL_FROM(button)->priv;
+
+	g_mutex_lock(priv->data_mutex);
 	set_all_filters(priv);
+	g_mutex_unlock(priv->data_mutex);
 }
 
 /*extern void destroy( GtkWidget *widget,
@@ -420,7 +440,7 @@ EEGPanel* eegpanel_create(void)
 	panel = g_malloc0(sizeof(*panel));
 	priv = g_malloc0(sizeof(*priv));
 	panel->priv = priv;
-
+	priv->data_mutex = g_mutex_new();
 
 	// Create the panel widgets according to the ui definition files
 	builder = gtk_builder_new();
@@ -495,6 +515,7 @@ void eegpanel_destroy(EEGPanel* panel)
 	if ((priv->main_loop_thread) && (priv->main_loop_thread != g_thread_self()))
 		g_thread_join(priv->main_loop_thread);
 
+	g_mutex_free(priv->data_mutex);
 	g_strfreev(priv->eeg_labels);
 	g_strfreev(priv->exg_labels);
 	g_strfreev(priv->bipole_labels);
@@ -707,9 +728,17 @@ void fill_combo(GtkComboBox* combo, char** labels, int num_labels)
 
 void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples)
 {
+	EEGPanelPrivateData* priv = panel->priv;
+
+	g_mutex_lock(priv->data_mutex);
+	add_samples(priv, eeg, exg, triggers, num_samples);
+	g_mutex_unlock(priv->data_mutex);
+}
+
+void add_samples(EEGPanelPrivateData* priv, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples)
+{
 	unsigned int num_eeg_ch, num_exg_ch, nmax_eeg, nmax_exg;
 	unsigned int num_samples_written = 0;
-	EEGPanelPrivateData* priv = panel->priv;
 	unsigned int pointer = priv->current_sample;
 	unsigned int *eeg_sel, *exg_sel; 
 	unsigned int lock_res = 0;
@@ -729,7 +758,7 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 	if (num_samples+pointer > priv->num_samples) {
 		num_samples_written = priv->num_samples - pointer;
 		
-		eegpanel_add_samples(panel, eeg, exg, triggers, num_samples_written);
+		add_samples(priv, eeg, exg, triggers, num_samples_written);
 
 		eeg += nmax_eeg*num_samples_written;
 		exg += nmax_exg*num_samples_written;
