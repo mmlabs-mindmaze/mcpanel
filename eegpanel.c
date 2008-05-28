@@ -37,6 +37,7 @@ typedef enum {
 	EEG_HIGHPASS_SPIN,
 	REFTYPE_COMBO,
 	ELECREF_COMBO,
+	ELECSET_COMBO,
 	EEG_TREEVIEW,
 	OFFSET_SCALE_COMBO,
 	EXG_SCALE_COMBO,
@@ -111,6 +112,7 @@ const LinkWidgetName widget_name_table[] = {
 	{EEG_HIGHPASS_SPIN, "eeg_highpass_spin", "GtkSpinButton"},
 	{REFTYPE_COMBO, "reftype_combo", "GtkComboBox"},
 	{ELECREF_COMBO, "elecref_combo", "GtkComboBox"},
+	{ELECSET_COMBO, "elecset_combo", "GtkComboBox"},
 	{EEG_TREEVIEW, "eeg_treeview", "GtkTreeView"},
 //	{OFFSET_SCALE_COMBO, "offset_scale_combo", "GtkComboBox"},
 	{EXG_SCALE_COMBO, "exg_scale_combo", "GtkComboBox"},
@@ -164,6 +166,7 @@ struct _EEGPanelPrivateData {
 	float *eeg_offset, *exg_offset;
 	uint32_t *triggers;
 	RefType eeg_ref_type;
+	int eeg_ref_elec;
 
 	// filters
 	dfilter *filt[NUM_FILTERS];
@@ -176,9 +179,9 @@ int fill_selec_from_treeselec(ChannelSelection* selection, GtkTreeSelection* tre
 int poll_widgets(EEGPanel* panel, GtkBuilder* builder);
 int initialize_widgets(EEGPanel* panel, GtkBuilder* builder);
 GtkListStore* initialize_list_treeview(GtkTreeView* treeview, const gchar* attr_name);
-void initialize_combo(GtkComboBox* combo, const char* labels);
+void initialize_combo(GtkComboBox* combo);
 void fill_treeview(GtkTreeView* treeview, unsigned int num_labels, const char** labels);
-void fill_combo(GtkComboBox* combo, const char* labels);
+void fill_combo(GtkComboBox* combo, char** labels, int num_labels);
 char** add_default_labels(char** labels, unsigned int requested_num_labels, const char* prefix);
 void set_bipole_labels(EEGPanelPrivateData* priv);
 void set_scopes_xticks(EEGPanelPrivateData* priv);
@@ -214,7 +217,7 @@ extern gboolean startacquisition_button_toggled_cb(GtkButton* button, gpointer d
 	return TRUE;
 }
 
-extern void reftype_combo_changed_cb(GtkComboBox* combo, gpointer data)
+void reftype_combo_changed_cb(GtkComboBox* combo, gpointer data)
 {
 	GtkTreeIter iter;
 	GValue value = {0};
@@ -231,6 +234,44 @@ extern void reftype_combo_changed_cb(GtkComboBox* combo, gpointer data)
 	gtk_widget_set_sensitive(GTK_WIDGET(priv->widgets[ELECREF_COMBO]), (type==ELECTRODE_REF)? TRUE : FALSE);
 
 	priv->eeg_ref_type = type;
+}
+
+void refelec_combo_changed_cb(GtkComboBox* combo, gpointer data)
+{
+	EEGPanelPrivateData* priv = GET_PANEL_FROM(combo)->priv;
+	priv->eeg_ref_elec = gtk_combo_box_get_active(combo);
+}
+
+void elecset_combo_changed_cb(GtkComboBox* combo, gpointer data)
+{
+	unsigned int selec, nmax;
+	int first, last;
+	GtkTreeSelection* tree_selection;
+	GtkTreePath *path1, *path2;
+	EEGPanelPrivateData* priv = GET_PANEL_FROM(combo)->priv;
+
+	tree_selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]));
+
+	selec = gtk_combo_box_get_active(combo);
+
+	if (selec==0) {
+		gtk_tree_selection_select_all(tree_selection);
+	}
+	else {
+		nmax = priv->nmax_eeg;
+
+		first = 0;
+		last = selec*32 - 1;
+		first = (first < nmax) ? first : nmax-1;
+		last = (last < nmax) ? last : nmax-1;
+
+		path1 = gtk_tree_path_new_from_indices(first, -1);
+		path2 = gtk_tree_path_new_from_indices(last, -1);
+		gtk_tree_selection_unselect_all(tree_selection);
+		gtk_tree_selection_select_range(tree_selection, path1, path2);
+		gtk_tree_path_free(path1);
+		gtk_tree_path_free(path2);
+	}
 }
 
 extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer user_data)
@@ -504,42 +545,24 @@ int initialize_widgets(EEGPanel* panel, GtkBuilder* builder)
 	
 	treeview = GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]);
 	initialize_list_treeview(treeview, "channels");
-	g_signal_connect_after(gtk_tree_view_get_selection(treeview),
-				"changed",
-				(GCallback)channel_selection_changed_cb,
-				(gpointer)EEG);
+	g_signal_connect_after(gtk_tree_view_get_selection(treeview), "changed", (GCallback)channel_selection_changed_cb, (gpointer)EEG);
 
 	treeview = GTK_TREE_VIEW(priv->widgets[EXG_TREEVIEW]);
 	initialize_list_treeview(treeview, "channels");
-	g_signal_connect_after(gtk_tree_view_get_selection(treeview),
-				"changed",
-				(GCallback)channel_selection_changed_cb,
-				(gpointer)EXG);
+	g_signal_connect_after(gtk_tree_view_get_selection(treeview), "changed", (GCallback)channel_selection_changed_cb, (gpointer)EXG);
 
 	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[DECIMATION_COMBO]), 0);
-	g_signal_connect_after(priv->widgets[DECIMATION_COMBO],
-				"changed",
-				(GCallback)decimation_combo_changed_cb,
-				NULL);
+	g_signal_connect_after(priv->widgets[DECIMATION_COMBO],	"changed", (GCallback)decimation_combo_changed_cb, NULL);
 	
 	// Scale combos
-	g_signal_connect_after(priv->widgets[EEG_SCALE_COMBO],
-				"changed",
-				(GCallback)scale_combo_changed_cb,
-				(gpointer)ELEC_TYPE);
+	g_signal_connect_after(priv->widgets[EEG_SCALE_COMBO], "changed", (GCallback)scale_combo_changed_cb, (gpointer)ELEC_TYPE);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[EEG_SCALE_COMBO]), 0);
-	g_signal_connect_after(priv->widgets[EXG_SCALE_COMBO],
-				"changed",
-				(GCallback)scale_combo_changed_cb,
-				(gpointer)BIPOLE_TYPE);
+	g_signal_connect_after(priv->widgets[EXG_SCALE_COMBO], "changed", (GCallback)scale_combo_changed_cb, (gpointer)BIPOLE_TYPE);
 	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[EXG_SCALE_COMBO]), 0);
 
 	// Time window combo
 	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[TIME_WINDOW_COMBO]), 0);
-	g_signal_connect_after(priv->widgets[TIME_WINDOW_COMBO],
-				"changed",
-				(GCallback)time_window_combo_changed_cb,
-				(gpointer)ELEC_TYPE);
+	g_signal_connect_after(priv->widgets[TIME_WINDOW_COMBO], "changed", (GCallback)time_window_combo_changed_cb, (gpointer)ELEC_TYPE);
 
 	// filter buttons
 	g_signal_connect_after(priv->widgets[EEG_LOWPASS_CHECK], "toggled",(GCallback)filter_button_changed_cb, NULL);
@@ -551,6 +574,12 @@ int initialize_widgets(EEGPanel* panel, GtkBuilder* builder)
 	g_signal_connect_after(priv->widgets[EXG_LOWPASS_SPIN], "value-changed",(GCallback)filter_button_changed_cb, NULL);
 	g_signal_connect_after(priv->widgets[EXG_HIGHPASS_SPIN], "value-changed",(GCallback)filter_button_changed_cb, NULL);
 
+	// reference combos
+	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[REFTYPE_COMBO]), 0);
+	g_signal_connect(priv->widgets[REFTYPE_COMBO], "changed", (GCallback)reftype_combo_changed_cb, NULL);
+	g_signal_connect(priv->widgets[ELECREF_COMBO], "changed", (GCallback)refelec_combo_changed_cb, NULL);
+
+	g_signal_connect(priv->widgets[ELECSET_COMBO], "changed", (GCallback)elecset_combo_changed_cb, NULL);
 	return 1;
 }
 
@@ -577,6 +606,8 @@ int eegpanel_define_input(EEGPanel* panel, unsigned int num_eeg_channels,
 
 	// Update widgets
 	fill_treeview(GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]), priv->nmax_eeg, (const char**)priv->eeg_labels);
+	fill_combo(GTK_COMBO_BOX(priv->widgets[ELECREF_COMBO]), priv->eeg_labels, priv->nmax_eeg);
+	gtk_combo_box_set_active(GTK_COMBO_BOX(priv->widgets[ELECREF_COMBO]), 0);
 	fill_treeview(GTK_TREE_VIEW(priv->widgets[EXG_TREEVIEW]), priv->nmax_exg, (const char**)priv->bipole_labels);
 	sprintf(tempstr,"%u Hz",sampling_rate);
 	gtk_label_set_text(GTK_LABEL(priv->widgets[NATIVE_FREQ_LABEL]), tempstr);
@@ -612,7 +643,7 @@ GtkListStore* initialize_list_treeview(GtkTreeView* treeview, const gchar* attr_
 }
 
 
-void initialize_combo(GtkComboBox* combo, const char* labels)
+void initialize_combo(GtkComboBox* combo)
 {
 	GtkListStore* list;
 	GtkCellRenderer *renderer;
@@ -626,11 +657,7 @@ void initialize_combo(GtkComboBox* combo, const char* labels)
 	gtk_cell_layout_pack_start (GTK_CELL_LAYOUT(combo), renderer, TRUE);
 	gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT(combo), renderer,
 					"text", 0, NULL);
-
-	if (labels)
-		fill_combo(combo, labels);
 }
-
 
 void fill_treeview(GtkTreeView* treeview, unsigned int num_labels, const char** labels)
 {
@@ -650,23 +677,22 @@ void fill_treeview(GtkTreeView* treeview, unsigned int num_labels, const char** 
 	}
 }
 
-void fill_combo(GtkComboBox* combo, const char* labels)
+void fill_combo(GtkComboBox* combo, char** labels, int num_labels)
 {
 	GtkListStore* list;
-	int num_labels, i;
+	int i;
 	GtkTreeIter iter;
-	gchar** labelv = NULL;
 
 	list = GTK_LIST_STORE(gtk_combo_box_get_model(combo));
 	gtk_list_store_clear(list);
 
-	labelv = g_strsplit(labels, "\n", 0);
-	num_labels = labelv ? g_strv_length(labelv) : 0;
+	if (num_labels < -1)
+		num_labels = labels ? g_strv_length(labels) : 0;
+
 	for (i=0; i<num_labels; i++) {
 		gtk_list_store_append(list, &iter);
-		gtk_list_store_set(list, &iter, 0, labelv[i], -1);
+		gtk_list_store_set(list, &iter, 0, labels[i], -1);
 	}
-	g_strfreev(labelv);
 
 	gtk_combo_box_set_active (combo, 0);
 }
@@ -1098,7 +1124,7 @@ void process_eeg(EEGPanelPrivateData* priv, const float* eeg, float* temp_buff, 
 	if (priv->eeg_ref_type == AVERAGE_REF)
 		remove_common_avg_ref(buff1, nchann, eeg, nmax_ch, n_samples);
 	else if (priv->eeg_ref_type == ELECTRODE_REF)
-		remove_electrode_ref(buff1, nchann, eeg, nmax_ch, n_samples, 0);
+		remove_electrode_ref(buff1, nchann, eeg, nmax_ch, n_samples, priv->eeg_ref_elec);
 
 	// Process decimation
 	// TODO
@@ -1141,7 +1167,7 @@ void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, 
 	// Copy data of the selected channels
 	for (i=0; i<n_samples; i++) {
 		for (j=0; j<num_ch; j++) {
-			k = (sel[j]-1)%nmax_ch;
+			k = (sel[j]+1)%nmax_ch;
 			buff2[i*num_ch+j] = exg[i*nmax_ch + sel[j]] - exg[i*nmax_ch + k];
 		}
 	}

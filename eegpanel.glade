@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Wed May 21 17:57:06 2008 -->
+<!--Generated with glade3 3.4.5 on Wed May 28 08:56:05 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="topwindow">
     <signal name="destroy" handler="gtk_main_quit"/>
@@ -158,7 +158,6 @@
                                         <property name="items" translatable="yes">None
 Average
 Electrode</property>
-                                        <signal name="changed" handler="reftype_combo_changed_cb"/>
                                       </widget>
                                     </child>
                                     <child>
@@ -198,7 +197,7 @@ Electrode</property>
                                   <widget class="GtkVBox" id="vbox4">
                                     <property name="visible">True</property>
                                     <child>
-                                      <widget class="GtkComboBox" id="electrodesets_combo">
+                                      <widget class="GtkComboBox" id="elecset_combo">
                                         <property name="visible">True</property>
                                         <property name="items" translatable="yes">All
 Set A
@@ -259,14 +258,24 @@ Sets A-D</property>
                             <property name="n_rows">2</property>
                             <property name="n_columns">2</property>
                             <child>
-                              <widget class="GtkLabel" id="label5">
+                              <widget class="GtkDrawingArea" id="eeg_scope">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">EEG Channels</property>
-                                <property name="justify">GTK_JUSTIFY_CENTER</property>
-                                <property name="angle">90</property>
                               </widget>
                               <packing>
-                                <property name="x_options">GTK_FILL</property>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkDrawingArea" id="tri_scope">
+                                <property name="height_request">64</property>
+                                <property name="visible">True</property>
+                              </widget>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
                                 <property name="y_options">GTK_FILL</property>
                               </packing>
                             </child>
@@ -285,25 +294,15 @@ Sets A-D</property>
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkDrawingArea" id="tri_scope">
-                                <property name="height_request">64</property>
+                              <widget class="GtkLabel" id="label5">
                                 <property name="visible">True</property>
+                                <property name="label" translatable="yes">EEG Channels</property>
+                                <property name="justify">GTK_JUSTIFY_CENTER</property>
+                                <property name="angle">90</property>
                               </widget>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="right_attach">2</property>
-                                <property name="top_attach">1</property>
-                                <property name="bottom_attach">2</property>
+                                <property name="x_options">GTK_FILL</property>
                                 <property name="y_options">GTK_FILL</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <widget class="GtkDrawingArea" id="eeg_scope">
-                                <property name="visible">True</property>
-                              </widget>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="right_attach">2</property>
                               </packing>
                             </child>
                           </widget>
@@ -664,10 +663,26 @@ Sets A-D</property>
                             <property name="n_rows">2</property>
                             <property name="n_columns">2</property>
                             <child>
-                              <widget class="GtkLabel" id="cms_led">
+                              <widget class="GtkLabel" id="connect_led">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">led1</property>
+                                <property name="label" translatable="yes">led2</property>
                               </widget>
+                              <packing>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="label8">
+                                <property name="visible">True</property>
+                                <property name="sensitive">False</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">CMS in range</property>
+                              </widget>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                              </packing>
                             </child>
                             <child>
                               <widget class="GtkLabel" id="label9">
@@ -685,26 +700,10 @@ Sets A-D</property>
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkLabel" id="label8">
+                              <widget class="GtkLabel" id="cms_led">
                                 <property name="visible">True</property>
-                                <property name="sensitive">False</property>
-                                <property name="xalign">0</property>
-                                <property name="label" translatable="yes">CMS in range</property>
+                                <property name="label" translatable="yes">led1</property>
                               </widget>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="right_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <widget class="GtkLabel" id="connect_led">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">led2</property>
-                              </widget>
-                              <packing>
-                                <property name="top_attach">1</property>
-                                <property name="bottom_attach">2</property>
-                              </packing>
                             </child>
                           </widget>
                         </child>

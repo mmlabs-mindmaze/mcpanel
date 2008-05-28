@@ -350,7 +350,6 @@
                                     <child>
                                       <object class="GtkComboBox" id="reftype_combo">
                                         <property name="visible">True</property>
-                                        <signal handler="reftype_combo_changed_cb" name="changed"/>
                                         <property name="model">model1</property>
                                         <child>
                                           <object class="GtkCellRendererText" id="renderer1"/>
@@ -400,7 +399,7 @@
                                   <object class="GtkVBox" id="vbox4">
                                     <property name="visible">True</property>
                                     <child>
-                                      <object class="GtkComboBox" id="electrodesets_combo">
+                                      <object class="GtkComboBox" id="elecset_combo">
                                         <property name="visible">True</property>
                                         <property name="model">model3</property>
                                         <child>
