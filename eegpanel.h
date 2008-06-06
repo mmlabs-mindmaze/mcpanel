@@ -40,6 +40,7 @@ struct _EEGPanel {
 	EEGPanelPrivateData* priv;
 };
 
+void init_eegpanel_lib(int *argc, char ***argv);
 EEGPanel* eegpanel_create(void);
 void eegpanel_destroy(EEGPanel* panel);
 void eegpanel_show(EEGPanel* panel, int state);

@@ -47,11 +47,14 @@ typedef enum {
 	EXG_HIGHPASS_SPIN,
 	EXG_TREEVIEW,
 	STARTACQUISITION_BUTTON,
+	CONNECT_LED,
+	CMS_LED,
 	NATIVE_FREQ_LABEL,
 	DECIMATION_COMBO,
 	DISPLAYED_FREQ_LABEL,
 	TIME_WINDOW_COMBO,
 	RECORDING_LIMIT_ENTRY,
+	RECORDING_LED,
 	START_RECORDING_BUTTON,
 	PAUSE_RECORDING_BUTTON,
 	FILE_LENGTH_LABEL,
@@ -121,12 +124,15 @@ const LinkWidgetName widget_name_table[] = {
 	{EXG_HIGHPASS_CHECK, "exg_highpass_check", "GtkCheckButton"},
 	{EXG_HIGHPASS_SPIN, "exg_highpass_spin", "GtkSpinButton"},
 	{EXG_TREEVIEW, "exg_treeview", "GtkTreeView"},
+	{CONNECT_LED, "connect_led", "GtkLed"},  
+	{CMS_LED, "cms_led", "GtkLed"},  
 	{STARTACQUISITION_BUTTON, "startacquisition_button", "GtkToggleButton"},  
 	{NATIVE_FREQ_LABEL, "native_freq_label", "GtkLabel"},
 	{DECIMATION_COMBO, "decimation_combo", "GtkComboBox"},
 	{DISPLAYED_FREQ_LABEL, "displayed_freq_label", "GtkLabel"},
 	{TIME_WINDOW_COMBO, "time_window_combo", "GtkComboBox"},
 	{RECORDING_LIMIT_ENTRY, "recording_limit_entry", "GtkEntry"},
+	{RECORDING_LED, "recording_led", "GtkLed"},  
 	{START_RECORDING_BUTTON, "start_recording_button", "GtkButton"},
 	{PAUSE_RECORDING_BUTTON, "pause_recording_button", "GtkToggleButton"},
 	{FILE_LENGTH_LABEL, "file_length_label", "GtkLabel"}
@@ -208,11 +214,12 @@ gpointer loop_thread(gpointer user_data)
 extern gboolean startacquisition_button_toggled_cb(GtkButton* button, gpointer data)
 {
 	EEGPanel* panel = GET_PANEL_FROM(button);
-	int state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ? 1 : 0;
+	EEGPanelPrivateData* priv = panel->priv;
+	gboolean state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ? TRUE : FALSE;
 
 	if (panel->system_connection) {
 		if (panel->system_connection(state, panel->user_data)) {
-			
+			gtk_led_set_state(GTK_LED(priv->widgets[CONNECT_LED]), state);
 		}
 	}
 		
@@ -295,13 +302,11 @@ extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer u
 	fill_selec_from_treeselec(&select, selection, labels);
 
 	
-	if (panel->process_selection) {
-		if (panel->process_selection(&select, type, panel->user_data) > 0) {
-			if (type == EEG)
-				set_data_input(panel, -1, &select, NULL);
-			else
-				set_data_input(panel, -1, NULL, &select);
-		}
+	if (!panel->process_selection || (panel->process_selection(&select, type, panel->user_data) > 0)) {
+		if (type == EEG)
+			set_data_input(panel, -1, &select, NULL);
+		else
+			set_data_input(panel, -1, NULL, &select);
 	}
 
 	// free everything holded by the selection struct
@@ -425,6 +430,13 @@ int RegisterCustomDefinition(void)
 	type = GTK_TYPE_LED;
 
 	return type;
+}
+
+void init_eegpanel_lib(int *argc, char ***argv)
+{
+	g_thread_init(NULL);
+	gdk_threads_init();
+	gtk_init(argc, argv);
 }
 
 EEGPanel* eegpanel_create(void)

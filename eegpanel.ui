@@ -491,6 +491,7 @@
                                 <child>
                                   <object class="BinaryScope" id="tri_scope">
                                     <property name="height-request">48</property>
+                                    <property name="background">white</property>
                                   </object>
                                 </child>
                               </object>
@@ -507,6 +508,7 @@
                                 <property name="left-padding">40</property>
                                 <child>
                                   <object class="Scope" id="eeg_scope">
+                                    <property name="background">white</property>
                                   </object>
                                 </child>
                               </object>
@@ -629,6 +631,7 @@
                                 <property name="left-padding">40</property>
                                 <child>
                                   <object class="Bargraph" id="eeg_offset_bar1">
+                                    <property name="background">white</property>
                                   </object>
                                 </child>
                               </object>
@@ -639,6 +642,7 @@
                                 <property name="left-padding">40</property>
                                 <child>
                                   <object class="Bargraph" id="eeg_offset_bar2">
+                                    <property name="background">white</property>
                                   </object>
                                 </child>
                               </object>
@@ -830,6 +834,7 @@
                             <property name="left-padding">60</property>
                             <child>
                               <object class="Scope" id="exg_scope">
+                                <property name="background">white</property>
                               </object>
                             </child>
                           </object>

@@ -70,6 +70,11 @@ int ProcessSelection(const ChannelSelection* selection, ChannelType type, void* 
 	return 1;
 }
 
+int SystemConnection(int start, void* user_data)
+{
+	return 1;
+}
+
 int main(int argc, char* argv[])
 {
 	float fc, fc2;
@@ -100,10 +105,11 @@ int main(int argc, char* argv[])
 
 	eegpanel_define_input(panel, NUM_CH, 8, 16, SAMPLING_RATE);
 	panel->process_selection = ProcessSelection;
+	panel->system_connection = SystemConnection;
 
 
 	eegpanel_show(panel, 1);
-	g_timeout_add(UPDATE_PERIOD, timerfunc, panel);
+	//g_timeout_add(UPDATE_PERIOD, timerfunc, panel);
 	
 	eegpanel_run(panel, 0);
 
