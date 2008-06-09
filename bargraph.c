@@ -180,6 +180,7 @@ bargraph_draw_samples(const Bargraph* self)
 	const GdkColor* grid_color = &(PLOT_AREA(self)->grid_color);
 	const GdkColor* colors = PLOT_AREA(self)->colors;
 	const data_t* values = self->data + (self->current_pointer*self->num_channels);
+	data_t val;
 	nColors = PLOT_AREA(self)->nColors;
 	num_ticks = PLOT_AREA(self)->num_yticks;
 
@@ -203,6 +204,14 @@ bargraph_draw_samples(const Bargraph* self)
 	if (self->num_channels) {
 		halfwidth = (gint)(0.5f* self->bar_ratio * (gfloat)width / (gfloat)self->num_channels);
 		for (iChannel=0; iChannel<self->num_channels; iChannel++) {
+
+			// val to the limits
+			val = values[iChannel];
+			if (val > self->max)
+				val = self->max;
+			if (val < self->min)
+				val = self->min;
+				
 			// (positive y points to bottom in the window basis) 
 			jvalue = self->offset - (values[iChannel] * self->scale);
 			ivalue = chann_pos[iChannel];

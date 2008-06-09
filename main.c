@@ -1,125 +1,128 @@
-#include <gtk/gtk.h>
 #include <stdio.h>
-#include <math.h>
-#include <unistd.h>
 #include "eegpanel.h"
-#include "filter.h"
-#include <math.h>
+#include <stdlib.h>
+#include <pthread.h>
 
-#define NUM_CH 		64	
-#define NUM_EXG_CH 	8	
+#define EEGSET	AB
+#define NEEG	64
+#define EXGSET	STD
+#define NEXG	8
+#define NSAMPLES	32
 #define SAMPLING_RATE	2048
-#define UPDATE_PERIOD	30
-#define NUM_POINTS	((UPDATE_PERIOD*SAMPLING_RATE)/1000)
 
-float eeg_data[NUM_CH*NUM_POINTS], filtered_eeg_data[NUM_CH*NUM_POINTS];
-float exg_data[NUM_EXG_CH*NUM_POINTS], filtered_exg_data[NUM_EXG_CH*NUM_POINTS];
-uint32_t trigg[NUM_POINTS];
-static int addsamp = 0;
-dfilter* filt = NULL;
-dfilter* exg_filt = NULL;
+pthread_t thread_id = 0;
+volatile int run_eeg = 0;
 
+#define increase_timespec(timeout, delay)	do {			\
+	unsigned int nsec_duration = (delay) + (timeout).tv_nsec;	\
+	(timeout).tv_sec += nsec_duration/1000000000;			\
+	(timeout).tv_nsec = nsec_duration%1000000000;			\
+} while (0)
 
-static gboolean timerfunc(gpointer user_data)
+void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 {
-	EEGPanel* panel = user_data;
+	int i, j;
+	static uint32_t triggers;
 
-	static gfloat t=0;
-	static guint32 triggers=0;
-	static int isample = 0;
-	gint i, j;
-	for (i=0; i<NUM_POINTS; i++) {
-		for (j=0; j<NUM_CH; j++)
-			eeg_data[NUM_CH*i +j] = 200.0*cos(2.0*M_PI*t*(j+1));
-			//eeg_data[NUM_CH*i +j] = ((isample/SAMPLING_RATE)%2) ? 0 : 1;
-			//eeg_data[NUM_CH*i +j] = (isample%SAMPLING_RATE) ? 0 : 1;
-		for (j=0; j<NUM_EXG_CH; j++)
-			exg_data[NUM_EXG_CH*i +j] = cos(2.0*M_PI*t*(j+1));
-		trigg[i] = triggers;
-		t += 1.0 / (float)SAMPLING_RATE;
-		isample++;
+	for (i=0; i<nsamples; i++) {
+		for (j=0; j<NEEG; j++)
+			eeg[i*NEEG+j] = i;
+		for (j=0; j<NEXG; j++)
+			exg[i*NEXG+j] = i;
+		tri[i] = triggers;
 	}
+
 	triggers++;
-
-	/*
-	filter(filt, eeg_data, filtered_eeg_data, NUM_POINTS); 
-	filter(exg_filt, exg_data, filtered_exg_data, NUM_POINTS); 
-	eegpanel_add_samples(panel, filtered_eeg_data, filtered_exg_data, trigg, NUM_POINTS);
-	*/
-	eegpanel_add_samples(panel, eeg_data, exg_data, trigg, NUM_POINTS);
-
-	return TRUE;
 }
 
-int ProcessSelection(const ChannelSelection* selection, ChannelType type, void* user_data)
+#define UPDATE_DELAY	((NSAMPLES*1000)/SAMPLING_RATE)
+void* reading_thread(void* arg)
 {
-/*	int i;
-	int num_ch = selection->num_chann;
-	unsigned int* selected = selection->selection;
+	float *eeg, *exg;
+	uint32_t *tri;
+	int32_t *raweeg, *rawexg;
+	EEGPanel* panel = arg;
+	struct timespec curr, prev;
+	int interval;
 
-	addsamp = 0;
-	// check that the selected channels are consecutive
-	for (i=0; i<num_ch-1; i++) {
-		if (selected[i+1] != selected[i]+1)
-			return 0;
+	eeg = calloc(NEEG*NSAMPLES, sizeof(*eeg));
+	exg = calloc(NEXG*NSAMPLES, sizeof(*exg));
+	tri = calloc(NSAMPLES, sizeof(*tri));
+	raweeg = (int32_t*)eeg;
+	rawexg = (int32_t*)exg;
+	
+	clock_gettime(CLOCK_REALTIME, &prev);
+	while(run_eeg) {
+		clock_gettime(CLOCK_REALTIME, &curr);
+		interval = (curr.tv_sec - prev.tv_sec)*1000 + (curr.tv_nsec - prev.tv_nsec)/1000000;
+
+		if (interval > UPDATE_DELAY) {
+			set_signals(eeg, exg, tri, NSAMPLES);
+			eegpanel_add_samples(panel, eeg, exg, tri, NSAMPLES);
+			prev = curr;
+		}
 	}
-	if (num_ch != NUM_CH)
-		return 0;
-*/	
-	addsamp = 1;
-	return 1;
+
+	free(eeg);
+	free(exg);
+	free(tri);
+
+	return 0;
 }
+
+int Connect(EEGPanel* panel)
+{
+	eegpanel_define_input(panel, NEEG, NEXG, 16, SAMPLING_RATE);
+
+	run_eeg = 1;
+	pthread_create(&thread_id, NULL, reading_thread, panel);
+	
+	return 0;
+}
+
+int Disconnect(EEGPanel* panel)
+{
+	run_eeg = 0;
+	pthread_join(thread_id, NULL);
+	return 0;
+}
+
 
 int SystemConnection(int start, void* user_data)
 {
-	return 1;
+	EEGPanel* panel = user_data;
+	int retval;
+
+	if (start) {
+		retval = Connect(panel);
+	}
+	else {
+		retval = Disconnect(panel);
+	}
+
+	return (retval < 0) ? 0 : 1;
 }
+
 
 int main(int argc, char* argv[])
 {
-	float fc, fc2;
 	EEGPanel* panel;
-	//int i = 20;
-
-	/*//filt = create_filter_mean(120, NUM_CH);
-	fc = 20.0 / (float) SAMPLING_RATE;
-	fc2 = 30.0 / (float) SAMPLING_RATE;
-	//filt = create_fir_filter_bandpass(fc, fc2, 20, NUM_CH, HAMMING_WINDOW);
-	//filt = create_fir_filter_lowpass(fc, 100, NUM_CH, RECT_WINDOW);
-	exg_filt = create_fir_filter_lowpass(fc, 100, NUM_EXG_CH, RECT_WINDOW);
-	//filt = create_butterworth_filter(fc, 2, NUM_CH, 1);
-	//filt = create_adhoc_filter(NUM_CH);
-	//filt = create_integrate_filter(NUM_CH);
-	//filt = create_fir_filter_mean(2,NUM_CH);
-	exg_filt = create_chebychev_filter(fc, 4, NUM_EXG_CH, 1, 0.1);
-*/
-
-	g_thread_init(NULL);
-	gdk_threads_init();
-	gtk_init(&argc, &argv);
 	
-	
+	init_eegpanel_lib(&argc, &argv);
+
 	panel = eegpanel_create();
-	if (!panel)
+	if (!panel) {
+		printf("error at the creation of the panel");
 		return 0;
-
-	eegpanel_define_input(panel, NUM_CH, 8, 16, SAMPLING_RATE);
-	panel->process_selection = ProcessSelection;
+	}
+	
+	panel->user_data = panel;
 	panel->system_connection = SystemConnection;
 
-
 	eegpanel_show(panel, 1);
-	//g_timeout_add(UPDATE_PERIOD, timerfunc, panel);
-	
 	eegpanel_run(panel, 0);
 
-/*	while(i--) {
-		timerfunc(panel);
-		sleep(3);
-	}*/
-
 	eegpanel_destroy(panel);
-	destroy_filter(filt);
 
 	return 0;
 }
