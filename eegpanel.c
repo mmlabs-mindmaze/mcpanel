@@ -94,6 +94,7 @@ typedef struct _LinkWidgetName {
 
 typedef struct _FilterParam {
 	float fc;
+	float freq;
 	int state;
 } FilterParam;
 
@@ -209,6 +210,7 @@ void remove_common_avg_ref(float* data, unsigned int nchann, const float* fullse
 void add_samples(EEGPanelPrivateData* priv, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples);
 int RegisterCustomDefinition(void);
 gboolean check_redraw_scopes(gpointer user_data);
+void set_default_values(EEGPanelPrivateData* priv);
 
 ///////////////////////////////////////////////////
 //
@@ -426,24 +428,22 @@ void filter_button_changed_cb(GtkButton* button, gpointer user_data)
 	exg_high_state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(priv->widgets[EXG_HIGHPASS_CHECK]));
 
 
-	//printf("lock filter_butt_cb\n");
 	g_mutex_lock(priv->data_mutex);
 	fs = priv->sampling_rate / priv->decimation_factor;
 	memcpy(options, priv->filter_param, sizeof(options));
 	
 	// Set the cutoff frequencies of every filters
-	options[EEG_LOWPASS_FILTER].fc = eeg_low_fc / fs;
+	options[EEG_LOWPASS_FILTER].freq = eeg_low_fc;
 	options[EEG_LOWPASS_FILTER].state = eeg_low_state;
-	options[EEG_HIGHPASS_FILTER].fc = eeg_high_fc / fs;
+	options[EEG_HIGHPASS_FILTER].freq = eeg_high_fc;
 	options[EEG_HIGHPASS_FILTER].state = eeg_high_state;
-	options[EXG_LOWPASS_FILTER].fc = exg_low_fc / fs;
+	options[EXG_LOWPASS_FILTER].freq = exg_low_fc;
 	options[EXG_LOWPASS_FILTER].state = exg_low_state;
-	options[EXG_HIGHPASS_FILTER].fc = exg_high_fc / fs;
+	options[EXG_HIGHPASS_FILTER].freq = exg_high_fc;
 	options[EXG_HIGHPASS_FILTER].state = exg_high_state;
 	
 	set_all_filters(priv, options);
 	g_mutex_unlock(priv->data_mutex);
-	//printf("unlock filter_butt_cb\n");
 }
 
 
@@ -487,8 +487,9 @@ EEGPanel* eegpanel_create(void)
 		initialize_all_filters(priv);
 	
 		// Initialize the content of the widgets
+		set_default_values(priv);
 		initialize_widgets(panel, builder);
-		eegpanel_define_input(panel, 128, 8, 16, 2048);
+		eegpanel_define_input(panel, 0, 0, 16, 2048);
 		set_scopes_xticks(priv);
 
 		g_idle_add(check_redraw_scopes, priv);
@@ -585,7 +586,7 @@ int eegpanel_define_input(EEGPanel* panel, unsigned int num_eeg_channels,
 	priv->nlines_tri = num_tri_lines;
 	priv->sampling_rate = sampling_rate;
 	num_samples = (sampling_rate*priv->display_length)/priv->decimation_factor;
-	// 
+	 
 
 	// Add default channel labels if not available
 	priv->eeg_labels = add_default_labels(priv->eeg_labels, num_eeg_channels, "EEG");
@@ -735,6 +736,14 @@ int initialize_widgets(EEGPanel* panel, GtkBuilder* builder)
 	g_signal_connect_after(priv->widgets[TIME_WINDOW_COMBO], "changed", (GCallback)time_window_combo_changed_cb, (gpointer)ELEC_TYPE);
 
 	// filter buttons
+	g_object_set(priv->widgets[EEG_LOWPASS_CHECK], "active", priv->filter_param[EEG_LOWPASS_FILTER].state, NULL);
+	g_object_set(priv->widgets[EEG_LOWPASS_SPIN], "value", priv->filter_param[EEG_LOWPASS_FILTER].freq, NULL);
+	g_object_set(priv->widgets[EEG_HIGHPASS_CHECK], "active", priv->filter_param[EEG_HIGHPASS_FILTER].state, NULL);
+	g_object_set(priv->widgets[EEG_HIGHPASS_SPIN], "value", priv->filter_param[EEG_HIGHPASS_FILTER].freq, NULL);
+	g_object_set(priv->widgets[EXG_LOWPASS_CHECK], "active", priv->filter_param[EXG_LOWPASS_FILTER].state, NULL);
+	g_object_set(priv->widgets[EXG_LOWPASS_SPIN], "value", priv->filter_param[EXG_LOWPASS_FILTER].freq, NULL);
+	g_object_set(priv->widgets[EXG_HIGHPASS_CHECK], "active", priv->filter_param[EXG_HIGHPASS_FILTER].state, NULL);
+	g_object_set(priv->widgets[EXG_HIGHPASS_SPIN], "value", priv->filter_param[EXG_HIGHPASS_FILTER].freq, NULL);
 	g_signal_connect_after(priv->widgets[EEG_LOWPASS_CHECK], "toggled",(GCallback)filter_button_changed_cb, NULL);
 	g_signal_connect_after(priv->widgets[EEG_HIGHPASS_CHECK], "toggled",(GCallback)filter_button_changed_cb, NULL);
 	g_signal_connect_after(priv->widgets[EXG_LOWPASS_CHECK], "toggled",(GCallback)filter_button_changed_cb, NULL);
@@ -1156,13 +1165,16 @@ void set_bargraphs_yticks(EEGPanelPrivateData* priv, float max)
 
 void set_one_filter(EEGPanelPrivateData* priv, EnumFilter type, FilterParam* options, int nchann, int highpass)
 {
+	float fs = priv->sampling_rate;
 	dfilter* filt = priv->filt[type];
 	FilterParam* curr_param =  &(priv->filter_param[type]);
-	FilterParam* param = options ? options + type : curr_param;
+	FilterParam* param = options + type;
 
+	
 	if (param->state) {
-		if (!filt || (param->fc!=curr_param->fc) || (filt->num_chann != nchann)) {
+		if (!filt || (param->freq/fs!=curr_param->fc) || (filt->num_chann != nchann)) {
 			destroy_filter(filt);
+			param->fc = param->freq/fs;
 			filt = create_butterworth_filter(param->fc, 2, nchann, highpass);
 			priv->filter_param[type] = *param;
 		}
@@ -1181,16 +1193,18 @@ void set_all_filters(EEGPanelPrivateData* priv, FilterParam* options)
 	unsigned int num_exg = priv->num_exg_channels;
 	unsigned int dec_state = (priv->decimation_factor != 1) ? 1 : 0;
 
-	if (options == NULL)
+	if (options==NULL)
 		options = priv->filter_param;
+
+	options[EEG_DECIMATION_FILTER].state = dec_state;
+	options[EXG_DECIMATION_FILTER].state = dec_state;
+
 	// Set the filters
 	set_one_filter(priv, EEG_LOWPASS_FILTER, options, num_eeg, 0);
 	set_one_filter(priv, EEG_HIGHPASS_FILTER, options, num_eeg, 1);
 	set_one_filter(priv, EXG_LOWPASS_FILTER, options, num_exg, 0);
 	set_one_filter(priv, EXG_HIGHPASS_FILTER, options, num_exg, 1);
 
-	options[EEG_DECIMATION_FILTER].state = dec_state;
-	options[EXG_DECIMATION_FILTER].state = dec_state;
 	set_one_filter(priv, EEG_DECIMATION_FILTER, options, num_eeg, 0);
 	set_one_filter(priv, EXG_DECIMATION_FILTER, options, num_exg, 0);
 
@@ -1204,19 +1218,27 @@ void initialize_all_filters(EEGPanelPrivateData* priv)
 	FilterParam* options = priv->filter_param;
 	float fs = priv->sampling_rate;
 	int dec_state = (priv->decimation_factor!=1) ? 1 : 0;
-	float dec_fc = 0.4/priv->decimation_factor;
+	float dec_fc = 0.4*fs/priv->decimation_factor;
 	
 	
 	memset(options, 0, sizeof(options));
 
 	options[EEG_OFFSET_FILTER].state = 1;
-	options[EEG_OFFSET_FILTER].fc = 1.0/fs;
+	options[EEG_OFFSET_FILTER].freq = 1.0;
 	options[EXG_OFFSET_FILTER].state = 1;
-	options[EXG_OFFSET_FILTER].fc = 1.0/fs;
-	options[EEG_DECIMATION_FILTER].fc = dec_fc;
+	options[EXG_OFFSET_FILTER].freq = 1.0;
+	options[EEG_DECIMATION_FILTER].freq = dec_fc;
 	options[EEG_DECIMATION_FILTER].state = dec_state;
-	options[EXG_DECIMATION_FILTER].fc = dec_fc;
+	options[EXG_DECIMATION_FILTER].freq = dec_fc;
 	options[EXG_DECIMATION_FILTER].state = dec_state;
+	options[EEG_LOWPASS_FILTER].state = 0;
+	options[EEG_LOWPASS_FILTER].freq = 0.1;
+	options[EEG_HIGHPASS_FILTER].state = 0;
+	options[EEG_HIGHPASS_FILTER].freq = 0.4*fs;
+	options[EEG_LOWPASS_FILTER].state = 0;
+	options[EEG_LOWPASS_FILTER].freq = 0.1;
+	options[EEG_HIGHPASS_FILTER].state = 0;
+	options[EEG_HIGHPASS_FILTER].freq = 0.4*fs;
 }
 
 
@@ -1383,4 +1405,25 @@ void remove_electrode_ref(float* data, unsigned int nchann, const float* fullset
 		for (j=0; j<nchann; j++)
 			data[i*nchann+j] -= fullset[i*nchann_full+elec_ref];
 	}
+}
+
+
+void set_default_values(EEGPanelPrivateData* priv)
+{
+	GKeyFile* key_file;
+
+	key_file = g_key_file_new();
+	if (!g_key_file_load_from_file(key_file, "settings.ini", G_KEY_FILE_NONE, NULL)) {
+		g_key_file_free(key_file);
+		return;
+	}
+
+	priv->filter_param[EEG_LOWPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EEGLowpassState", NULL);
+	priv->filter_param[EEG_LOWPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EEGLowpassFreq", NULL);
+	priv->filter_param[EEG_HIGHPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EEGHighpassState", NULL);
+	priv->filter_param[EEG_HIGHPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EEGHighpassFreq", NULL);
+	priv->filter_param[EXG_LOWPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EXGLowpassState", NULL);
+	priv->filter_param[EXG_LOWPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EXGLowpassFreq", NULL);
+	priv->filter_param[EXG_HIGHPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EXGHighpassState", NULL);
+	priv->filter_param[EXG_HIGHPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EXGHighpassFreq", NULL);
 }

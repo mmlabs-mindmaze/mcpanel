@@ -1,7 +1,9 @@
 #include <gtk/gtk.h>
 #include "gtk-led.h"
 
-const char* led_image_filename[NUM_COLORS_LED] = {"led_gray.png", "led_red.png", "led_green.png", "led_blue.png"};
+#include <gdk-pixbuf/gdk-pixdata.h>
+#include "led-images.c"
+const GdkPixdata const* led_image_data[NUM_COLORS_LED] = {&pix_led_gray, &pix_led_red, &pix_led_green, &pix_led_blue};
 
 enum {
 	DUMMY_PROP,
@@ -142,7 +144,7 @@ static void gtk_led_class_init (GtkLedClass *klass)
 
 	// Load the state pixbuf
 	for (i=0; i<NUM_COLORS_LED; i++) {
-		pixbuf = gdk_pixbuf_new_from_file(led_image_filename[i], NULL);
+		pixbuf = gdk_pixbuf_from_pixdata(led_image_data[i], FALSE, NULL);
 		klass->icon_sets[i] = gtk_icon_set_new_from_pixbuf(pixbuf);
 		g_object_unref(pixbuf);
 	}

@@ -34,10 +34,17 @@ main: $(OBJ_FILES) main.o
 %.o : %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+led-images.c : led_gray.png led_blue.png led_red.png led_green.png
+	gdk-pixbuf-csource --raw --struct --build-list pix_led_gray led_gray.png pix_led_blue led_blue.png pix_led_red led_red.png pix_led_green led_green.png > $@
+
 depend :
 	@for file in $(SRC_FILES); do $(DEP) $(CFLAGS) $(INCS) $$file >> $(DEPEND_FILE); done
 
 clean :
-	@rm *.o
+	$(RM) *.o
+	$(RM) led-images.c
+	$(RM) libeegpanel.a
+	$(RM) main
 
+gtk-led.o: led-images.c
 -include $(DEPEND_FILE)

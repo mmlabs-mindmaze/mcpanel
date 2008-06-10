@@ -492,6 +492,7 @@
                                   <object class="BinaryScope" id="tri_scope">
                                     <property name="height-request">48</property>
                                     <property name="background">white</property>
+                                    <property name="channel-colors">blue;yellow;red;green;orange;brown;magenta;cyan</property>
                                   </object>
                                 </child>
                               </object>
@@ -509,6 +510,7 @@
                                 <child>
                                   <object class="Scope" id="eeg_scope">
                                     <property name="background">white</property>
+                                    <property name="channel-colors">blue;yellow;red;green;orange;brown;magenta;cyan</property>
                                   </object>
                                 </child>
                               </object>
