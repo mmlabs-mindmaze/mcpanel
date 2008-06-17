@@ -49,6 +49,7 @@ typedef enum {
 	STARTACQUISITION_BUTTON,
 	CONNECT_LED,
 	CMS_LED,
+	BATTERY_LED,
 	NATIVE_FREQ_LABEL,
 	DECIMATION_COMBO,
 	DISPLAYED_FREQ_LABEL,
@@ -98,6 +99,11 @@ typedef struct _FilterParam {
 	int state;
 } FilterParam;
 
+typedef struct _Indicators {
+	unsigned int cms_in_range	: 1;
+	unsigned int low_battery	: 1;
+} Indicators;
+
 const LinkWidgetName widget_name_table[] = {
 	{TOP_WINDOW, "topwindow", "GtkWindow"},
 	{EEG_SCOPE, "eeg_scope", "Scope"},
@@ -132,6 +138,7 @@ const LinkWidgetName widget_name_table[] = {
 	{EXG_TREEVIEW, "exg_treeview", "GtkTreeView"},
 	{CONNECT_LED, "connect_led", "GtkLed"},  
 	{CMS_LED, "cms_led", "GtkLed"},  
+	{BATTERY_LED, "battery_led", "GtkLed"},  
 	{STARTACQUISITION_BUTTON, "startacquisition_button", "GtkToggleButton"},  
 	{NATIVE_FREQ_LABEL, "native_freq_label", "GtkLabel"},
 	{DECIMATION_COMBO, "decimation_combo", "GtkComboBox"},
@@ -176,6 +183,7 @@ struct _EEGPanelPrivateData {
 
 	// data
 	unsigned int *selected_eeg, *selected_exg;
+	Indicators flags;
 	float *eeg, *exg;
 	float *eeg_offset, *exg_offset;
 	uint32_t *triggers;
@@ -642,6 +650,9 @@ gboolean check_redraw_scopes(gpointer user_data)
 		binary_scope_update_data(priv->tri_scope, curr_sample);
 		bargraph_update_data(priv->eeg_offset_bar1, 0);
 		bargraph_update_data(priv->eeg_offset_bar2, 0);
+
+		g_object_set(priv->widgets[CMS_LED], "state", (gboolean)(priv->flags.cms_in_range), NULL);
+		g_object_set(priv->widgets[BATTERY_LED], "state", (gboolean)(priv->flags.low_battery), NULL);
 
 		priv->last_drawn_sample = curr_sample;
 	}
@@ -1362,6 +1373,8 @@ void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, 
 		memcpy(curr_exg, buff1, n_samples*nchann*sizeof(*buff1));
 }
 
+#define CMS_IN_RANGE	0x10000000
+#define LOW_BATTERY	0x40000000
 void process_tri(EEGPanelPrivateData* priv, const uint32_t* tri, uint32_t* temp_buff, unsigned int n_samples)
 {
 	int i;
@@ -1370,11 +1383,17 @@ void process_tri(EEGPanelPrivateData* priv, const uint32_t* tri, uint32_t* temp_
 	buff1 = temp_buff;
 	curr_tri = priv->triggers + priv->current_sample;
 	buff2 = curr_tri;
- 
 
-	// Copy data
+	priv->flags.cms_in_range = 1;
+	priv->flags.low_battery = 0;
+
+	// Copy data and set the states of the system
 	for (i=0; i<n_samples; i++) {
 		buff2[i] = tri[i];
+		if ((CMS_IN_RANGE & tri[i]) == 0)
+			priv->flags.cms_in_range = 0;
+		if (LOW_BATTERY & tri[i])
+			priv->flags.low_battery = 1;
 	}
 }
 

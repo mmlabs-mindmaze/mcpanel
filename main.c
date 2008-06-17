@@ -23,6 +23,7 @@ void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 {
 	int i, j;
 	static uint32_t triggers;
+	static int isample = 0;
 
 	for (i=0; i<nsamples; i++) {
 		for (j=0; j<NEEG; j++)
@@ -30,6 +31,11 @@ void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 		for (j=0; j<NEXG; j++)
 			exg[i*NEXG+j] = i;
 		tri[i] = triggers;
+		if ((isample/2048) % 2)
+			tri[i] |= 0x10000000;
+		if (!((isample/2048) % 3))
+			tri[i] |= 0x40000000;
+		isample++;
 	}
 
 	triggers++;

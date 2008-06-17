@@ -879,18 +879,37 @@
                         <child>
                           <object class="GtkTable" id="table1">
                             <property name="visible">True</property>
-                            <property name="n_rows">2</property>
+                            <property name="n_rows">3</property>
                             <property name="n_columns">2</property>
                             <child>
                               <object class="GtkLed" id="cms_led">
+                                <property name="color-on">BLUE_LED</property>
                               </object>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="label9">
+                              <object class="GtkLabel" id="label8">
                                 <property name="visible">True</property>
-                                <property name="sensitive">False</property>
                                 <property name="xalign">0</property>
-                                <property name="label" translatable="yes">Connected</property>
+                                <property name="label" translatable="yes">CMS in range</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLed" id="battery_led">
+                              </object>
+                              <packing>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="battery_label">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Low battery</property>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -901,23 +920,26 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkLabel" id="label8">
+                              <object class="GtkLed" id="connect_led">
+                                <property name="color-on">BLUE_LED</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label9">
                                 <property name="visible">True</property>
-                                <property name="sensitive">False</property>
                                 <property name="xalign">0</property>
-                                <property name="label" translatable="yes">CMS in range</property>
+                                <property name="label" translatable="yes">Connected</property>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="right_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkLed" id="connect_led">
-                              </object>
-                              <packing>
-                                <property name="top_attach">1</property>
-                                <property name="bottom_attach">2</property>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="x_options">GTK_FILL</property>
                               </packing>
                             </child>
                           </object>
@@ -967,7 +989,7 @@
                         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                         <property name="xpad">3</property>
                         <property name="ypad">2</property>
-                        <property name="label" translatable="yes">Acquisition</property>
+                        <property name="label" translatable="yes">System</property>
                       </object>
                     </child>
                   </object>
