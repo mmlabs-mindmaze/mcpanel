@@ -149,6 +149,14 @@
         <col id="1">1.0</col>
       </row>
       <row>
+        <col id="0">2.5 uV</col>
+        <col id="1">2.5</col>
+      </row>
+      <row>
+        <col id="0">5 uV</col>
+        <col id="1">5.0</col>
+      </row>
+      <row>
         <col id="0">10 uV</col>
         <col id="1">10.0</col>
       </row>

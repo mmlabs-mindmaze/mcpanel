@@ -35,7 +35,7 @@ GType led_color_get_type(void)
 
 
 
-G_DEFINE_TYPE (GtkLed, gtk_led, GTK_TYPE_WIDGET);
+G_DEFINE_TYPE (GtkLed, gtk_led, GTK_TYPE_WIDGET)
 
 static void
 gtk_led_set_property (GObject *object, guint property_id,

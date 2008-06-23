@@ -282,6 +282,10 @@ void elecset_combo_changed_cb(GtkComboBox* combo, gpointer data)
 	GtkTreePath *path1, *path2;
 	EEGPanelPrivateData* priv = GET_PANEL_FROM(combo)->priv;
 
+	nmax = priv->nmax_eeg;
+	if (!nmax)
+		return;
+
 	tree_selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]));
 
 	selec = gtk_combo_box_get_active(combo);
@@ -290,7 +294,6 @@ void elecset_combo_changed_cb(GtkComboBox* combo, gpointer data)
 		gtk_tree_selection_select_all(tree_selection);
 	}
 	else {
-		nmax = priv->nmax_eeg;
 
 		first = 0;
 		last = selec*32 - 1;
@@ -646,6 +649,19 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 }
 
 
+void eegpanel_popup_message(EEGPanel* panel, const char* message)
+{
+	GtkWidget* dialog;
+	EEGPanelPrivateData* priv = panel->priv;
+
+	dialog = gtk_message_dialog_new(priv->window,
+					GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+					GTK_MESSAGE_INFO,
+					GTK_BUTTONS_CLOSE,
+					message);
+	gtk_dialog_run(GTK_DIALOG(dialog));
+	gtk_widget_destroy(dialog);
+}
 ///////////////////////////////////////////////////
 //
 //	Internal functions
@@ -1229,8 +1245,6 @@ void set_all_filters(EEGPanelPrivateData* priv, FilterParam* options)
 
 	options[EEG_DECIMATION_FILTER].state = dec_state;
 	options[EXG_DECIMATION_FILTER].state = dec_state;
-	options[EEG_OFFSET_FILTER].state = 0;
-	options[EXG_OFFSET_FILTER].state = 0;
 
 	// Set the filters
 	set_one_filter(priv, EEG_LOWPASS_FILTER, options, num_eeg, 0);

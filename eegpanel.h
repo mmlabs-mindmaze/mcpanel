@@ -44,6 +44,7 @@ void init_eegpanel_lib(int *argc, char ***argv);
 EEGPanel* eegpanel_create(void);
 void eegpanel_destroy(EEGPanel* panel);
 void eegpanel_show(EEGPanel* panel, int state);
+void eegpanel_popup_message(EEGPanel* panel, const char* message);
 void eegpanel_run(EEGPanel* panel, int nonblocking);
 void eegpanel_add_selected_samples(EEGPanel* panel, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples);
 void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples);

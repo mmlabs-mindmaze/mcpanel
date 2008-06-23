@@ -12,8 +12,8 @@ endif
 CC := $(CROSS)gcc
 DEP := $(CROSS)gcc -MM
 DEPEND_FILE := .depend
-CFLAGS := -std=c99 -O -g3 -Wall -W -pedantic $(CFLAGS)
-LFLAGS := -std=c99 -g3 -Wall $(LFLAGS) 
+CFLAGS := -std=c99 -march=native -O3 -g3 -Wall -W -pedantic $(CFLAGS)
+LFLAGS := -std=c99 -march=native -O3 -g3 -Wall $(LFLAGS) 
 #CFLAGS := -std=c99 -O3 -Wall -D G_DISABLE_CAST_CHECKS $(CFLAGS)
 #LFLAGS := -std=c99 -O3 -Wall $(LFLAGS)
 
