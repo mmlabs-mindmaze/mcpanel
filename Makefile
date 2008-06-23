@@ -4,7 +4,7 @@ ifeq ($(PLATFORM),win32)
 	LFLAGS=-L/home/nbourdau/packages/gtk-win32/lib -lgtk-win32-2.0 -lgdk-win32-2.0 -latk-1.0 -lgdk_pixbuf-2.0 -lpangowin32-1.0 -lgdi32 -lpangocairo-1.0 -lpango-1.0 -lcairo -lgobject-2.0 -lgmodule-2.0 -lgthread-2.0 -lglib-2.0 -lintl
 	CFLAGS=-mms-bitfields -I/home/nbourdau/packages/gtk-win32/include/gtk-2.0 -I/home/nbourdau/packages/gtk-win32/lib/gtk-2.0/include -I/home/nbourdau/packages/gtk-win32/include/atk-1.0 -I/home/nbourdau/packages/gtk-win32/include/cairo -I/home/nbourdau/packages/gtk-win32/include/pango-1.0 -I/home/nbourdau/packages/gtk-win32/include/glib-2.0 -I/home/nbourdau/packages/gtk-win32/lib/glib-2.0/include -I/home/nbourdau/packages/gtk-win32/include/libpng12
 else
-	CFLAGS=`pkg-config --cflags gtk+-2.0`
+	CFLAGS=-D_POSIX_C_SOURCE=199506L `pkg-config --cflags gtk+-2.0`
 	LFLAGS=`pkg-config --libs gtk+-2.0 gmodule-2.0 gthread-2.0`
 endif
 
@@ -12,24 +12,27 @@ endif
 CC := $(CROSS)gcc
 DEP := $(CROSS)gcc -MM
 DEPEND_FILE := .depend
-CFLAGS := -g3 -Wall $(CFLAGS)
-LFLAGS := -g3 -Wall $(LFLAGS)
-#CFLAGS := -O3 -Wall -D G_DISABLE_CAST_CHECKS $(CFLAGS)
-#LFLAGS := -O3 -Wall $(LFLAGS)
+CFLAGS := -std=c99 -O -g3 -Wall -W -pedantic $(CFLAGS)
+LFLAGS := -std=c99 -g3 -Wall $(LFLAGS) 
+#CFLAGS := -std=c99 -O3 -Wall -D G_DISABLE_CAST_CHECKS $(CFLAGS)
+#LFLAGS := -std=c99 -O3 -Wall $(LFLAGS)
 
 
 #SRC_FILES := $(wildcard *.c)
 SRC_FILES := bargraph.c  binary-scope.c  eegpanel.c  filter.c  gtk-led.c  labelized-plot.c  plot-area.c  scope.c
 OBJ_FILES := $(foreach f, $(SRC_FILES), $(patsubst %.c,%.o,$(f)))
 
-all: main libeegpanel.a
+all: main libeegpanel.a test_filter
 
 libeegpanel.a: $(OBJ_FILES)
 	$(AR) rvu $@ $(OBJ_FILES)
 	ranlib $@
 
 main: $(OBJ_FILES) main.o
-	$(CC) $(OBJ_FILES) main.o -o $@ $(LFLAGS)
+	$(CC) $(OBJ_FILES) main.o -lm -o $@ $(LFLAGS)
+
+test_filter: filter.o test_filter.o
+	$(CC) filter.o test_filter.o -lm -o $@ $(LFLAGS)
 
 %.o : %.c
 	$(CC) $(CFLAGS) -c -o $@ $<

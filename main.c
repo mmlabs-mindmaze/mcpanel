@@ -2,6 +2,8 @@
 #include "eegpanel.h"
 #include <stdlib.h>
 #include <pthread.h>
+#include <time.h>
+#include <gtk/gtk.h>
 
 #define EEGSET	AB
 #define NEEG	64
@@ -12,6 +14,9 @@
 
 pthread_t thread_id = 0;
 volatile int run_eeg = 0;
+
+float *geeg=NULL, *gexg=NULL;
+uint32_t *gtri = NULL;
 
 #define increase_timespec(timeout, delay)	do {			\
 	unsigned int nsec_duration = (delay) + (timeout).tv_nsec;	\
@@ -50,23 +55,29 @@ void* reading_thread(void* arg)
 	EEGPanel* panel = arg;
 	struct timespec curr, prev;
 	int interval;
+	unsigned int isample = 0;
 
 	eeg = calloc(NEEG*NSAMPLES, sizeof(*eeg));
 	exg = calloc(NEXG*NSAMPLES, sizeof(*exg));
 	tri = calloc(NSAMPLES, sizeof(*tri));
 	raweeg = (int32_t*)eeg;
 	rawexg = (int32_t*)exg;
-	
-	clock_gettime(CLOCK_REALTIME, &prev);
-	while(run_eeg) {
-		clock_gettime(CLOCK_REALTIME, &curr);
-		interval = (curr.tv_sec - prev.tv_sec)*1000 + (curr.tv_nsec - prev.tv_nsec)/1000000;
 
-		if (interval > UPDATE_DELAY) {
+	curr.tv_sec = 0;
+	curr.tv_nsec = UPDATE_DELAY*1000000;
+
+//	clock_gettime(CLOCK_REALTIME, &prev);
+	while(run_eeg) {
+//		clock_gettime(CLOCK_REALTIME, &curr);
+//		interval = (curr.tv_sec - prev.tv_sec)*1000 + (curr.tv_nsec - prev.tv_nsec)/1000000;
+
+//		if (interval > UPDATE_DELAY) {
+			nanosleep(&curr, NULL);
 			set_signals(eeg, exg, tri, NSAMPLES);
 			eegpanel_add_samples(panel, eeg, exg, tri, NSAMPLES);
-			prev = curr;
-		}
+			isample += NSAMPLES;
+//			prev = curr;
+//		}
 	}
 
 	free(eeg);
@@ -76,13 +87,32 @@ void* reading_thread(void* arg)
 	return 0;
 }
 
+
+gboolean iteration_func(gpointer data)
+{
+	EEGPanel *panel = data;
+
+	if (!run_eeg)
+		return FALSE;
+
+	set_signals(geeg, gexg, gtri, NSAMPLES);
+	eegpanel_add_samples(panel, geeg, gexg, gtri, NSAMPLES);
+	return TRUE;
+}
+
 int Connect(EEGPanel* panel)
 {
+	run_eeg = 1;
+
 	eegpanel_define_input(panel, NEEG, NEXG, 16, SAMPLING_RATE);
 
-	run_eeg = 1;
 	pthread_create(&thread_id, NULL, reading_thread, panel);
-	
+
+/*	geeg = calloc(NEEG*NSAMPLES, sizeof(*geeg));
+	gexg = calloc(NEXG*NSAMPLES, sizeof(*gexg));
+	gtri = calloc(NSAMPLES, sizeof(*gtri));
+	g_timeout_add(UPDATE_DELAY, iteration_func, panel);
+*/
 	return 0;
 }
 
@@ -90,6 +120,12 @@ int Disconnect(EEGPanel* panel)
 {
 	run_eeg = 0;
 	pthread_join(thread_id, NULL);
+
+	/*free(geeg);
+	free(gexg);
+	free(gtri);
+	*/
+
 	return 0;
 }
 

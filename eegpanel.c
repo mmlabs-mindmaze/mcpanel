@@ -11,6 +11,7 @@
 #include "filter.h"
 #include <memory.h>
 
+#define REFRESH_INTERVAL	30
 
 #define GET_PANEL_FROM(widget)  ((EEGPanel*)(g_object_get_data(G_OBJECT(gtk_widget_get_toplevel(GTK_WIDGET(widget))), "eeg_panel")))
 
@@ -165,6 +166,9 @@ struct _EEGPanelPrivateData {
 	GThread* main_loop_thread;
 	GMutex* data_mutex;
 
+	// states
+	gboolean connected;
+
 	//
 	unsigned int sampling_rate;
 	unsigned int decimation_factor;
@@ -231,11 +235,13 @@ extern gboolean startacquisition_button_toggled_cb(GtkButton* button, gpointer d
 	EEGPanelPrivateData* priv = panel->priv;
 	gboolean state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ? TRUE : FALSE;
 
-	if (panel->system_connection) {
-		if (panel->system_connection(state, panel->user_data)) {
-			gtk_led_set_state(GTK_LED(priv->widgets[CONNECT_LED]), state);
+	if (priv->connected != state)
+		if (panel->system_connection) {
+			if (panel->system_connection(state, panel->user_data)) {
+				priv->connected = state;
+				gtk_led_set_state(GTK_LED(priv->widgets[CONNECT_LED]), state);
+			}
 		}
-	}
 		
 
 	return TRUE;
@@ -259,6 +265,7 @@ void reftype_combo_changed_cb(GtkComboBox* combo, gpointer data)
 
 	priv->eeg_ref_type = type;
 }
+
 
 void refelec_combo_changed_cb(GtkComboBox* combo, gpointer data)
 {
@@ -422,6 +429,7 @@ void filter_button_changed_cb(GtkButton* button, gpointer user_data)
 	float fs;
 
 	EEGPanelPrivateData* priv = GET_PANEL_FROM(button)->priv;
+	EEGPanel* panel = GET_PANEL_FROM(button);
 
 	// Get the cut-off frequencies specified by the spin buttons
 	eeg_low_fc = gtk_spin_button_get_value(GTK_SPIN_BUTTON(priv->widgets[EEG_LOWPASS_SPIN]));
@@ -450,7 +458,10 @@ void filter_button_changed_cb(GtkButton* button, gpointer user_data)
 	options[EXG_HIGHPASS_FILTER].freq = exg_high_fc;
 	options[EXG_HIGHPASS_FILTER].state = exg_high_state;
 	
-	set_all_filters(priv, options);
+	
+	memcpy(priv->filter_param, options, sizeof(options));
+	set_data_input(panel, -1, NULL, NULL);
+//	set_all_filters(priv, options);
 	g_mutex_unlock(priv->data_mutex);
 }
 
@@ -500,7 +511,8 @@ EEGPanel* eegpanel_create(void)
 		eegpanel_define_input(panel, 0, 0, 16, 2048);
 		set_scopes_xticks(priv);
 
-		g_idle_add(check_redraw_scopes, priv);
+//		g_idle_add(check_redraw_scopes, priv);
+		g_timeout_add(REFRESH_INTERVAL, check_redraw_scopes, priv);
 	} else {
 		eegpanel_destroy(panel);
 		panel = NULL;
@@ -557,7 +569,12 @@ void eegpanel_destroy(EEGPanel* panel)
 {
 	EEGPanelPrivateData* priv = panel->priv;
 
-	g_idle_remove_by_data(priv);
+	// Stop refreshing the scopes content
+	g_source_remove_by_user_data(priv);
+
+	// Disconnect the system if applicable
+	if (priv->connected && panel->system_connection)
+		panel->system_connection(FALSE, panel->user_data);
 
 	// If called from another thread than the one of the main loop
 	// wait for the termination of the main loop
@@ -929,6 +946,7 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 		g_free(priv->eeg);
 		priv->eeg = eeg;
 	}
+	memset(priv->eeg, 0, num_eeg_points*sizeof(*eeg));
 	scope_set_data(priv->eeg_scope, priv->eeg, num_samples, num_eeg);
 
 	if (num_exg_points != priv->num_exg_channels*priv->num_samples) {
@@ -955,7 +973,6 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 			priv->num_eeg_channels = num_eeg;
 		}
 		memcpy(priv->selected_eeg, eeg_selec->selection, num_eeg*sizeof(*(priv->selected_eeg)));
-
 	}
 
 
@@ -1183,13 +1200,16 @@ void set_one_filter(EEGPanelPrivateData* priv, EnumFilter type, FilterParam* opt
 
 	
 	if (param->state) {
-		if (!filt || (param->freq/fs!=curr_param->fc) || (filt->num_chann != nchann)) {
+		if (!filt || ((param->freq/fs!=curr_param->fc) || (filt->num_chann != nchann))) {
 			destroy_filter(filt);
 			param->fc = param->freq/fs;
 			filt = create_butterworth_filter(param->fc, 2, nchann, highpass);
 			priv->filter_param[type] = *param;
 		}
-	} else {
+		else
+			reset_filter(filt);
+	}
+	else {
 		destroy_filter(filt);
 		filt = NULL;
 	}
@@ -1209,6 +1229,8 @@ void set_all_filters(EEGPanelPrivateData* priv, FilterParam* options)
 
 	options[EEG_DECIMATION_FILTER].state = dec_state;
 	options[EXG_DECIMATION_FILTER].state = dec_state;
+	options[EEG_OFFSET_FILTER].state = 0;
+	options[EXG_OFFSET_FILTER].state = 0;
 
 	// Set the filters
 	set_one_filter(priv, EEG_LOWPASS_FILTER, options, num_eeg, 0);
@@ -1345,13 +1367,13 @@ void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, 
 	SWAP_POINTERS(buff1, buff2);
 
 	
-	/*filt = priv->filt[EXG_OFFSET_FILTER];
+	filt = priv->filt[EXG_OFFSET_FILTER];
 	if (filt) {
 		filter(filt, buff1, buff2, n_samples);
 		// copy last samples
 		for (i=0; i<num_ch; i++)
 			priv->exg_offset[i] = buff2[nchann*(n_samples-1)+i];
-	}*/
+	}
 
 	// Process decimation
 	// TODO
@@ -1437,6 +1459,7 @@ void set_default_values(EEGPanelPrivateData* priv)
 		return;
 	}
 
+	// Set filter default parameters
 	priv->filter_param[EEG_LOWPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EEGLowpassState", NULL);
 	priv->filter_param[EEG_LOWPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EEGLowpassFreq", NULL);
 	priv->filter_param[EEG_HIGHPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EEGHighpassState", NULL);
@@ -1446,3 +1469,4 @@ void set_default_values(EEGPanelPrivateData* priv)
 	priv->filter_param[EXG_HIGHPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EXGHighpassState", NULL);
 	priv->filter_param[EXG_HIGHPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EXGHighpassFreq", NULL);
 }
+

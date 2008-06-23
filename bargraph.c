@@ -19,16 +19,18 @@ G_DEFINE_TYPE (Bargraph, bargraph, TYPE_PLOT_AREA)
 	(G_TYPE_INSTANCE_GET_PRIVATE ((o), TYPE_BARGRAPH, BargraphPrivate))
 
 
-
+/*
 static void
 bargraph_get_property (GObject *object, guint property_id,
                               GValue *value, GParamSpec *pspec)
 {
+	
 	switch (property_id) {
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
 }
+*/
 
 static void
 bargraph_set_property (GObject *object, guint property_id,
@@ -75,7 +77,7 @@ bargraph_class_init (BargraphClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	object_class->get_property = bargraph_get_property;
+	//object_class->get_property = bargraph_get_property;
 	object_class->set_property = bargraph_set_property;
 	object_class->finalize = bargraph_finalize;
 

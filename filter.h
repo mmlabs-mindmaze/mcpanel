@@ -11,15 +11,17 @@ typedef enum {
 typedef struct _dfilter
 {
 	unsigned int num_chann;
+	unsigned int curr_sample;
 	unsigned int a_len;
-	const float* a;
+	const double* a;
 	unsigned int b_len;
-	const float* b;
+	const double* b;
 	float* xoff;
 	float* yoff;
 } dfilter;
 
-void filter(const dfilter* filt, const float* x, float* y, int num_samples);
+void filter(dfilter* filt, const float* x, float* y, int num_samples);
+void reset_filter(dfilter* filt);
 dfilter* create_fir_filter_mean(unsigned int nsamples, unsigned int nchann);
 dfilter* create_fir_filter_lowpass(float fc, unsigned int half_length, unsigned int nchann, KernelWindow window);
 dfilter* create_fir_filter_highpass(float fc, unsigned int half_length, unsigned int nchann, KernelWindow window);
