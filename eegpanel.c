@@ -1462,6 +1462,37 @@ void remove_electrode_ref(float* data, unsigned int nchann, const float* fullset
 	}
 }
 
+void get_default_channel_labels(GKeyFile* key_file, char*** labels, const char* group_name, const char* prefix)
+{
+	char** keys;
+	unsigned int max_index=0, i=0, index;
+
+	// Get the max index
+	keys = g_key_file_get_keys(key_file, group_name, NULL, NULL);
+
+	if (!keys)
+		return;
+
+	while (keys[i]) {
+		if ((sscanf(keys[i],"channel%u",&index) == 1) && (index>max_index))
+			max_index = index;
+		i++;
+	}
+
+	*labels = add_default_labels(*labels, max_index, prefix);
+
+	// Get all the names
+	i = 0;
+	while (keys[i]) {
+		if (sscanf(keys[i],"channel%u",&index) == 1) {
+			index--;	// starting index is 1
+			g_free((*labels)[index]);
+			(*labels)[index] = g_key_file_get_string(key_file, group_name, keys[i], NULL);
+		}
+		i++;
+	}
+	g_strfreev(keys);
+}
 
 void set_default_values(EEGPanelPrivateData* priv)
 {
@@ -1482,5 +1513,9 @@ void set_default_values(EEGPanelPrivateData* priv)
 	priv->filter_param[EXG_LOWPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EXGLowpassFreq", NULL);
 	priv->filter_param[EXG_HIGHPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EXGHighpassState", NULL);
 	priv->filter_param[EXG_HIGHPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EXGHighpassFreq", NULL);
+
+	// Get Channels name
+	get_default_channel_labels(key_file, &(priv->eeg_labels), "eeg_channels", "EEG");
+	get_default_channel_labels(key_file, &(priv->exg_labels), "exg_channels", "EEG");
 }
 
