@@ -29,7 +29,7 @@ typedef struct {
 
 	guint num_channels;
 	guint num_ticks;
-	gint* ticks;
+	guint* ticks;
 	gint* offsets;
 	guint current_pointer;
 	guint num_points;

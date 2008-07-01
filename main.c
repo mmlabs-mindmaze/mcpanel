@@ -37,9 +37,9 @@ void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 			exg[i*NEXG+j] = i;
 		tri[i] = triggers;
 		if ((isample/2048) % 2)
-			tri[i] |= 0x10000000;
+			tri[i] |= 0x100000;
 		if (!((isample/2048) % 3))
-			tri[i] |= 0x40000000;
+			tri[i] |= 0x400000;
 		isample++;
 	}
 
@@ -98,6 +98,16 @@ gboolean iteration_func(gpointer data)
 	set_signals(geeg, gexg, gtri, NSAMPLES);
 	eegpanel_add_samples(panel, geeg, gexg, gtri, NSAMPLES);
 	return TRUE;
+}
+
+int SetupRecording(const ChannelSelection* eeg_sel, const ChannelSelection* exg_sel, void* user_data)
+{
+	EEGPanel* panel = user_data;
+	char* filename;
+
+	if (filename = eegpanel_open_filename_dialog(panel, "*.bdf", "BDF files (*.bdf)"))
+		printf("%s\n", filename);
+	return 1;
 }
 
 int Connect(EEGPanel* panel)
@@ -160,6 +170,8 @@ int main(int argc, char* argv[])
 	
 	panel->user_data = panel;
 	panel->system_connection = SystemConnection;
+	panel->setup_recording = SetupRecording;
+typedef int (*SetupRecordingFunc)(const ChannelSelection* eeg_sel, const ChannelSelection* exg_sel, void* user_data);
 
 	eegpanel_show(panel, 1);
 	eegpanel_run(panel, 0);

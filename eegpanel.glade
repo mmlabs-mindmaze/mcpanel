@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Tue Jun 17 09:38:13 2008 -->
+<!--Generated with glade3 3.4.5 on Fri Jun 27 15:34:03 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="topwindow">
     <signal name="destroy" handler="gtk_main_quit"/>
@@ -258,24 +258,14 @@ Sets A-D</property>
                             <property name="n_rows">2</property>
                             <property name="n_columns">2</property>
                             <child>
-                              <widget class="GtkDrawingArea" id="eeg_scope">
+                              <widget class="GtkLabel" id="label5">
                                 <property name="visible">True</property>
+                                <property name="label" translatable="yes">EEG Channels</property>
+                                <property name="justify">GTK_JUSTIFY_CENTER</property>
+                                <property name="angle">90</property>
                               </widget>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="right_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <widget class="GtkDrawingArea" id="tri_scope">
-                                <property name="height_request">64</property>
-                                <property name="visible">True</property>
-                              </widget>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="right_attach">2</property>
-                                <property name="top_attach">1</property>
-                                <property name="bottom_attach">2</property>
+                                <property name="x_options">GTK_FILL</property>
                                 <property name="y_options">GTK_FILL</property>
                               </packing>
                             </child>
@@ -294,15 +284,25 @@ Sets A-D</property>
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkLabel" id="label5">
+                              <widget class="GtkDrawingArea" id="tri_scope">
+                                <property name="height_request">64</property>
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">EEG Channels</property>
-                                <property name="justify">GTK_JUSTIFY_CENTER</property>
-                                <property name="angle">90</property>
                               </widget>
                               <packing>
-                                <property name="x_options">GTK_FILL</property>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
                                 <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkDrawingArea" id="eeg_scope">
+                                <property name="visible">True</property>
+                              </widget>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
                               </packing>
                             </child>
                           </widget>
@@ -663,25 +663,33 @@ Sets A-D</property>
                             <property name="n_rows">3</property>
                             <property name="n_columns">2</property>
                             <child>
-                              <widget class="GtkLabel" id="battery_led">
+                              <widget class="GtkLabel" id="connect_led">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">led2</property>
+                                <property name="label" translatable="yes">led3</property>
                               </widget>
                               <packing>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="label22">
+                                <property name="visible">True</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Low battery</property>
+                              </widget>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
                                 <property name="top_attach">1</property>
                                 <property name="bottom_attach">2</property>
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkLabel" id="label8">
+                              <widget class="GtkLabel" id="cms_led">
                                 <property name="visible">True</property>
-                                <property name="xalign">0</property>
-                                <property name="label" translatable="yes">CMS in range</property>
+                                <property name="label" translatable="yes">led1</property>
                               </widget>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="right_attach">2</property>
-                              </packing>
                             </child>
                             <child>
                               <widget class="GtkLabel" id="label9">
@@ -698,32 +706,24 @@ Sets A-D</property>
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkLabel" id="cms_led">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">led1</property>
-                              </widget>
-                            </child>
-                            <child>
-                              <widget class="GtkLabel" id="label22">
+                              <widget class="GtkLabel" id="label8">
                                 <property name="visible">True</property>
                                 <property name="xalign">0</property>
-                                <property name="label" translatable="yes">Low battery</property>
+                                <property name="label" translatable="yes">CMS in range</property>
                               </widget>
                               <packing>
                                 <property name="left_attach">1</property>
                                 <property name="right_attach">2</property>
-                                <property name="top_attach">1</property>
-                                <property name="bottom_attach">2</property>
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkLabel" id="connect_led">
+                              <widget class="GtkLabel" id="battery_led">
                                 <property name="visible">True</property>
-                                <property name="label" translatable="yes">led3</property>
+                                <property name="label" translatable="yes">led2</property>
                               </widget>
                               <packing>
-                                <property name="top_attach">2</property>
-                                <property name="bottom_attach">3</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
                               </packing>
                             </child>
                           </widget>
@@ -736,7 +736,6 @@ Sets A-D</property>
                             <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                             <property name="label" translatable="yes">Connect</property>
                             <property name="response_id">0</property>
-                            <signal name="toggled" handler="startacquisition_button_toggled_cb"/>
                           </widget>
                           <packing>
                             <property name="position">1</property>

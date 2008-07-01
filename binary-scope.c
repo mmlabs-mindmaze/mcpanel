@@ -12,7 +12,7 @@ G_DEFINE_TYPE (BinaryScope, binary_scope, TYPE_PLOT_AREA)
 	(G_TYPE_INSTANCE_GET_PRIVATE ((o), TYPE_BINARY_SCOPE, BinaryScopePrivate))
 
 
-
+/*
 static void
 binary_scope_get_property (GObject *object, guint property_id,
                               GValue *value, GParamSpec *pspec)
@@ -32,6 +32,7 @@ binary_scope_set_property (GObject *object, guint property_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
 }
+*/
 
 static void
 binary_scope_finalize (GObject *object)
@@ -54,8 +55,8 @@ binary_scope_class_init (BinaryScopeClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	object_class->get_property = binary_scope_get_property;
-	object_class->set_property = binary_scope_set_property;
+/*	object_class->get_property = binary_scope_get_property;
+	object_class->set_property = binary_scope_set_property;*/
 	object_class->finalize = binary_scope_finalize;
 }
 
@@ -91,6 +92,9 @@ binary_scope_configure_event_callback (BinaryScope *self,
                                 GdkEventConfigure *event,
                                 gpointer data)
 {
+	(void)event;
+	(void)data;
+
 	binary_scope_calculate_drawparameters (self);
 	return TRUE;
 }
@@ -101,8 +105,10 @@ binary_scope_expose_event_callback (BinaryScope *self,
                              GdkEventExpose *event,
                              gpointer data)
 {
-	unsigned int first, last, xmin, xmax, num_points;
+	unsigned int first, last, num_points;
+	int xmin, xmax;
 	gint* xcoords = self->xcoords;
+	(void)data;
 	
 	num_points = self->num_points;
 	xmin = event->area.x;

@@ -152,6 +152,8 @@ bargraph_configure_event_callback (Bargraph *self,
                                 GdkEventConfigure *event,
                                 gpointer data)
 {
+	(void)data;
+	(void)event;
 	bargraph_calculate_drawparameters (self);
 	return TRUE;
 }
@@ -162,6 +164,8 @@ bargraph_expose_event_callback (Bargraph *self,
                              GdkEventExpose *event,
                              gpointer data)
 {
+	(void)data;
+	(void)event;
 	/* Redraw the region */
 	bargraph_draw_samples(self);
 
@@ -173,8 +177,8 @@ bargraph_expose_event_callback (Bargraph *self,
 static void
 bargraph_draw_samples(const Bargraph* self)
 {
-	guint iChannel, iColor, width, height, nColors, num_ticks;
-	gint ivalue, i, jvalue, halfwidth, Yorg, rectH;
+	guint i, iChannel, iColor, width, height, nColors, num_ticks;
+	gint ivalue, jvalue, halfwidth, Yorg, rectH;
 	GdkGC* plotgc = PLOT_AREA(self)->plotgc;
 	GdkWindow* window = GTK_WIDGET(self)->window;
 	const gint* ticks_pos = PLOT_AREA(self)->yticks;

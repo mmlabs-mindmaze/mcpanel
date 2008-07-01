@@ -10,6 +10,7 @@
 #include "gtk-led.h"
 #include "filter.h"
 #include <memory.h>
+#include <stdlib.h>
 
 #define REFRESH_INTERVAL	30
 
@@ -166,6 +167,12 @@ struct _EEGPanelPrivateData {
 	GThread* main_loop_thread;
 	GMutex* data_mutex;
 
+	// modal dialog stuff
+	GMutex* dialog_mutex;
+	GMutex* dlg_completion_mutex;
+	GtkDialog* dialog;
+	gint dlg_retval;
+
 	// states
 	gboolean connected;
 
@@ -202,6 +209,7 @@ struct _EEGPanelPrivateData {
 gpointer loop_thread(gpointer user_data);
 int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec, ChannelSelection* exg_selec);
 int fill_selec_from_treeselec(ChannelSelection* selection, GtkTreeSelection* tree_sel, char** labels);
+void clean_selec(ChannelSelection* selection);
 int poll_widgets(EEGPanel* panel, GtkBuilder* builder);
 int initialize_widgets(EEGPanel* panel, GtkBuilder* builder);
 GtkListStore* initialize_list_treeview(GtkTreeView* treeview, const gchar* attr_name);
@@ -223,17 +231,71 @@ void add_samples(EEGPanelPrivateData* priv, const float* eeg, const float* exg, 
 int RegisterCustomDefinition(void);
 gboolean check_redraw_scopes(gpointer user_data);
 void set_default_values(EEGPanelPrivateData* priv);
+gint run_model_dialog(EEGPanelPrivateData* priv, GtkDialog* dialog);
 
 ///////////////////////////////////////////////////
 //
 //	Signal handlers
 //
 ///////////////////////////////////////////////////
-extern gboolean startacquisition_button_toggled_cb(GtkButton* button, gpointer data)
+gboolean startacquisition_button_toggled_cb(GtkButton* button, gpointer data)
 {
 	EEGPanel* panel = GET_PANEL_FROM(button);
 	EEGPanelPrivateData* priv = panel->priv;
 	gboolean state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ? TRUE : FALSE;
+
+	(void)data;
+
+	if (priv->connected != state)
+		if (panel->system_connection) {
+			if (panel->system_connection(state, panel->user_data)) {
+				priv->connected = state;
+				gtk_led_set_state(GTK_LED(priv->widgets[CONNECT_LED]), state);
+			}
+		}
+	
+
+	return TRUE;
+}
+
+
+gboolean start_recording_button_toggled_cb(GtkButton* button, gpointer data)
+{
+	ChannelSelection eeg_sel, exg_sel;
+	GtkTreeSelection* selection;
+	EEGPanel* panel = GET_PANEL_FROM(button);
+	EEGPanelPrivateData* priv = panel->priv;
+
+	(void)data;
+
+	// Prepare selections
+	selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]));
+	fill_selec_from_treeselec(&eeg_sel, selection, priv->eeg_labels);
+	selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(priv->widgets[EXG_TREEVIEW]));
+	fill_selec_from_treeselec(&exg_sel, selection, priv->exg_labels);
+
+	// setup recording
+	if (panel->setup_recording) {
+		if (panel->setup_recording(&eeg_sel, &exg_sel, panel->user_data)) {
+		}
+	}
+
+	g_free(eeg_sel.selection);
+	g_free(eeg_sel.labels);
+	g_free(exg_sel.selection);
+	g_free(exg_sel.labels);
+
+	return TRUE;
+}
+
+
+gboolean pause_recording_button_toggled_cb(GtkButton* button, gpointer data)
+{
+	EEGPanel* panel = GET_PANEL_FROM(button);
+	EEGPanelPrivateData* priv = panel->priv;
+	gboolean state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ? TRUE : FALSE;
+
+	(void)data;
 
 	if (priv->connected != state)
 		if (panel->system_connection) {
@@ -250,12 +312,15 @@ extern gboolean startacquisition_button_toggled_cb(GtkButton* button, gpointer d
 void reftype_combo_changed_cb(GtkComboBox* combo, gpointer data)
 {
 	GtkTreeIter iter;
-	GValue value = {0};
+	GValue value;
 	GtkTreeModel* model;
 	RefType type;
 	EEGPanelPrivateData* priv = GET_PANEL_FROM(combo)->priv;
+
+	(void)data;
 	
 	// Get the value set
+	memset(&value, 0, sizeof(value));
 	model = gtk_combo_box_get_model(combo);
 	gtk_combo_box_get_active_iter(combo, &iter);
 	gtk_tree_model_get_value(model, &iter, 1, &value);
@@ -270,17 +335,18 @@ void reftype_combo_changed_cb(GtkComboBox* combo, gpointer data)
 void refelec_combo_changed_cb(GtkComboBox* combo, gpointer data)
 {
 	EEGPanelPrivateData* priv = GET_PANEL_FROM(combo)->priv;
+	(void)data;
 
 	priv->eeg_ref_elec = gtk_combo_box_get_active(combo);
 }
 
 void elecset_combo_changed_cb(GtkComboBox* combo, gpointer data)
 {
-	unsigned int selec, nmax;
-	int first, last;
+	int selec, nmax, first, last;
 	GtkTreeSelection* tree_selection;
 	GtkTreePath *path1, *path2;
 	EEGPanelPrivateData* priv = GET_PANEL_FROM(combo)->priv;
+	(void)data;
 
 	nmax = priv->nmax_eeg;
 	if (!nmax)
@@ -290,11 +356,9 @@ void elecset_combo_changed_cb(GtkComboBox* combo, gpointer data)
 
 	selec = gtk_combo_box_get_active(combo);
 
-	if (selec==0) {
+	if (selec==0) 
 		gtk_tree_selection_select_all(tree_selection);
-	}
 	else {
-
 		first = 0;
 		last = selec*32 - 1;
 		first = (first < nmax) ? first : nmax-1;
@@ -340,12 +404,14 @@ void decimation_combo_changed_cb(GtkComboBox* combo, gpointer data)
 {
 	char tempstr[32];
 	GtkTreeIter iter;
-	GValue value = {0};
+	GValue value;
 	GtkTreeModel* model;
 	EEGPanel* panel = GET_PANEL_FROM(combo);
 	EEGPanelPrivateData* priv = panel->priv;
+	(void)data;
 
 	// Get the value set
+	memset(&value, 0, sizeof(value));
 	model = gtk_combo_box_get_model(combo);
 	gtk_combo_box_get_active_iter(combo, &iter);
 	gtk_tree_model_get_value(model, &iter, 1, &value);
@@ -368,13 +434,13 @@ void scale_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 {
 	GtkTreeModel* model;
 	GtkTreeIter iter;
-	GValue value = {0};
+	GValue value;
 	double scale;
 	ScopeType type = (ChannelType)user_data;
 	EEGPanelPrivateData* priv = GET_PANEL_FROM(combo)->priv;
 	
-	
 	// Get the value set
+	memset(&value, 0, sizeof(value));
 	model = gtk_combo_box_get_model(combo);
 	gtk_combo_box_get_active_iter(combo, &iter);
 	gtk_tree_model_get_value(model, &iter, 1, &value);
@@ -401,15 +467,16 @@ void time_window_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 {
 	GtkTreeModel* model;
 	GtkTreeIter iter;
-	GValue value = {0};
+	GValue value;
 	unsigned int time_length, num_samples;
 	EEGPanel* panel = GET_PANEL_FROM(combo);
 	EEGPanelPrivateData* priv = panel->priv;
+	(void)user_data;
 
-	//printf("lock time_cb\n");
 	g_mutex_lock(priv->data_mutex);
 	
 	// Get the value set
+	memset(&value, 0, sizeof(value));
 	model = gtk_combo_box_get_model(combo);
 	gtk_combo_box_get_active_iter(combo, &iter);
 	gtk_tree_model_get_value(model, &iter, 1, &value);
@@ -421,7 +488,6 @@ void time_window_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 	set_scopes_xticks(priv);
 
 	g_mutex_unlock(priv->data_mutex);
-	//printf("unlock time_cb\n");
 }
 
 void filter_button_changed_cb(GtkButton* button, gpointer user_data)
@@ -430,6 +496,7 @@ void filter_button_changed_cb(GtkButton* button, gpointer user_data)
 	float eeg_low_fc, eeg_high_fc, exg_low_fc, exg_high_fc;
 	int eeg_low_state, eeg_high_state, exg_low_state, exg_high_state;
 	float fs;
+	(void)user_data;
 
 	EEGPanelPrivateData* priv = GET_PANEL_FROM(button)->priv;
 	EEGPanel* panel = GET_PANEL_FROM(button);
@@ -469,6 +536,42 @@ void filter_button_changed_cb(GtkButton* button, gpointer user_data)
 }
 
 
+gboolean check_redraw_scopes(gpointer user_data)
+{
+	EEGPanelPrivateData* priv = user_data;
+	unsigned int curr_sample, last_sample;
+
+	// Redraw all the scopes
+	g_mutex_lock(priv->data_mutex);
+
+	curr_sample = priv->current_sample;
+	last_sample = priv->last_drawn_sample;
+
+	if (curr_sample != last_sample) {
+		scope_update_data(priv->eeg_scope, curr_sample);
+		scope_update_data(priv->exg_scope, curr_sample);
+		binary_scope_update_data(priv->tri_scope, curr_sample);
+		bargraph_update_data(priv->eeg_offset_bar1, 0);
+		bargraph_update_data(priv->eeg_offset_bar2, 0);
+
+		g_object_set(priv->widgets[CMS_LED], "state", (gboolean)(priv->flags.cms_in_range), NULL);
+		g_object_set(priv->widgets[BATTERY_LED], "state", (gboolean)(priv->flags.low_battery), NULL);
+
+		priv->last_drawn_sample = curr_sample;
+	}
+
+	g_mutex_unlock(priv->data_mutex);
+
+	// Run modal dialog
+	if (priv->dialog) {
+		priv->dlg_retval = gtk_dialog_run(priv->dialog);
+		g_mutex_unlock(priv->dlg_completion_mutex);
+	}
+
+	return TRUE;
+}
+
+
 ///////////////////////////////////////////////////
 //
 //	API functions
@@ -495,6 +598,9 @@ EEGPanel* eegpanel_create(void)
 	priv = g_malloc0(sizeof(*priv));
 	panel->priv = priv;
 	priv->data_mutex = g_mutex_new();
+	priv->dialog_mutex = g_mutex_new();
+	priv->dlg_completion_mutex = g_mutex_new();
+	g_mutex_lock(priv->dlg_completion_mutex);
 
 	// Create the panel widgets according to the ui definition files
 	builder = gtk_builder_new();
@@ -584,10 +690,15 @@ void eegpanel_destroy(EEGPanel* panel)
 	if ((priv->main_loop_thread) && (priv->main_loop_thread != g_thread_self()))
 		g_thread_join(priv->main_loop_thread);
 
+	g_mutex_free(priv->dialog_mutex);
+	g_mutex_unlock(priv->dlg_completion_mutex);
+	g_mutex_free(priv->dlg_completion_mutex);
+
 	g_mutex_free(priv->data_mutex);
 	g_strfreev(priv->eeg_labels);
 	g_strfreev(priv->exg_labels);
 	g_strfreev(priv->bipole_labels);
+
 	
 	g_free(priv->eeg);
 	g_free(priv->exg);
@@ -662,42 +773,55 @@ void eegpanel_popup_message(EEGPanel* panel, const char* message)
 	gtk_dialog_run(GTK_DIALOG(dialog));
 	gtk_widget_destroy(dialog);
 }
+
+char* eegpanel_open_filename_dialog(EEGPanel* panel, const char* filter, const char* filtername)
+{
+	GtkWidget* dialog;
+	char* filename = NULL;
+	GtkFileFilter* ffilter;
+	EEGPanelPrivateData* priv = panel->priv;
+
+	dialog = gtk_file_chooser_dialog_new("Choose a filename",
+					     priv->window,
+					     GTK_FILE_CHOOSER_ACTION_SAVE,
+					     GTK_STOCK_OK,GTK_RESPONSE_ACCEPT,
+					     GTK_STOCK_CANCEL,GTK_RESPONSE_CANCEL,
+					     NULL);
+	if (filter && filtername) {
+		ffilter = gtk_file_filter_new();
+		gtk_file_filter_add_pattern(ffilter, filter);
+		gtk_file_filter_set_name(ffilter, filtername);
+		gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), ffilter);
+	}
+	ffilter = gtk_file_filter_new();
+	gtk_file_filter_add_pattern(ffilter, "*");
+	gtk_file_filter_set_name(ffilter, "any files");
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), ffilter);
+
+
+	if (gtk_dialog_run(GTK_DIALOG(dialog))==GTK_RESPONSE_ACCEPT) {
+		gchar* retfile = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+		if (retfile) {
+			filename = malloc(strlen(retfile));
+			strcpy(filename, retfile);
+			g_free(retfile);
+		}
+	}
+	gtk_widget_destroy(dialog);
+
+	return filename;
+}
 ///////////////////////////////////////////////////
 //
 //	Internal functions
 //
 ///////////////////////////////////////////////////
-gboolean check_redraw_scopes(gpointer user_data)
-{
-	EEGPanelPrivateData* priv = user_data;
-	unsigned int curr_sample, last_sample;
-
-	g_mutex_lock(priv->data_mutex);
-
-	curr_sample = priv->current_sample;
-	last_sample = priv->last_drawn_sample;
-
-	if (curr_sample != last_sample) {
-		scope_update_data(priv->eeg_scope, curr_sample);
-		scope_update_data(priv->exg_scope, curr_sample);
-		binary_scope_update_data(priv->tri_scope, curr_sample);
-		bargraph_update_data(priv->eeg_offset_bar1, 0);
-		bargraph_update_data(priv->eeg_offset_bar2, 0);
-
-		g_object_set(priv->widgets[CMS_LED], "state", (gboolean)(priv->flags.cms_in_range), NULL);
-		g_object_set(priv->widgets[BATTERY_LED], "state", (gboolean)(priv->flags.low_battery), NULL);
-
-		priv->last_drawn_sample = curr_sample;
-	}
-
-	g_mutex_unlock(priv->data_mutex);
-
-	return TRUE;
-}
 
 
 gpointer loop_thread(gpointer user_data)
 {
+	(void)user_data;
+
 	gtk_main();
 	return 0;
 }
@@ -720,7 +844,7 @@ int RegisterCustomDefinition(void)
 
 int poll_widgets(EEGPanel* panel, GtkBuilder* builder)
 {
-	int i;
+	unsigned int i;
 	EEGPanelPrivateData* priv = panel->priv;
 
 	// Get the list of mandatory widgets and check their type;
@@ -755,7 +879,12 @@ int initialize_widgets(EEGPanel* panel, GtkBuilder* builder)
 {
 	GtkTreeView* treeview;
 	EEGPanelPrivateData* priv = panel->priv;
+	(void)builder;
 	
+	g_signal_connect(priv->widgets[STARTACQUISITION_BUTTON], "toggled", (GCallback)startacquisition_button_toggled_cb, NULL);
+	g_signal_connect(priv->widgets[START_RECORDING_BUTTON], "clicked", (GCallback)start_recording_button_toggled_cb, NULL);
+	g_signal_connect(priv->widgets[PAUSE_RECORDING_BUTTON], "toggled", (GCallback)pause_recording_button_toggled_cb, NULL);
+
 	treeview = GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]);
 	initialize_list_treeview(treeview, "channels");
 	g_signal_connect_after(gtk_tree_view_get_selection(treeview), "changed", (GCallback)channel_selection_changed_cb, (gpointer)EEG);
@@ -847,7 +976,7 @@ void initialize_combo(GtkComboBox* combo)
 void fill_treeview(GtkTreeView* treeview, unsigned int num_labels, const char** labels)
 {
 	GtkListStore* list;
-	int i = 0;
+	unsigned int i = 0;
 	GtkTreeIter iter;
 
 	list = GTK_LIST_STORE(gtk_tree_view_get_model(treeview));
@@ -947,7 +1076,7 @@ int set_data_input(EEGPanel* panel, int num_samples, ChannelSelection* eeg_selec
 	priv->decimation_offset = 0;
 
 	// Use the previous values if unspecified
-	num_samples = (num_samples>=0) ? num_samples : priv->num_samples;
+	num_samples = (num_samples>=0) ? num_samples : (int)(priv->num_samples);
 	num_eeg = eeg_selec ? eeg_selec->num_chann : priv->num_eeg_channels;
 	num_exg = exg_selec ? exg_selec->num_chann : priv->num_exg_channels;
 
@@ -1060,6 +1189,17 @@ int fill_selec_from_treeselec(ChannelSelection* selection, GtkTreeSelection* tre
 	return 0;
 }
 
+void clean_selec(ChannelSelection* selection)
+{
+	if (!selection)
+		return;
+
+	g_free(selection->selection);
+	g_free(selection->labels);
+	selection->selection = NULL;
+	selection->labels = NULL;
+}
+
 char** add_default_labels(char** labels, unsigned int requested_num_labels, const char* prefix)
 {
 	guint prev_length, alloc_length, i;
@@ -1112,7 +1252,7 @@ void set_bipole_labels(EEGPanelPrivateData* priv)
 
 void set_scopes_xticks(EEGPanelPrivateData* priv)
 {
-	int i, value;
+	unsigned int i, value;
 	unsigned int* ticks;
 	char** labels;
 	unsigned int inc, num_ticks;
@@ -1135,7 +1275,7 @@ void set_scopes_xticks(EEGPanelPrivateData* priv)
 	for (i=0; i<num_ticks; i++) {
 		value = (i+1)*inc;
 		ticks[i] = value*sampling_rate -1;
-		labels[i] = g_strdup_printf("%is",value);
+		labels[i] = g_strdup_printf("%us",value);
 	}
 
 	// Set the ticks to the scope widgets
@@ -1207,7 +1347,7 @@ void set_bargraphs_yticks(EEGPanelPrivateData* priv, float max)
 }
 
 
-void set_one_filter(EEGPanelPrivateData* priv, EnumFilter type, FilterParam* options, int nchann, int highpass)
+void set_one_filter(EEGPanelPrivateData* priv, EnumFilter type, FilterParam* options, unsigned int nchann, int highpass)
 {
 	float fs = priv->sampling_rate;
 	dfilter* filt = priv->filt[type];
@@ -1298,7 +1438,7 @@ void initialize_all_filters(EEGPanelPrivateData* priv)
 
 void process_eeg(EEGPanelPrivateData* priv, const float* eeg, float* temp_buff, unsigned int n_samples)
 {
-	int i, j;
+	unsigned int i, j;
 	unsigned int nchann = priv->num_eeg_channels;
 	dfilter* filt;
 	float* buff1, *buff2, *curr_eeg;
@@ -1358,7 +1498,7 @@ void process_eeg(EEGPanelPrivateData* priv, const float* eeg, float* temp_buff, 
 
 void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, unsigned int n_samples)
 {
-	int i, j, k;
+	unsigned int i, j, k;
 	unsigned int nchann = priv->num_exg_channels;
 	dfilter* filt;
 	float* buff1, *buff2, *curr_exg;
@@ -1409,11 +1549,11 @@ void process_exg(EEGPanelPrivateData* priv, const float* exg, float* temp_buff, 
 		memcpy(curr_exg, buff1, n_samples*nchann*sizeof(*buff1));
 }
 
-#define CMS_IN_RANGE	0x10000000
-#define LOW_BATTERY	0x40000000
+#define CMS_IN_RANGE	0x100000
+#define LOW_BATTERY	0x400000
 void process_tri(EEGPanelPrivateData* priv, const uint32_t* tri, uint32_t* temp_buff, unsigned int n_samples)
 {
-	int i;
+	unsigned int i;
 	uint32_t* buff1, *buff2, *curr_tri;
 	
 	buff1 = temp_buff;
@@ -1435,7 +1575,7 @@ void process_tri(EEGPanelPrivateData* priv, const uint32_t* tri, uint32_t* temp_
 
 void remove_common_avg_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples)
 {
-	int i, j;
+	unsigned int i, j;
 	float sum;
 
 	for (i=0; i<num_samples; i++) {
@@ -1453,7 +1593,7 @@ void remove_common_avg_ref(float* data, unsigned int nchann, const float* fullse
 
 void remove_electrode_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples, unsigned int elec_ref)
 {
-	int i, j;
+	unsigned int i, j;
 
 	for (i=0; i<num_samples; i++) {
 		// reference the data
@@ -1517,5 +1657,25 @@ void set_default_values(EEGPanelPrivateData* priv)
 	// Get Channels name
 	get_default_channel_labels(key_file, &(priv->eeg_labels), "eeg_channels", "EEG");
 	get_default_channel_labels(key_file, &(priv->exg_labels), "exg_channels", "EEG");
+}
+
+gint run_model_dialog(EEGPanelPrivateData* priv, GtkDialog* dialog)
+{
+	gint retval;
+
+	if ((priv->main_loop_thread) && (priv->main_loop_thread != g_thread_self()))
+		retval = gtk_dialog_run(dialog);
+	else {
+		g_mutex_lock(priv->dialog_mutex);		
+		
+		priv->dialog = dialog;
+
+		g_mutex_lock(priv->dlg_completion_mutex);
+		retval = priv->dlg_retval;
+
+		g_mutex_unlock(priv->dialog_mutex);		
+	}
+
+	return retval;
 }
 

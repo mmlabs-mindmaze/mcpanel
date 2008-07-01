@@ -224,6 +224,8 @@ void gtk_led_expose_event_callback(GtkLed* self, GdkEventExpose* event, gpointer
 	GtkIconSet* iconset;
 	GtkWidget* widget = GTK_WIDGET(self);
 	GtkLedClass* klass = gtk_type_class(GTK_TYPE_LED);
+	(void)data;
+	(void)event;
 
 	iconset = klass->icon_sets[(self->state? self->color_on : self->color_off)];
 	pixbuf = gtk_icon_set_render_icon(iconset,
