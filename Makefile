@@ -12,10 +12,10 @@ endif
 CC := $(CROSS)gcc
 DEP := $(CROSS)gcc -MM
 DEPEND_FILE := .depend
-CFLAGS := -std=c99 -march=native  -g3 -Wall -W -pedantic $(CFLAGS)
-LFLAGS := -std=c99 -march=native  -g3 -Wall $(LFLAGS) 
-#CFLAGS := -std=c99 -march=native -O3 -Wall -D G_DISABLE_CAST_CHECKS $(CFLAGS)
-#LFLAGS := -std=c99 -march=native -O3 -Wall $(LFLAGS)
+#CFLAGS := -std=c99 -march=native  -g3 -Wall -W -pedantic $(CFLAGS)
+#LFLAGS := -std=c99 -march=native  -g3 -Wall $(LFLAGS) 
+CFLAGS := -std=gnu99 -march=native -g3  -msse2 -Wall -D G_DISABLE_CAST_CHECKS $(CFLAGS)
+LFLAGS := -std=gnu99 -march=native -g3  -msse2 -Wall $(LFLAGS)
 
 
 #SRC_FILES := $(wildcard *.c)

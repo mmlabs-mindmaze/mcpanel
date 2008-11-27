@@ -13,9 +13,9 @@ typedef struct _dfilter
 	unsigned int num_chann;
 	unsigned int curr_sample;
 	unsigned int a_len;
-	const double* a;
+	const float* a;
 	unsigned int b_len;
-	const double* b;
+	const float* b;
 	float* xoff;
 	float* yoff;
 } dfilter;

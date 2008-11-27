@@ -3,10 +3,12 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define M_PI	3.1415926535897932384626433832795L
+#define PId	3.1415926535897932384626433832795L
+#define PIf	3.1415926535897932384626433832795f
+
 // TODO change the data type used for filter function (use double) to improve stability of recursive filters
 
-void apply_window(double* fir, unsigned int length, KernelWindow window)
+void apply_window(float* fir, unsigned int length, KernelWindow window)
 {
 	unsigned int i;
 	float M = length-1;
@@ -14,12 +16,12 @@ void apply_window(double* fir, unsigned int length, KernelWindow window)
 	switch (window) {
 	case HAMMING_WINDOW:
 		for (i=0; i<length; i++)
-			fir[i] *= 0.54 + 0.46*cos(2.0*M_PI*((double)i/M - 0.5));
+			fir[i] *= 0.54 + 0.46*cos(2.0*PIf*((float)i/M - 0.5));
 		break;
 
 	case BLACKMAN_WINDOW:
 		for (i=0; i<length; i++)
-			fir[i] *= 0.42 + 0.5*cos(2.0*M_PI*((double)i/M - 0.5)) + 0.08*cos(4.0*M_PI*((double)i/M - 0.5));
+			fir[i] *= 0.42 + 0.5*cos(2.0*PIf*((float)i/M - 0.5)) + 0.08*cos(4.0*PIf*((float)i/M - 0.5));
 		break;
 
 	case RECT_WINDOW:
@@ -30,7 +32,7 @@ void apply_window(double* fir, unsigned int length, KernelWindow window)
 
 
 
-void normalize_fir(double* fir, unsigned int length)
+void normalize_fir(float* fir, unsigned int length)
 {
 	unsigned int i;
 	double sum = 0.0;
@@ -42,7 +44,7 @@ void normalize_fir(double* fir, unsigned int length)
 		fir[i] /= sum;
 }
 
-void compute_convolution(double* product, double* sig1, unsigned int len1, double* sig2, unsigned int len2)
+void compute_convolution(float* product, float* sig1, unsigned int len1, float* sig2, unsigned int len2)
 {
 	unsigned int i,j;
 
@@ -54,19 +56,19 @@ void compute_convolution(double* product, double* sig1, unsigned int len1, doubl
 }
 
 
-void compute_fir_lowpass(double* fir, unsigned int length, float fc)
+void compute_fir_lowpass(float* fir, unsigned int length, float fc)
 {
 	unsigned int i;
-	double half_len = (double)((unsigned int)(length/2));
+	float half_len = (float)((unsigned int)(length/2));
 
 	for (i=0; i<length; i++)
 		if (i != length/2)
-			fir[i] = sin(2.0*M_PI*(double)fc*((double)i-half_len)) / ((double)i-half_len);
+			fir[i] = sin(2.0*PIf*(float)fc*((float)i-half_len)) / ((float)i-half_len);
 		else
-			fir[i] = 2.0*M_PI*fc;
+			fir[i] = 2.0*PIf*fc;
 }
 
-void reverse_fir(double* fir, unsigned int length)
+void reverse_fir(float* fir, unsigned int length)
 {
 	unsigned int i;
 
@@ -77,7 +79,7 @@ void reverse_fir(double* fir, unsigned int length)
 }
 
 // inspired by DSP guide ch33
-int compute_cheby_iir(double* num, double* den, unsigned int num_pole, int highpass, float ripple, float cutoff_freq)
+int compute_cheby_iir(float* num, float* den, unsigned int num_pole, int highpass, float ripple, float cutoff_freq)
 {
 	double *a, *b, *ta, *tb;
 	double a0, a1, a2, b1, b2;
@@ -105,8 +107,8 @@ int compute_cheby_iir(double* num, double* den, unsigned int num_pole, int highp
 
 	for (p=1; p<=num_pole/2; p++) {
 		// calculate pole locate on the unit circle
-		rp = -cos(M_PI/(np*2.0) + ((double)(p-1))*M_PI/np);
-		ip = sin(M_PI/(np*2.0) + ((double)(p-1))*M_PI/np);
+		rp = -cos(PId/(np*2.0) + ((double)(p-1))*PId/np);
+		ip = sin(PId/(np*2.0) + ((double)(p-1))*PId/np);
 
 		// Warp from a circle to an ellipse
 		if (r != 0.0) {
@@ -120,7 +122,7 @@ int compute_cheby_iir(double* num, double* den, unsigned int num_pole, int highp
 
 		// s to z domains conversion
 		t = 2.0*tan(0.5);
-		w = 2.0*M_PI*fc;
+		w = 2.0*PId*fc;
 		m = rp*rp + ip*ip;
 		d = 4.0 - 4.0*rp*t + m*t*t;
 		x0 = t*t/d;
@@ -188,10 +190,10 @@ exit:
 }
 
 
-dfilter* create_fir_filter(unsigned int fir_length, unsigned int nchann, double** fir_out)
+dfilter* create_fir_filter(unsigned int fir_length, unsigned int nchann, float** fir_out)
 {
 	dfilter* filt = NULL;
-	double* fir = NULL;
+	float* fir = NULL;
 	float* off = NULL;
 
 	filt = malloc(sizeof(*filt));
@@ -221,12 +223,12 @@ dfilter* create_fir_filter(unsigned int fir_length, unsigned int nchann, double*
 	return filt;
 }
 
-dfilter* create_iir_filter(int a_len, int b_len, unsigned int nchann, double** a_out, double** b_out)
+dfilter* create_iir_filter(int a_len, int b_len, unsigned int nchann, float** a_out, float** b_out)
 {
 	dfilter* filt = NULL;
-	double* a = NULL;
+	float* a = NULL;
 	float* xoff = NULL;
-	double* b = NULL;
+	float* b = NULL;
 	float* yoff = NULL;
 	int xoffsize, yoffsize;
 
@@ -296,13 +298,12 @@ void filter(dfilter* filt, const float* in, float* out, int nsamples)
 	const float* x;
 	const float* y;
 	int a_len = filt->a_len;
-	const double* a = filt->a;
+	const float* a = filt->a;
 	int b_len = filt->b_len;
-	const double* b = filt->b;
+	const float* b = filt->b;
 	int nchann = filt->num_chann;
 	const float* xprev = filt->xoff + (a_len-1)*nchann;
 	const float* yprev = filt->yoff + b_len*nchann;
-	double conv[nchann];
 
 
 	if (!nchann)
@@ -311,9 +312,8 @@ void filter(dfilter* filt, const float* in, float* out, int nsamples)
 	// compute the product of convolution of the input with the finite
 	// impulse response (fir)
 	for (i=0; i<nsamples; i++) {
-	//	memset(conv, 0, nchann*sizeof(conv[0]));
-		for (ichann=0; ichann<nchann; ichann++)
-			conv[ichann] = 0.0;
+		io = i*nchann;
+		memset(out+io, 0, nchann*sizeof(*out));
 
 		for (k=0; k<a_len; k++) {
 			ii = (i-k)*nchann;
@@ -323,7 +323,7 @@ void filter(dfilter* filt, const float* in, float* out, int nsamples)
 			x = (ii >= 0) ? in : xprev;
 			
 			for (ichann=0; ichann<nchann; ichann++)
-				conv[ichann] += a[k] *(double)(x[ii+ichann]);
+				out[io+ichann] += a[k]*x[ii+ichann];
 		}
 
 		// compute the convolution in the denominator
@@ -335,16 +335,7 @@ void filter(dfilter* filt, const float* in, float* out, int nsamples)
 			y = (ii>=0) ? out : yprev;
 			
 			for (ichann=0; ichann<nchann; ichann++)
-				conv[ichann] += b[k]*(double)(y[ii+ichann]);
-		}
-		
-		// copy the result
-		io = i*nchann;
-		for (ichann=0; ichann<nchann; ichann++) {
-			if (!isfinite(conv[ichann]))
-				out[io+ichann] = 0.0;
-			else
-				out[io+ichann] = conv[ichann];
+				out[io+ichann] += b[k]*y[ii+ichann];
 		}
 	}
 
@@ -379,7 +370,7 @@ void filter(dfilter* filt, const float* in, float* out, int nsamples)
 dfilter* create_fir_filter_mean(unsigned int fir_length, unsigned int nchann)
 {
 	unsigned int i;
-	double* fir = NULL;
+	float* fir = NULL;
 	dfilter* filt;
 
 	filt = create_fir_filter(fir_length, nchann, &fir);
@@ -388,14 +379,14 @@ dfilter* create_fir_filter_mean(unsigned int fir_length, unsigned int nchann)
 
 	// prepare the finite impulse response
 	for (i=0; i<fir_length; i++)
-		fir[i] = 1.0f/(double)fir_length;
+		fir[i] = 1.0f/(float)fir_length;
 
 	return filt;
 }
 
 dfilter* create_fir_filter_lowpass(float fc, unsigned int half_length, unsigned int nchann, KernelWindow window)
 {
-	double* fir = NULL;
+	float* fir = NULL;
 	dfilter* filt;
 	unsigned int fir_length = 2*half_length + 1;
 
@@ -414,7 +405,7 @@ dfilter* create_fir_filter_lowpass(float fc, unsigned int half_length, unsigned 
 
 dfilter* create_fir_filter_highpass(float fc, unsigned int half_length, unsigned int nchann, KernelWindow window)
 {
-	double* fir = NULL;
+	float* fir = NULL;
 	dfilter* filt;
 	unsigned int fir_length = 2*half_length + 1;
 
@@ -435,8 +426,8 @@ dfilter* create_fir_filter_highpass(float fc, unsigned int half_length, unsigned
 dfilter* create_fir_filter_bandpass(float fc_low, float fc_high, unsigned int half_length, unsigned int nchann, KernelWindow window)
 {
 	unsigned int len = 2*(half_length/2)+1;
-	double fir_low[len], fir_high[len];
-	double* fir = NULL;
+	float fir_low[len], fir_high[len];
+	float* fir = NULL;
 	dfilter* filt;
 	unsigned int fir_length = 2*half_length + 1;
 	
@@ -465,7 +456,7 @@ dfilter* create_fir_filter_bandpass(float fc_low, float fc_high, unsigned int ha
 
 dfilter* create_chebychev_filter(float fc, unsigned int num_pole, unsigned int nchann, int highpass, float ripple)
 {
-	double *a = NULL, *b = NULL;
+	float *a = NULL, *b = NULL;
 	dfilter* filt;
 	
 	if (num_pole%2 != 0)
@@ -491,7 +482,7 @@ dfilter* create_butterworth_filter(float fc, unsigned int num_pole, unsigned int
 
 dfilter* create_integrate_filter(unsigned int nchann)
 {
-	double *a = NULL, *b = NULL;
+	float *a = NULL, *b = NULL;
 	dfilter* filt;
 	
 	filt = create_iir_filter(1, 1, nchann, &a, &b);
@@ -508,7 +499,7 @@ dfilter* create_integrate_filter(unsigned int nchann)
 dfilter* create_adhoc_filter(unsigned int nchann)
 {
 	
-	double *a = NULL, *b = NULL;
+	float *a = NULL, *b = NULL;
 	dfilter* filt;
 	
 	filt = create_iir_filter(5, 4, nchann, &a, &b);

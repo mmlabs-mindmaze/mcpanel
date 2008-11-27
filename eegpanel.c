@@ -589,7 +589,8 @@ EEGPanel* eegpanel_create(void)
 	GtkBuilder* builder;
 	EEGPanel* panel = NULL;
 	EEGPanelPrivateData* priv = NULL;
-	GError* error;
+	GError* error = NULL;
+	//guint success = 0;
 
 	RegisterCustomDefinition();
 
