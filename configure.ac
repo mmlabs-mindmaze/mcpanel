@@ -8,7 +8,7 @@ AC_REQUIRE_AUX_FILE([convert-image.sh])
 
 AC_PROG_CC_C99
 AM_PROG_CC_C_O
-AM_PATH_GTK_2_0
+AM_PATH_GTK_2_0(2.12.0,,AC_MSG_ERROR(GTK+ libraries 2.12 or more recent should be installed),[gthread])
 
 #AC_DISABLE_SHARED
 AC_PROG_LIBTOOL
@@ -29,6 +29,6 @@ AC_C_VOLATILE
 #AC_CHECK_FUNCS([gettimeofday ftime _ftime select Sleep])
 
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile test/Makefile])
 AC_OUTPUT
 

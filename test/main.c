@@ -1,9 +1,9 @@
 #include <stdio.h>
-#include "eegpanel.h"
+#include <eegpanel.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
-#include <gtk/gtk.h>
+//#include <gtk/gtk.h>
 
 #define EEGSET	AB
 #define NEEG	64
@@ -87,7 +87,7 @@ void* reading_thread(void* arg)
 	return 0;
 }
 
-
+/*
 gboolean iteration_func(gpointer data)
 {
 	EEGPanel *panel = data;
@@ -98,7 +98,7 @@ gboolean iteration_func(gpointer data)
 	set_signals(geeg, gexg, gtri, NSAMPLES);
 	eegpanel_add_samples(panel, geeg, gexg, gtri, NSAMPLES);
 	return TRUE;
-}
+}*/
 
 int SetupRecording(const ChannelSelection* eeg_sel, const ChannelSelection* exg_sel, void* user_data)
 {
@@ -180,3 +180,4 @@ typedef int (*SetupRecordingFunc)(const ChannelSelection* eeg_sel, const Channel
 
 	return 0;
 }
+

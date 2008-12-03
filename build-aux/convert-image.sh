@@ -6,8 +6,7 @@ outname="images.h"
 while getopts "o:" option
 do
   case $option in
-    o) outname=$OPTARG 
-       ;;
+    o) outname=$OPTARG ;;
     *) exit 1 ;;
   esac
 done
@@ -23,7 +22,8 @@ echo "#define "$macroname >> $outname
 echo "#include <gdk-pixbuf/gdk-pixdata.h>" >> $outname
 
 # convert every supplied file
-for file in $@ ; do
+for file in $@
+do
   base=`basename $file .png`
   cname=pix_$base
   echo $file
@@ -33,3 +33,4 @@ done
 
 # write footer of the file
 echo "#endif" >> $outname
+
