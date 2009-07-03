@@ -309,22 +309,20 @@ gboolean start_recording_button_toggled_cb(GtkButton* button, gpointer data)
 
 gboolean pause_recording_button_toggled_cb(GtkButton* button, gpointer data)
 {
+	int retcode = 0;
 	EEGPanel* panel = GET_PANEL_FROM(button);
 	EEGPanelPrivateData* priv = panel->priv;
-	gboolean state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ? TRUE : FALSE;
+	int start = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ? 1 : 0;
 
 	(void)data;
 
-	if (priv->connected != state)
-		if (panel->system_connection) {
-			if (panel->system_connection(state, panel->user_data)) {
-				priv->connected = state;
-				gtk_led_set_state(GTK_LED(priv->widgets[CONNECT_LED]), state);
-			}
-		}
-		
+	if (panel->toggle_recording)
+		retcode = panel->toggle_recording(start, panel->user_data);
+	
+	if (retcode)
+		gtk_led_set_state(GTK_LED(priv->widgets[RECORDING_LED]), start ? TRUE : FALSE);
 
-	return TRUE;
+	return retcode ? TRUE : FALSE;
 }
 
 void reftype_combo_changed_cb(GtkComboBox* combo, gpointer data)

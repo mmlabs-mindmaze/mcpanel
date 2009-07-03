@@ -155,6 +155,11 @@ int SystemConnection(int start, void* user_data)
 	return (retval < 0) ? 0 : 1;
 }
 
+int ToggleRecording(int start, void* user_data)
+{
+	return 0;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -171,6 +176,8 @@ int main(int argc, char* argv[])
 	panel->user_data = panel;
 	panel->system_connection = SystemConnection;
 	panel->setup_recording = SetupRecording;
+	panel->toggle_recording = ToggleRecording;
+
 
 	eegpanel_show(panel, 1);
 	eegpanel_run(panel, 0);
