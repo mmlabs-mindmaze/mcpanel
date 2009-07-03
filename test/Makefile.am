@@ -1,3 +1,4 @@
+EXTRA_DIST=settings.ini
 AM_CFLAGS = -I$(top_srcdir)/src
 
 check_PROGRAMS = test-panel

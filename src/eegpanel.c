@@ -18,6 +18,8 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <gtk/gtk.h>
+#include <memory.h>
+#include <stdlib.h>
 #include "eegpanel.h"
 #include "plot-area.h"
 #include "scope.h"
@@ -26,8 +28,7 @@
 #include "labelized-plot.h"
 #include "gtk-led.h"
 #include "filter.h"
-#include <memory.h>
-#include <stdlib.h>
+#include "default-ui.h"
 
 #define REFRESH_INTERVAL	30
 
@@ -247,7 +248,7 @@ void remove_common_avg_ref(float* data, unsigned int nchann, const float* fullse
 void add_samples(EEGPanelPrivateData* priv, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples);
 int RegisterCustomDefinition(void);
 gboolean check_redraw_scopes(gpointer user_data);
-void set_default_values(EEGPanelPrivateData* priv);
+void set_default_values(EEGPanelPrivateData* priv, const char* filename);
 gint run_model_dialog(EEGPanelPrivateData* priv, GtkDialog* dialog);
 
 ///////////////////////////////////////////////////
@@ -601,13 +602,13 @@ void init_eegpanel_lib(int *argc, char ***argv)
 	gtk_init(argc, argv);
 }
 
-EEGPanel* eegpanel_create(void)
+EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename)
 {
 	GtkBuilder* builder;
 	EEGPanel* panel = NULL;
 	EEGPanelPrivateData* priv = NULL;
 	GError* error = NULL;
-	//guint success = 0;
+	guint success = 0;
 
 	RegisterCustomDefinition();
 
@@ -622,7 +623,17 @@ EEGPanel* eegpanel_create(void)
 
 	// Create the panel widgets according to the ui definition files
 	builder = gtk_builder_new();
-	gtk_builder_add_from_file(builder, "eegpanel.ui", &error);
+	if (uifilename)
+		success = gtk_builder_add_from_file(builder, uifilename, &error);
+	else
+		success = gtk_builder_add_from_string(builder, str_default_ui_, -1, &error);
+	
+	if (success == 0) {
+		fprintf(stderr,"%s\n",error->message);
+		eegpanel_destroy(panel);
+		return NULL;
+	}
+		
 	gtk_builder_connect_signals(builder, panel);
 
 	// Get the pointers of the control widgets
@@ -633,7 +644,8 @@ EEGPanel* eegpanel_create(void)
 		initialize_all_filters(priv);
 	
 		// Initialize the content of the widgets
-		set_default_values(priv);
+		if (settingsfilename)
+			set_default_values(priv, settingsfilename);
 		initialize_widgets(panel, builder);
 		eegpanel_define_input(panel, 0, 0, 16, 2048);
 		set_scopes_xticks(priv);
@@ -1652,7 +1664,7 @@ void get_default_channel_labels(GKeyFile* key_file, char*** labels, const char* 
 	g_strfreev(keys);
 }
 
-void set_default_values(EEGPanelPrivateData* priv)
+void set_default_values(EEGPanelPrivateData* priv, const char* filename)
 {
 	GKeyFile* key_file;
 
@@ -1674,7 +1686,9 @@ void set_default_values(EEGPanelPrivateData* priv)
 
 	// Get Channels name
 	get_default_channel_labels(key_file, &(priv->eeg_labels), "eeg_channels", "EEG");
-	get_default_channel_labels(key_file, &(priv->exg_labels), "exg_channels", "EEG");
+	get_default_channel_labels(key_file, &(priv->exg_labels), "exg_channels", "EXG");
+
+	g_key_file_free(key_file);
 }
 
 gint run_model_dialog(EEGPanelPrivateData* priv, GtkDialog* dialog)
