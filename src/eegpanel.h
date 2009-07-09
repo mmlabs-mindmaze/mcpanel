@@ -58,7 +58,7 @@ struct _EEGPanel {
 };
 
 void init_eegpanel_lib(int *argc, char ***argv);
-EEGPanel* eegpanel_create(void);
+EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename);
 void eegpanel_destroy(EEGPanel* panel);
 void eegpanel_show(EEGPanel* panel, int state);
 void eegpanel_popup_message(EEGPanel* panel, const char* message);

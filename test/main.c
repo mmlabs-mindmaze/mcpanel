@@ -155,6 +155,11 @@ int SystemConnection(int start, void* user_data)
 	return (retval < 0) ? 0 : 1;
 }
 
+int ToggleRecording(int start, void* user_data)
+{
+	return 0;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -162,16 +167,17 @@ int main(int argc, char* argv[])
 	
 	init_eegpanel_lib(&argc, &argv);
 
-	panel = eegpanel_create();
+	panel = eegpanel_create(NULL/*"eegpanel.ui"*/, NULL);
 	if (!panel) {
-		printf("error at the creation of the panel");
-		return 0;
+		fprintf(stderr,"error at the creation of the panel\n");
+		return 1;
 	}
 	
 	panel->user_data = panel;
 	panel->system_connection = SystemConnection;
 	panel->setup_recording = SetupRecording;
-typedef int (*SetupRecordingFunc)(const ChannelSelection* eeg_sel, const ChannelSelection* exg_sel, void* user_data);
+	panel->toggle_recording = ToggleRecording;
+
 
 	eegpanel_show(panel, 1);
 	eegpanel_run(panel, 0);
