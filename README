@@ -1,0 +1,28 @@
+                            EEGPANEL
+
+
+Presentation
+============
+
+This package provides a library written in C implementing a set of widgets
+designed to view in realtime EEG multichannels signals. Despite it has been
+initially design to view signals coming from a BIOSMEI Activetwo system, it
+is totally EEG system agnostic and any user of other system might find it
+useful.
+
+
+Supported platforms
+===================
+
+The widgets are based on GTK+ framework, so any platform supported by GTK+
+is able to compile and run the library (this is the case of GNU/Linux,
+Mac OS X and Windows). GTK+ 2.12 libraries or later must be installed before
+compiling the package.
+
+
+Compilation
+===========
+
+This library is organized as a GNU package and can be compiled and
+installed in the same way (see INSTALL file for further information).
+
