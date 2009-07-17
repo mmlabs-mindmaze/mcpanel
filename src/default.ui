@@ -949,7 +949,7 @@
                           </object>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="startacquisition_button">
+                          <object class="GtkButton" id="startacquisition_button">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -1199,14 +1199,14 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="label" translatable="yes">Start</property>
+                            <property name="label" translatable="yes">Setup</property>
                           </object>
                           <packing>
                             <property name="position">2</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="pause_recording_button">
+                          <object class="GtkButton" id="pause_recording_button">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>

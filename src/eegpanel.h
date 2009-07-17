@@ -40,6 +40,7 @@ typedef struct _ChannelSelection {
 typedef int (*ProcessSelectionFunc)(const ChannelSelection* selection, ChannelType type, void* user_data);
 typedef int (*SystemConnectionFunc)(int start, void* user_data);
 typedef int (*SetupRecordingFunc)(const ChannelSelection* eeg_sel, const ChannelSelection* exg_sel, void* user_data);
+typedef int (*StopRecordingFunc)(void* user_data);
 typedef int (*ToggleRecordingFunc)(int start, void* user_data);
 
 
@@ -48,6 +49,7 @@ struct _EEGPanel {
 	ProcessSelectionFunc process_selection;
 	SystemConnectionFunc system_connection;
 	SetupRecordingFunc setup_recording;
+	StopRecordingFunc stop_recording;
 	ToggleRecordingFunc toggle_recording; 
 
 	// pointer used to pass data to the user functions

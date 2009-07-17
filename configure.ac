@@ -20,16 +20,6 @@ AC_HEADER_TIME
 AC_C_CONST
 AC_C_VOLATILE
 
-#AC_SEARCH_LIBS(OpenDriverAsync, [act2api], [], AC_MSG_ERROR([The library act2api must be installed]))
-#AC_SEARCH_LIBS([pthread_create], [pthread posix4])
-#AC_SEARCH_LIBS(clock_gettime, [rt posix4])
-
-#AC_CHECK_DECLS([clock_gettime, nanosleep], [], [], [[#include <time.h>]])
-#AC_CHECK_TYPES([[struct timespec], [clockid_t]])
-#AC_REPLACE_FUNCS([clock_gettime nanosleep])
-#AC_CHECK_FUNCS([gettimeofday ftime _ftime select Sleep])
-
-
 AC_CONFIG_FILES([Makefile src/Makefile test/Makefile])
 AC_OUTPUT
 

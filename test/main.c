@@ -155,9 +155,14 @@ int SystemConnection(int start, void* user_data)
 	return (retval < 0) ? 0 : 1;
 }
 
+int StopRecording(void* user_data)
+{
+	return 1;
+}
+
 int ToggleRecording(int start, void* user_data)
 {
-	return 0;
+	return 1;
 }
 
 
@@ -176,6 +181,7 @@ int main(int argc, char* argv[])
 	panel->user_data = panel;
 	panel->system_connection = SystemConnection;
 	panel->setup_recording = SetupRecording;
+	panel->stop_recording = StopRecording;
 	panel->toggle_recording = ToggleRecording;
 
 

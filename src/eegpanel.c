@@ -159,7 +159,7 @@ const LinkWidgetName widget_name_table[] = {
 	{CONNECT_LED, "connect_led", "GtkLed"},  
 	{CMS_LED, "cms_led", "GtkLed"},  
 	{BATTERY_LED, "battery_led", "GtkLed"},  
-	{STARTACQUISITION_BUTTON, "startacquisition_button", "GtkToggleButton"},  
+	{STARTACQUISITION_BUTTON, "startacquisition_button", "GtkButton"},  
 	{NATIVE_FREQ_LABEL, "native_freq_label", "GtkLabel"},
 	{DECIMATION_COMBO, "decimation_combo", "GtkComboBox"},
 	{DISPLAYED_FREQ_LABEL, "displayed_freq_label", "GtkLabel"},
@@ -167,7 +167,7 @@ const LinkWidgetName widget_name_table[] = {
 	{RECORDING_LIMIT_ENTRY, "recording_limit_entry", "GtkEntry"},
 	{RECORDING_LED, "recording_led", "GtkLed"},  
 	{START_RECORDING_BUTTON, "start_recording_button", "GtkButton"},
-	{PAUSE_RECORDING_BUTTON, "pause_recording_button", "GtkToggleButton"},
+	{PAUSE_RECORDING_BUTTON, "pause_recording_button", "GtkButton"},
 	{FILE_LENGTH_LABEL, "file_length_label", "GtkLabel"}
 };
 
@@ -193,6 +193,8 @@ struct _EEGPanelPrivateData {
 
 	// states
 	gboolean connected;
+	gboolean fileopened;
+	gboolean recording;
 
 	//
 	unsigned int sampling_rate;
@@ -256,28 +258,27 @@ gint run_model_dialog(EEGPanelPrivateData* priv, GtkDialog* dialog);
 //	Signal handlers
 //
 ///////////////////////////////////////////////////
-gboolean startacquisition_button_toggled_cb(GtkButton* button, gpointer data)
+gboolean startacquisition_button_clicked_cb(GtkButton* button, gpointer data)
 {
 	EEGPanel* panel = GET_PANEL_FROM(button);
 	EEGPanelPrivateData* priv = panel->priv;
-	gboolean state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ? TRUE : FALSE;
 
 	(void)data;
 
-	if (priv->connected != state)
-		if (panel->system_connection) {
-			if (panel->system_connection(state, panel->user_data)) {
-				priv->connected = state;
-				gtk_led_set_state(GTK_LED(priv->widgets[CONNECT_LED]), state);
-			}
+	if (panel->system_connection) {
+		if (panel->system_connection(priv->connected ? 0 : 1, panel->user_data)) {
+			priv->connected = !priv->connected;
+			gtk_led_set_state(GTK_LED(priv->widgets[CONNECT_LED]), priv->connected);
+			gtk_button_set_label(button, priv->connected ? "Disconnect" : "Connect");
 		}
+	}
 	
 
 	return TRUE;
 }
 
 
-gboolean start_recording_button_toggled_cb(GtkButton* button, gpointer data)
+gboolean start_recording_button_clicked_cb(GtkButton* button, gpointer data)
 {
 	ChannelSelection eeg_sel, exg_sel;
 	GtkTreeSelection* selection;
@@ -286,41 +287,67 @@ gboolean start_recording_button_toggled_cb(GtkButton* button, gpointer data)
 
 	(void)data;
 
-	// Prepare selections
-	selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]));
-	fill_selec_from_treeselec(&eeg_sel, selection, priv->eeg_labels);
-	selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(priv->widgets[EXG_TREEVIEW]));
-	fill_selec_from_treeselec(&exg_sel, selection, priv->exg_labels);
 
-	// setup recording
-	if (panel->setup_recording) {
-		if (panel->setup_recording(&eeg_sel, &exg_sel, panel->user_data)) {
+	if (!priv->fileopened) {
+		// setup recording
+		
+		// Prepare selections
+		selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]));
+		fill_selec_from_treeselec(&eeg_sel, selection, priv->eeg_labels);
+		selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(priv->widgets[EXG_TREEVIEW]));
+		fill_selec_from_treeselec(&exg_sel, selection, priv->exg_labels);
+
+		// Send the setup event through the callback
+		if (panel->setup_recording) {
+			if (panel->setup_recording(&eeg_sel, &exg_sel, panel->user_data)) {
+				priv->fileopened = TRUE;
+				gtk_button_set_label(GTK_BUTTON(priv->widgets[PAUSE_RECORDING_BUTTON]),"Record");
+				gtk_button_set_label(button, "Stop");
+				gtk_widget_set_sensitive(GTK_WIDGET(priv->widgets[PAUSE_RECORDING_BUTTON]),TRUE);
+			}
+		}
+		
+		// free selection
+		g_free(eeg_sel.selection);
+		g_free(eeg_sel.labels);
+		g_free(exg_sel.selection);
+		g_free(exg_sel.labels);
+	} 
+	else {
+		// Stop recording
+		if (panel->stop_recording) {
+			if (panel->stop_recording(panel->user_data)) {
+				priv->fileopened = FALSE;
+				gtk_button_set_label(button, "Setup");
+				gtk_widget_set_sensitive(GTK_WIDGET(priv->widgets[PAUSE_RECORDING_BUTTON]),FALSE);
+			}
 		}
 	}
 
-	g_free(eeg_sel.selection);
-	g_free(eeg_sel.labels);
-	g_free(exg_sel.selection);
-	g_free(exg_sel.labels);
+
 
 	return TRUE;
 }
 
 
-gboolean pause_recording_button_toggled_cb(GtkButton* button, gpointer data)
+gboolean pause_recording_button_clicked_cb(GtkButton* button, gpointer data)
 {
 	int retcode = 0;
 	EEGPanel* panel = GET_PANEL_FROM(button);
 	EEGPanelPrivateData* priv = panel->priv;
-	int start = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ? 1 : 0;
 
 	(void)data;
 
-	if (panel->toggle_recording)
-		retcode = panel->toggle_recording(start, panel->user_data);
+
+	if (panel->toggle_recording) {
+		retcode = panel->toggle_recording(priv->recording ? 0 : 1, panel->user_data);
+		priv->recording = !priv->recording;
+	}
 	
-	if (retcode)
-		gtk_led_set_state(GTK_LED(priv->widgets[RECORDING_LED]), start ? TRUE : FALSE);
+	if (retcode) {
+		gtk_led_set_state(GTK_LED(priv->widgets[RECORDING_LED]), priv->recording);
+		gtk_button_set_label(button,priv->recording ? "Pause": "Record");
+	}
 
 	return retcode ? TRUE : FALSE;
 }
@@ -909,9 +936,10 @@ int initialize_widgets(EEGPanel* panel, GtkBuilder* builder)
 	EEGPanelPrivateData* priv = panel->priv;
 	(void)builder;
 	
-	g_signal_connect(priv->widgets[STARTACQUISITION_BUTTON], "toggled", (GCallback)startacquisition_button_toggled_cb, NULL);
-	g_signal_connect(priv->widgets[START_RECORDING_BUTTON], "clicked", (GCallback)start_recording_button_toggled_cb, NULL);
-	g_signal_connect(priv->widgets[PAUSE_RECORDING_BUTTON], "toggled", (GCallback)pause_recording_button_toggled_cb, NULL);
+	g_signal_connect(priv->widgets[STARTACQUISITION_BUTTON], "clicked", (GCallback)startacquisition_button_clicked_cb, NULL);
+	g_signal_connect(priv->widgets[START_RECORDING_BUTTON], "clicked", (GCallback)start_recording_button_clicked_cb, NULL);
+	g_signal_connect(priv->widgets[PAUSE_RECORDING_BUTTON], "clicked", (GCallback)pause_recording_button_clicked_cb, NULL);
+	gtk_widget_set_sensitive(GTK_WIDGET(priv->widgets[PAUSE_RECORDING_BUTTON]),FALSE);
 
 	treeview = GTK_TREE_VIEW(priv->widgets[EEG_TREEVIEW]);
 	initialize_list_treeview(treeview, "channels");
