@@ -252,6 +252,7 @@ int RegisterCustomDefinition(void);
 gboolean check_redraw_scopes(gpointer user_data);
 void set_default_values(EEGPanelPrivateData* priv, const char* filename);
 gint run_model_dialog(EEGPanelPrivateData* priv, GtkDialog* dialog);
+void get_initial_values(EEGPanelPrivateData* priv);
 
 ///////////////////////////////////////////////////
 //
@@ -673,6 +674,7 @@ EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename)
 		if (settingsfilename)
 			set_default_values(priv, settingsfilename);
 		initialize_widgets(panel, builder);
+		get_initial_values(priv);
 		eegpanel_define_input(panel, 0, 0, 16, 2048);
 		set_scopes_xticks(priv);
 
@@ -873,6 +875,21 @@ char* eegpanel_open_filename_dialog(EEGPanel* panel, const char* filter, const c
 //
 ///////////////////////////////////////////////////
 
+void get_initial_values(EEGPanelPrivateData* priv)
+{
+	GtkTreeModel* model;
+	GtkTreeIter iter;
+	GValue value;
+	GtkComboBox* combo;
+
+	// Get the display length
+	combo = GTK_COMBO_BOX(priv->widgets[TIME_WINDOW_COMBO]);
+	memset(&value, 0, sizeof(value));
+	model = gtk_combo_box_get_model(combo);
+	gtk_combo_box_get_active_iter(combo, &iter);
+	gtk_tree_model_get_value(model, &iter, 1, &value);
+	priv->display_length = g_value_get_float(&value);
+}
 
 gpointer loop_thread(gpointer user_data)
 {
