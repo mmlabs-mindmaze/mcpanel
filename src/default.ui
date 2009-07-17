@@ -105,9 +105,17 @@
   <object class="GtkListStore" id="model5">
     <columns>
       <column type="gchararray"/>
-      <column type="guint"/>
+      <column type="gfloat"/>
     </columns>
     <data>
+      <row>
+        <col id="0">0.25s</col>
+        <col id="1">0.25</col>
+      </row>
+      <row>
+        <col id="0">0.5s</col>
+        <col id="1">0.5</col>
+      </row>
       <row>
         <col id="0">1s</col>
         <col id="1">1</col>

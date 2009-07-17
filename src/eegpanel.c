@@ -203,7 +203,7 @@ struct _EEGPanelPrivateData {
 	unsigned int nmax_eeg, nmax_exg, nlines_tri;
 	unsigned int num_eeg_channels, num_exg_channels;
 	unsigned int num_samples;
-	unsigned int display_length;
+	float display_length;
 	unsigned int current_sample;
 	unsigned int last_drawn_sample;
 
@@ -463,7 +463,7 @@ void decimation_combo_changed_cb(GtkComboBox* combo, gpointer data)
 	// Reset the internals
 	g_mutex_lock(priv->data_mutex);
 	priv->decimation_factor = g_value_get_uint(&value);
-	set_data_input(panel, (priv->sampling_rate*priv->display_length)/priv->decimation_factor, NULL, NULL);
+	set_data_input(panel, (priv->display_length * priv->sampling_rate)/priv->decimation_factor, NULL, NULL);
 	g_mutex_unlock(priv->data_mutex);
 	
 	// update the display
@@ -511,7 +511,8 @@ void time_window_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 	GtkTreeModel* model;
 	GtkTreeIter iter;
 	GValue value;
-	unsigned int time_length, num_samples;
+	unsigned int num_samples;
+	float time_length;
 	EEGPanel* panel = GET_PANEL_FROM(combo);
 	EEGPanelPrivateData* priv = panel->priv;
 	(void)user_data;
@@ -523,10 +524,10 @@ void time_window_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 	model = gtk_combo_box_get_model(combo);
 	gtk_combo_box_get_active_iter(combo, &iter);
 	gtk_tree_model_get_value(model, &iter, 1, &value);
-	time_length = g_value_get_uint(&value);
+	time_length = g_value_get_float(&value);
 
 	priv->display_length = time_length;
-	num_samples = time_length * (priv->sampling_rate / priv->decimation_factor);
+	num_samples = (unsigned int)(time_length * (float)(priv->sampling_rate / priv->decimation_factor));
 	set_data_input(panel, num_samples, NULL, NULL);
 	set_scopes_xticks(priv);
 
@@ -664,7 +665,7 @@ EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename)
 	// Get the pointers of the control widgets
 	if (poll_widgets(panel, builder)) {
 		// Needed initializations
-		priv->display_length = 1;
+		priv->display_length = 1.0f;
 		priv->decimation_factor = 1;
 		initialize_all_filters(priv);
 	
@@ -779,7 +780,7 @@ int eegpanel_define_input(EEGPanel* panel, unsigned int num_eeg_channels,
 	priv->nmax_exg = num_exg_channels;
 	priv->nlines_tri = num_tri_lines;
 	priv->sampling_rate = sampling_rate;
-	num_samples = (sampling_rate*priv->display_length)/priv->decimation_factor;
+	num_samples = (priv->display_length * sampling_rate)/priv->decimation_factor;
 	 
 
 	// Add default channel labels if not available
@@ -1312,7 +1313,7 @@ void set_scopes_xticks(EEGPanelPrivateData* priv)
 	unsigned int* ticks;
 	char** labels;
 	unsigned int inc, num_ticks;
-	unsigned int disp_len = priv->display_length;
+	float disp_len = priv->display_length;
 	unsigned int sampling_rate = priv->sampling_rate / priv->decimation_factor;
 
 	inc = 1;
