@@ -259,6 +259,8 @@ void get_initial_values(EEGPanelPrivateData* priv);
 //	Signal handlers
 //
 ///////////////////////////////////////////////////
+gboolean pause_recording_button_clicked_cb(GtkButton* button, gpointer data);
+
 gboolean startacquisition_button_clicked_cb(GtkButton* button, gpointer data)
 {
 	EEGPanel* panel = GET_PANEL_FROM(button);
@@ -317,6 +319,10 @@ gboolean start_recording_button_clicked_cb(GtkButton* button, gpointer data)
 	else {
 		// Stop recording
 		if (panel->stop_recording) {
+			// Pause recording before
+			if (priv->recording) 
+				pause_recording_button_clicked_cb(GTK_BUTTON(priv->widgets[PAUSE_RECORDING_BUTTON]),NULL);
+
 			if (panel->stop_recording(panel->user_data)) {
 				priv->fileopened = FALSE;
 				gtk_button_set_label(button, "Setup");
@@ -738,6 +744,12 @@ void eegpanel_destroy(EEGPanel* panel)
 
 	// Stop refreshing the scopes content
 	g_source_remove_by_user_data(priv);
+
+	// Stop recording
+	if (priv->recording && panel->toggle_recording)
+		panel->toggle_recording(0, panel->user_data);
+	if (priv->fileopened && panel->stop_recording)
+		panel->stop_recording(panel->user_data);
 
 	// Disconnect the system if applicable
 	if (priv->connected && panel->system_connection)
