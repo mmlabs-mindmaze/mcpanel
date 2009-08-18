@@ -172,6 +172,7 @@ void open_filename_dialog(struct DialogParam* dlgprm)
 gboolean blocking_dialog_cb(gpointer data)
 {
 	struct DialogParam* dlgprm = data;
+	gdk_threads_enter();
 
 	// Run the function
 	dlgprm->func(dlgprm);
@@ -182,6 +183,7 @@ gboolean blocking_dialog_cb(gpointer data)
 	g_cond_signal(dlgprm->cond);
 	g_mutex_unlock(dlgprm->mtx);
 	
+	gdk_threads_leave();
 	return FALSE;
 }
 

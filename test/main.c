@@ -116,7 +116,6 @@ int SetupRecording(const ChannelSelection* eeg_sel, const ChannelSelection* exg_
 		free(filename);
 		retval = 1;
 	}
-	retval=1;
 	return retval;
 }
 

@@ -53,9 +53,6 @@ EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename, 
 	// Allocate memory for the structures
 	pan = g_malloc0(sizeof(*pan));
 	pan->data_mutex = g_mutex_new();
-	pan->dialog_mutex = g_mutex_new();
-	pan->dlg_completion_mutex = g_mutex_new();
-	g_mutex_lock(pan->dlg_completion_mutex);
 
 	// Set callbacks
 	if (cb)
@@ -88,24 +85,19 @@ void eegpanel_show(EEGPanel* pan, int state)
 {
 	int lock_res = 0;
 
-	if ((pan->main_loop_thread) && (pan->main_loop_thread != g_thread_self()))
-		lock_res = 1;
+	//if (pan->main_loop_thread != g_thread_self()) 
 	
 	//////////////////////////////////////////////////////////////
 	//		WARNING
 	//	Possible deadlock here if called from another thread
 	//	than the main loop thread
 	/////////////////////////////////////////////////////////////
-	if (lock_res)
-		gdk_threads_enter();
 
 	if (state)
 		gtk_widget_show_all(GTK_WIDGET(pan->gui.window));
 	else
 		gtk_widget_hide_all(GTK_WIDGET(pan->gui.window));
 
-	if (lock_res)
-		gdk_threads_leave();
 }
 
 
@@ -143,10 +135,6 @@ void eegpanel_destroy(EEGPanel* pan)
 	// wait for the termination of the main loop
 	if ((pan->main_loop_thread) && (pan->main_loop_thread != g_thread_self()))
 		g_thread_join(pan->main_loop_thread);
-
-	g_mutex_free(pan->dialog_mutex);
-	g_mutex_unlock(pan->dlg_completion_mutex);
-	g_mutex_free(pan->dlg_completion_mutex);
 
 	g_mutex_free(pan->data_mutex);
 	g_strfreev(pan->eeg_labels);
