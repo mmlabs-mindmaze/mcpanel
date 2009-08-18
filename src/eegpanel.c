@@ -46,9 +46,7 @@ void init_eegpanel_lib(int *argc, char ***argv)
 
 EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename, const struct PanelCb* cb)
 {
-	GtkBuilder* builder;
 	EEGPanel* pan = NULL;
-	GError* error = NULL;
 	guint success = 0;
 
 
@@ -82,9 +80,6 @@ EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename, 
 		set_default_values(pan, settingsfilename);
 	get_initial_values(pan);
 	eegpanel_define_input(pan, 0, 0, 16, 2048);
-
-
-	g_object_unref(builder);
 
 	return pan;
 }
@@ -213,63 +208,12 @@ void eegpanel_add_samples(EEGPanel* pan, const float* eeg, const float* exg, con
 
 void eegpanel_popup_message(EEGPanel* pan, const char* message)
 {
-	struct DialogParam* dlgprm;
-	char* msgbuff;
-
-	// Allocate 
-	dlgprm = malloc(sizeof(*dlgprm));
-	msgbuff = malloc(strlen(message)+1);
-	if (!dlgprm || !msgbuff) {
-		free(dlgprm);
-		free(msgbuff);
-		return;
-	}
-
-	
-	strcpy(msgbuff,message);
-	dlgprm->message = msgbuff;
-	dlgprm->gui = &(pan->gui);
-
-	g_idle_add(popup_dialog_cb, dlgprm);
+	popup_message_gui(pan, message);
 }
 
 char* eegpanel_open_filename_dialog(EEGPanel* pan, const char* filter, const char* filtername)
 {
-/*	GtkWidget* dialog;
-	char* filename = NULL;
-	GtkFileFilter* ffilter;
-
-	dialog = gtk_file_chooser_dialog_new("Choose a filename",
-					     pan->window,
-					     GTK_FILE_CHOOSER_ACTION_SAVE,
-					     GTK_STOCK_OK,GTK_RESPONSE_ACCEPT,
-					     GTK_STOCK_CANCEL,GTK_RESPONSE_CANCEL,
-					     NULL);
-	if (filter && filtername) {
-		ffilter = gtk_file_filter_new();
-		gtk_file_filter_add_pattern(ffilter, filter);
-		gtk_file_filter_set_name(ffilter, filtername);
-		gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), ffilter);
-	}
-	ffilter = gtk_file_filter_new();
-	gtk_file_filter_add_pattern(ffilter, "*");
-	gtk_file_filter_set_name(ffilter, "any files");
-	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), ffilter);
-
-
-	if (gtk_dialog_run(GTK_DIALOG(dialog))==GTK_RESPONSE_ACCEPT) {
-		gchar* retfile = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-		if (retfile) {
-			filename = malloc(strlen(retfile));
-			strcpy(filename, retfile);
-			g_free(retfile);
-		}
-	}
-	gtk_widget_destroy(dialog);
-
-	return filename;
-*/
-	return NULL;
+	return open_filename_dialog_gui(pan, filter, filtername);
 }
 ///////////////////////////////////////////////////
 //

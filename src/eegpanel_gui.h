@@ -94,9 +94,18 @@ struct PanelGUI {
 	BinaryScope *tri_scope;
 };
 
+struct DialogParam;
+typedef void (*DlgProc)(struct DialogParam* dlgprm);
+
 struct DialogParam {
-	char* message;
+	const char *str_in1, *str_in2;
+	char *str_out;
+
 	struct PanelGUI* gui;
+	GMutex* mtx;
+	GCond* cond;
+	int done;
+	DlgProc func;
 };
 
 int create_panel_gui(EEGPanel* pan, const char* uifilename);
@@ -107,6 +116,8 @@ void fill_combo(GtkComboBox* combo, char** labels, int num_labels);
 int fill_selec_from_treeselec(ChannelSelection* selection, GtkTreeSelection* tree_sel, char** labels);
 void set_scopes_xticks(EEGPanel* pan);
 void set_bargraphs_yticks(EEGPanel* pan, float max);
+void popup_message_gui(EEGPanel* pan, const char* message);
+char* open_filename_dialog_gui(EEGPanel* pan, const char* filter, const char* filtername);
 gboolean popup_dialog_cb(gpointer data);
 
 #endif /* EEGPANEL_GUI_H */

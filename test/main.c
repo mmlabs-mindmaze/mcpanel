@@ -76,6 +76,11 @@ void* reading_thread(void* arg)
 			set_signals(eeg, exg, tri, NSAMPLES);
 			eegpanel_add_samples(panel, eeg, exg, tri, NSAMPLES);
 			isample += NSAMPLES;
+
+			if ((isample<201*NSAMPLES)&&(isample >= 200*NSAMPLES)) {
+				eegpanel_popup_message(panel, "Hello!");
+				isample = 201*NSAMPLES;
+			}
 //			prev = curr;
 //		}
 	}
@@ -106,11 +111,11 @@ int SetupRecording(const ChannelSelection* eeg_sel, const ChannelSelection* exg_
 	char* filename;
 	int retval = 0;
 
-/*	if (filename = eegpanel_open_filename_dialog(panel, "*.bdf", "BDF files (*.bdf)")) {
+	if (filename = eegpanel_open_filename_dialog(panel, "*.bdf", "BDF files (*.bdf)")) {
 		fprintf(stderr,"filename %s\n", filename);
 		free(filename);
 		retval = 1;
-	}*/
+	}
 	retval=1;
 	return retval;
 }

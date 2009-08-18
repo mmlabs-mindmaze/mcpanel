@@ -113,23 +113,75 @@ gboolean check_redraw_scopes_cb(gpointer user_data)
 	return TRUE;
 }
 
-gboolean popup_dialog_cb(gpointer data)
+void popup_message_dialog(struct DialogParam* dlgprm)
 {
 	GtkWidget* dialog;
-	struct DialogParam* dlgprm = data;
-
+	const char* message = dlgprm->str_in1;
 
 	dialog = gtk_message_dialog_new(dlgprm->gui->window,
 					GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
 					GTK_MESSAGE_INFO,
 					GTK_BUTTONS_CLOSE,
-					"%s", dlgprm->message);
+					"%s", message);
 	gtk_dialog_run(GTK_DIALOG(dialog));
 	gtk_widget_destroy(dialog);
+}
 
-	free(dlgprm->message);
-	free(dlgprm);
+void open_filename_dialog(struct DialogParam* dlgprm)
+{
+	GtkWidget* dialog;
+	char* filename = NULL;
+	GtkFileFilter* ffilter;
+	const char *filter, *filtername;
 
+	filter = dlgprm->str_in1;
+	filtername = dlgprm->str_in2;
+
+
+	dialog = gtk_file_chooser_dialog_new("Choose a filename",
+					     dlgprm->gui->window,
+					     GTK_FILE_CHOOSER_ACTION_SAVE,
+					     GTK_STOCK_OK,GTK_RESPONSE_ACCEPT,
+					     GTK_STOCK_CANCEL,GTK_RESPONSE_CANCEL,
+					     NULL);
+	if (filter && filtername) {
+		ffilter = gtk_file_filter_new();
+		gtk_file_filter_add_pattern(ffilter, filter);
+		gtk_file_filter_set_name(ffilter, filtername);
+		gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), ffilter);
+	}
+	ffilter = gtk_file_filter_new();
+	gtk_file_filter_add_pattern(ffilter, "*");
+	gtk_file_filter_set_name(ffilter, "any files");
+	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), ffilter);
+
+
+	if (gtk_dialog_run(GTK_DIALOG(dialog))==GTK_RESPONSE_ACCEPT) {
+		gchar* retfile = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+		if (retfile) {
+			filename = malloc(strlen(retfile)+1);
+			strcpy(filename, retfile);
+			g_free(retfile);
+		}
+	}
+	gtk_widget_destroy(dialog);
+
+	dlgprm->str_out = filename;
+}
+
+gboolean blocking_dialog_cb(gpointer data)
+{
+	struct DialogParam* dlgprm = data;
+
+	// Run the function
+	dlgprm->func(dlgprm);
+
+	// Signal that it is done
+	g_mutex_lock(dlgprm->mtx);
+	dlgprm->done = 1;
+	g_cond_signal(dlgprm->cond);
+	g_mutex_unlock(dlgprm->mtx);
+	
 	return FALSE;
 }
 
@@ -138,6 +190,77 @@ gboolean popup_dialog_cb(gpointer data)
  *                         GUI functions                                 *
  *                                                                       *
  *************************************************************************/
+void run_dialog(EEGPanel* pan, struct DialogParam* dlgprm)
+{
+	if (pan->main_loop_thread != g_thread_self()) {
+		// Init synchronization objects
+		dlgprm->mtx = g_mutex_new();
+		dlgprm->done = 0;
+		dlgprm->cond = g_cond_new();
+
+		g_mutex_lock(dlgprm->mtx);
+		
+		// queue job into GTK main loop
+		g_idle_add(blocking_dialog_cb, dlgprm);
+		
+		// Wait for completion
+		while (!dlgprm->done)
+			g_cond_wait(dlgprm->cond, dlgprm->mtx);
+		g_mutex_unlock(dlgprm->mtx);
+
+		// free sync objects
+		g_mutex_free(dlgprm->mtx);
+		g_cond_free(dlgprm->cond);
+	}
+	else
+		 dlgprm->func(dlgprm);
+}
+
+void popup_message_gui(EEGPanel* pan, const char* message)
+{
+	struct DialogParam* dlgprm;
+
+	// Allocate 
+	dlgprm = malloc(sizeof(*dlgprm));
+	if (!dlgprm) {
+		free(dlgprm);
+		return;
+	}
+
+	dlgprm->str_in1 = message;
+	dlgprm->gui = &(pan->gui);
+
+	dlgprm->func = popup_message_dialog;
+	run_dialog(pan, dlgprm);
+
+	free(dlgprm);
+}
+
+char* open_filename_dialog_gui(EEGPanel* pan, const char* filter, const char* filtername)
+{
+	struct DialogParam* dlgprm;
+	char* filename = NULL;
+
+	// Allocate 
+	dlgprm = malloc(sizeof(*dlgprm));
+	if (!dlgprm) {
+		free(dlgprm);
+		return NULL;
+	}
+
+	dlgprm->str_in1 = filter;
+	dlgprm->str_in2 = filtername;
+	dlgprm->gui = &(pan->gui);
+
+	dlgprm->func = open_filename_dialog;
+	run_dialog(pan, dlgprm);
+
+	filename = dlgprm->str_out;
+
+	free(dlgprm);
+	return filename;
+}
+
 void get_initial_values(EEGPanel* pan)
 {
 	GtkTreeModel* model;
@@ -466,7 +589,7 @@ int create_panel_gui(EEGPanel* pan, const char* uifilename)
 		res = gtk_builder_add_from_string(builder, str_default_ui_, -1, &error);
 
 	if (!res) {
-		fprintf(stderr,"%s\n",error->message);
+		fprintf(stderr, "%s\n", error->message);
 		goto out;
 	}
 
