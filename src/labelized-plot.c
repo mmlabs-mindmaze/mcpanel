@@ -89,8 +89,6 @@ labelized_plot_finalize (GObject *object)
 	LabelizedPlot* self = LABELIZED_PLOT(object);
 	g_strfreev(self->xtick_labels);
 	g_strfreev(self->ytick_labels);
-	pango_font_description_free(self->tick_font_desc);
-	pango_font_description_free(self->label_font_desc);
 	
 	// Call parent finalize function
 	if (G_OBJECT_CLASS(labelized_plot_parent_class)->finalize)
@@ -159,12 +157,6 @@ labelized_plot_init (LabelizedPlot* self)
 	g_signal_connect (G_OBJECT (self), "expose_event",  
                       G_CALLBACK(labelized_plot_expose_event_callback), NULL);
 
-	// Set font description
-	p_context =  gtk_widget_get_pango_context( GTK_WIDGET(self) );
-	self->tick_font_desc = pango_font_description_copy_static(pango_context_get_font_description(p_context));
-	self->label_font_desc = pango_font_description_copy_static(pango_context_get_font_description(p_context));
-	pango_font_description_set_size(self->tick_font_desc, 6*PANGO_SCALE);
-	pango_font_description_set_size(self->label_font_desc, 8*PANGO_SCALE);
 }
 
 
@@ -185,6 +177,7 @@ labelized_plot_expose_event_callback (LabelizedPlot *self,
 {
 	PangoLayout* layout;
 	PangoContext* context;
+	PangoFontDescription* desc;
 	guint num_ticks, num_labels, i, ivalue, jvalue;
 	gint width, height;
 	gchar** labels;
@@ -198,9 +191,14 @@ labelized_plot_expose_event_callback (LabelizedPlot *self,
 		return TRUE;
 
 	child_alloc = GTK_WIDGET(child)->allocation;
+//	context = gtk_widget_get_pango_context(GTK_WIDGET(self));
+//	layout = pango_layout_new(context);
+	layout = gtk_widget_create_pango_layout(GTK_WIDGET(self), NULL);
 	context = gtk_widget_get_pango_context(GTK_WIDGET(self));
-	layout = pango_layout_new(context);
-	pango_layout_set_font_description(layout, self->tick_font_desc);
+	desc = pango_font_description_copy_static(pango_context_get_font_description(context));
+	pango_font_description_set_size(desc, 6*PANGO_SCALE);
+	pango_layout_set_font_description(layout, desc);
+
 
 	// Draw vertical axis
 	offsets = child->yticks;
@@ -243,6 +241,7 @@ labelized_plot_expose_event_callback (LabelizedPlot *self,
 	}
 
 	g_object_unref(layout);
+	pango_font_description_free(desc);
 
 	gtk_paint_shadow (GTK_WIDGET(self)->style,
 					  window,
