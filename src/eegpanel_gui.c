@@ -431,7 +431,7 @@ void fill_combo(GtkComboBox* combo, char** labels, int num_labels)
 int fill_selec_from_treeselec(ChannelSelection* sel, GtkTreeSelection* tree_sel, char** labels)
 {
 	int num = gtk_tree_selection_count_selected_rows(tree_sel);
-	GList* list;
+	GList *list, *item;
 	int i;
 	unsigned int* chann_select = NULL;
 	const char** labelv = NULL;
@@ -440,10 +440,10 @@ int fill_selec_from_treeselec(ChannelSelection* sel, GtkTreeSelection* tree_sel,
 	chann_select = malloc(num*sizeof(*chann_select));
 
 	// Fill the array of the selected channels
-	list = gtk_tree_selection_get_selected_rows(tree_sel, NULL);
+	item = list = gtk_tree_selection_get_selected_rows(tree_sel, NULL);
 	for(i=0; i<num; i++) {
 		chann_select[i] = *gtk_tree_path_get_indices((GtkTreePath*)(list->data));
-		list = g_list_next(list);
+		item = g_list_next(item);
 	}
 	g_list_foreach(list, (GFunc)gtk_tree_path_free, NULL);
 	g_list_free(list);

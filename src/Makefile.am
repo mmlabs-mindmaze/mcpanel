@@ -22,8 +22,6 @@ libeegpanel_la_SOURCES = eegpanel.c		\
 			 bargraph.h		\
 			 binary-scope.c		\
 			 binary-scope.h		\
-			 filter.c		\
-			 filter.h		\
 			 gtk-led.c		\
 			 gtk-led.h		\
 			 labelized-plot.c	\

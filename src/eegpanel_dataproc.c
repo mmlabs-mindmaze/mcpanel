@@ -20,6 +20,7 @@
 #include "eegpanel_dataproc.h"
 #include <stdlib.h>
 #include <string.h>
+#include <common-filters.h>
 
 
 #define SWAP_POINTERS(pointer1, pointer2)	do {	\
@@ -55,7 +56,7 @@ void process_eeg(EEGPanel* pan, const float* eeg, float* temp_buff, unsigned int
 {
 	unsigned int i, j;
 	unsigned int nchann = pan->neeg;
-	dfilter* filt;
+	hfilter filt;
 	float* buff1, *buff2, *curr_eeg;
 	unsigned int *sel = pan->eegsel.selection;
 	unsigned int num_ch = pan->neeg;
@@ -76,7 +77,7 @@ void process_eeg(EEGPanel* pan, const float* eeg, float* temp_buff, unsigned int
 	
 	filt = pan->dta.filt[EEG_OFFSET_FILTER];
 	if (filt) {
-		filter(filt, buff1, buff2, n_samples);
+		filter_f(filt, buff1, buff2, n_samples);
 		// copy last samples
 		for (i=0; i<num_ch; i++)
 			pan->eeg_offset[i] = buff2[nchann*(n_samples-1)+i];
@@ -95,13 +96,13 @@ void process_eeg(EEGPanel* pan, const float* eeg, float* temp_buff, unsigned int
 
 	filt = pan->dta.filt[EEG_LOWPASS_FILTER];
 	if (filt) {
-		filter(filt, buff1, buff2, n_samples);
+		filter_f(filt, buff1, buff2, n_samples);
 		SWAP_POINTERS(buff1, buff2);		
 	}
 
 	filt = pan->dta.filt[EEG_HIGHPASS_FILTER];
 	if (filt) {
-		filter(filt, buff1, buff2, n_samples);
+		filter_f(filt, buff1, buff2, n_samples);
 		SWAP_POINTERS(buff1, buff2);
 	}
 	
@@ -115,7 +116,7 @@ void process_exg(EEGPanel* pan, const float* exg, float* temp_buff, unsigned int
 {
 	unsigned int i, j, k;
 	unsigned int nchann = pan->nexg;
-	dfilter* filt;
+	hfilter filt;
 	float* buff1, *buff2, *curr_exg;
 	unsigned int *sel = pan->exgsel.selection;
 	unsigned int num_ch = pan->nexg;
@@ -138,7 +139,7 @@ void process_exg(EEGPanel* pan, const float* exg, float* temp_buff, unsigned int
 	
 	filt = pan->dta.filt[EXG_OFFSET_FILTER];
 	if (filt) {
-		filter(filt, buff1, buff2, n_samples);
+		filter_f(filt, buff1, buff2, n_samples);
 		// copy last samples
 		for (i=0; i<num_ch; i++)
 			pan->exg_offset[i] = buff2[nchann*(n_samples-1)+i];
@@ -149,13 +150,13 @@ void process_exg(EEGPanel* pan, const float* exg, float* temp_buff, unsigned int
 
 	filt = pan->dta.filt[EXG_LOWPASS_FILTER];
 	if (filt) {
-		filter(filt, buff1, buff2, n_samples);
+		filter_f(filt, buff1, buff2, n_samples);
 		SWAP_POINTERS(buff1, buff2);		
 	}
 
 	filt = pan->dta.filt[EXG_HIGHPASS_FILTER];
 	if (filt) {
-		filter(filt, buff1, buff2, n_samples);
+		filter_f(filt, buff1, buff2, n_samples);
 		SWAP_POINTERS(buff1, buff2);
 	}
 	
@@ -331,3 +332,44 @@ void add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32
 	pan->current_sample = pointer;
 }
 
+
+void set_one_filter(EEGPanel* pan, EnumFilter type, FilterParam* options, unsigned int nchann, int highpass)
+{
+	float fs = pan->fs;
+	hfilter filt = pan->dta.filt[type];
+	FilterParam* curr_param =  &(pan->filter_param[type]);
+	FilterParam* param = options + type;
+
+	
+	if (param->state) {
+		if (!filt || ((param->freq/fs!=curr_param->fc) || (pan->dta.numch[type] != nchann))) {
+			destroy_filter(filt);
+			param->fc = param->freq/fs;
+			filt = create_butterworth_filter(param->fc, 2, nchann, highpass, DATATYPE_FLOAT);
+			pan->filter_param[type] = *param;
+			pan->dta.numch[type] = nchann;
+		}
+		else
+			reset_filter(filt);
+	}
+	else {
+		destroy_filter(filt);
+		filt = NULL;
+	}
+
+	pan->dta.filt[type] = filt;
+}
+
+void destroy_dataproc(EEGPanel* pan)
+{
+	int i;
+
+	for (i=0; i<NUM_FILTERS; i++)
+		destroy_filter(pan->dta.filt[i]);
+	
+	free(pan->eeg);
+	free(pan->exg);
+	free(pan->triggers);
+	free(pan->eeg_offset);
+	free(pan->exg_offset);
+}

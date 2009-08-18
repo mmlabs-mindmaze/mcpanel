@@ -20,7 +20,6 @@
 #include <memory.h>
 #include <stdlib.h>
 #include "eegpanel.h"
-#include "filter.h"
 #include "eegpanel_shared.h"
 
 
@@ -144,11 +143,9 @@ void eegpanel_destroy(EEGPanel* pan)
 	g_strfreev(pan->bipole_labels);
 
 	
-	free(pan->eeg);
-	free(pan->exg);
+	destroy_dataproc(pan);
 	clean_selec(&(pan->eegsel));
 	clean_selec(&(pan->exgsel));
-	free(pan->triggers);
 	
 	free(pan);
 }
@@ -293,33 +290,6 @@ void set_bipole_labels(EEGPanel* pan)
 	}
 
 	pan->bipole_labels = bip_labels;
-}
-
-
-void set_one_filter(EEGPanel* pan, EnumFilter type, FilterParam* options, unsigned int nchann, int highpass)
-{
-	float fs = pan->fs;
-	dfilter* filt = pan->dta.filt[type];
-	FilterParam* curr_param =  &(pan->filter_param[type]);
-	FilterParam* param = options + type;
-
-	
-	if (param->state) {
-		if (!filt || ((param->freq/fs!=curr_param->fc) || (filt->num_chann != nchann))) {
-			destroy_filter(filt);
-			param->fc = param->freq/fs;
-			filt = create_butterworth_filter(param->fc, 2, nchann, highpass);
-			pan->filter_param[type] = *param;
-		}
-		else
-			reset_filter(filt);
-	}
-	else {
-		destroy_filter(filt);
-		filt = NULL;
-	}
-
-	pan->dta.filt[type] = filt;
 }
 
 

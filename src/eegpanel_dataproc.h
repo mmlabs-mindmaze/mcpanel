@@ -18,7 +18,7 @@
 #ifndef EEGPANEL_DATAPROC_H
 #define EEGPANEL_DATAPROC_H
 
-#include "filter.h"
+#include <filter.h>
 
 typedef enum {
 	EEG_LOWPASS_FILTER,
@@ -48,11 +48,14 @@ typedef struct _Indicators {
 
 
 struct PanelDataProc {
-	dfilter *filt[NUM_FILTERS];
+	hfilter filt[NUM_FILTERS];
+	unsigned int numch[NUM_FILTERS];
 };
 
 void add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples);
 int set_data_input(EEGPanel* pan, int num_samples);
+void set_one_filter(EEGPanel* pan, EnumFilter type, FilterParam* options, unsigned int nchann, int highpass);
+void destroy_dataproc(EEGPanel* pan);
 
 #endif /* EEGPANEL_DATAPROC_H */
 
