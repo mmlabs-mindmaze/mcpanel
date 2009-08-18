@@ -173,20 +173,22 @@ int ToggleRecording(int start, void* user_data)
 int main(int argc, char* argv[])
 {
 	EEGPanel* panel;
+	struct PanelCb cb;
+
+	cb.user_data = NULL;
+	cb.system_connection = SystemConnection;
+	cb.setup_recording = SetupRecording;
+	cb.stop_recording = StopRecording;
+	cb.toggle_recording = ToggleRecording;
 	
 	init_eegpanel_lib(&argc, &argv);
 
-	panel = eegpanel_create(NULL/*"eegpanel.ui"*/, NULL);
+	panel = eegpanel_create(NULL/*"eegpanel.ui"*/, NULL, &cb);
 	if (!panel) {
 		fprintf(stderr,"error at the creation of the panel\n");
 		return 1;
 	}
 	
-	panel->user_data = panel;
-	panel->system_connection = SystemConnection;
-	panel->setup_recording = SetupRecording;
-	panel->stop_recording = StopRecording;
-	panel->toggle_recording = ToggleRecording;
 
 
 	eegpanel_show(panel, 1);

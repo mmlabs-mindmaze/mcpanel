@@ -21,7 +21,6 @@
 #include <stdint.h>
 
 
-typedef struct _EEGPanelPrivateData EEGPanelPrivateData;
 typedef struct _EEGPanel EEGPanel;
 
 typedef enum
@@ -44,7 +43,7 @@ typedef int (*StopRecordingFunc)(void* user_data);
 typedef int (*ToggleRecordingFunc)(int start, void* user_data);
 
 
-struct _EEGPanel {
+struct PanelCb {
 	// function supplied by the user
 	ProcessSelectionFunc process_selection;
 	SystemConnectionFunc system_connection;
@@ -54,13 +53,12 @@ struct _EEGPanel {
 
 	// pointer used to pass data to the user functions
 	void* user_data;
-
-	// private data, don't touch
-	EEGPanelPrivateData* priv;
 };
 
 void init_eegpanel_lib(int *argc, char ***argv);
-EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename);
+EEGPanel* eegpanel_create(const char* uifilename, 
+                          const char* settingsfilename, 
+			  const struct PanelCb* cb);
 void eegpanel_destroy(EEGPanel* panel);
 void eegpanel_show(EEGPanel* panel, int state);
 void eegpanel_popup_message(EEGPanel* panel, const char* message);
