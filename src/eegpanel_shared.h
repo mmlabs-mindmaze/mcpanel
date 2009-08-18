@@ -49,7 +49,6 @@ struct _EEGPanel {
 	unsigned int decimation_factor;
 	unsigned int decimation_offset;
 	unsigned int nmax_eeg, nmax_exg, nlines_tri;
-	unsigned int neeg, nexg;
 	unsigned int num_samples;
 	float display_length;
 	unsigned int current_sample;
@@ -61,8 +60,10 @@ struct _EEGPanel {
 	char** bipole_labels;
 
 	// data
-	unsigned int *selected_eeg, *selected_exg;
+	ChannelSelection eegsel;
+	ChannelSelection exgsel;
 	Indicators flags;
+	unsigned int neeg, nexg;
 	float *eeg, *exg;
 	float *eeg_offset, *exg_offset;
 	uint32_t *triggers;
@@ -79,5 +80,7 @@ struct _EEGPanel {
 	struct PanelDataProc dta;
 };
 
+void clean_selec(ChannelSelection* selection);
+void copy_selec(ChannelSelection* dst, ChannelSelection* src);
 
 #endif /*EEGPANEL_SHARED_H*/

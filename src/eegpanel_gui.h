@@ -102,6 +102,11 @@ struct DialogParam {
 int create_panel_gui(EEGPanel* pan, const char* uifilename);
 void set_databuff_gui(EEGPanel* pan);
 void update_input_gui(EEGPanel* pan);
+void fill_treeview(GtkTreeView* treeview, unsigned int num_labels, const char** labels);
+void fill_combo(GtkComboBox* combo, char** labels, int num_labels);
+int fill_selec_from_treeselec(ChannelSelection* selection, GtkTreeSelection* tree_sel, char** labels);
+void set_scopes_xticks(EEGPanel* pan);
+void set_bargraphs_yticks(EEGPanel* pan, float max);
 gboolean popup_dialog_cb(gpointer data);
 
 #endif /* EEGPANEL_GUI_H */

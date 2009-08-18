@@ -65,15 +65,16 @@ EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename, 
 	if (pan->cb.user_data == NULL)
 		pan->cb.user_data = pan;
 
+	// Needed initializations
+	pan->display_length = 1.0f;
+	pan->decimation_factor = 1;
+
 	// Create the panel widgets according to the ui definition files
 	if (!create_panel_gui(pan, uifilename)) {
 		eegpanel_destroy(pan);
 		return NULL;
 	}
 		
-	// Needed initializations
-	pan->display_length = 1.0f;
-	pan->decimation_factor = 1;
 	initialize_all_filters(pan);
 	
 	// Initialize the content of the widgets
@@ -160,8 +161,8 @@ void eegpanel_destroy(EEGPanel* pan)
 	
 	g_free(pan->eeg);
 	g_free(pan->exg);
-	g_free(pan->selected_eeg);
-	g_free(pan->selected_exg);
+	clean_selec(&(pan->eegsel));
+	clean_selec(&(pan->exgsel));
 	g_free(pan->triggers);
 	
 	g_free(pan);
@@ -195,7 +196,10 @@ int eegpanel_define_input(EEGPanel* pan, unsigned int neeg,
 	chann_selec.num_chann = 0;
 	chann_selec.selection = NULL;
 	chann_selec.labels = NULL;
-	return set_data_input(pan, nsamples, &chann_selec, &chann_selec);
+	memcpy(&(pan->eegsel), &chann_selec, sizeof(chann_selec));
+	memcpy(&(pan->exgsel), &chann_selec, sizeof(chann_selec));
+
+	return set_data_input(pan, nsamples);
 }
 
 
@@ -291,6 +295,21 @@ void clean_selec(ChannelSelection* selection)
 	g_free(selection->labels);
 	selection->selection = NULL;
 	selection->labels = NULL;
+}
+
+void copy_selec(ChannelSelection* dst, ChannelSelection* src)
+{
+	clean_selec(dst);
+	
+	dst->num_chann = src->num_chann;
+
+	dst->selection = g_malloc(src->num_chann*sizeof(*(src->selection)));
+	memcpy(dst->selection, src->selection, (src->num_chann)*sizeof(*(src->selection)));
+
+	if (src->labels) {
+		dst->labels = g_malloc((src->num_chann+1)*sizeof(*(src->labels)));
+		memcpy(dst->labels, src->labels, (src->num_chann+1)*sizeof(*(src->labels)));
+	}
 }
 
 char** add_default_labels(char** labels, unsigned int requested_num_labels, const char* prefix)

@@ -106,11 +106,12 @@ int SetupRecording(const ChannelSelection* eeg_sel, const ChannelSelection* exg_
 	char* filename;
 	int retval = 0;
 
-	if (filename = eegpanel_open_filename_dialog(panel, "*.bdf", "BDF files (*.bdf)")) {
+/*	if (filename = eegpanel_open_filename_dialog(panel, "*.bdf", "BDF files (*.bdf)")) {
 		fprintf(stderr,"filename %s\n", filename);
 		free(filename);
 		retval = 1;
-	}
+	}*/
+	retval=1;
 	return retval;
 }
 
@@ -176,6 +177,7 @@ int main(int argc, char* argv[])
 	struct PanelCb cb;
 
 	cb.user_data = NULL;
+	cb.process_selection = NULL;
 	cb.system_connection = SystemConnection;
 	cb.setup_recording = SetupRecording;
 	cb.stop_recording = StopRecording;

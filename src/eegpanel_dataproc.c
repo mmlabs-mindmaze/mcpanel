@@ -56,7 +56,7 @@ void process_eeg(EEGPanel* pan, const float* eeg, float* temp_buff, unsigned int
 	unsigned int nchann = pan->neeg;
 	dfilter* filt;
 	float* buff1, *buff2, *curr_eeg;
-	unsigned int *sel = pan->selected_eeg;
+	unsigned int *sel = pan->eegsel.selection;
 	unsigned int num_ch = pan->neeg;
 	unsigned int nmax_ch = pan->nmax_eeg;
 	
@@ -116,7 +116,7 @@ void process_exg(EEGPanel* pan, const float* exg, float* temp_buff, unsigned int
 	unsigned int nchann = pan->nexg;
 	dfilter* filt;
 	float* buff1, *buff2, *curr_exg;
-	unsigned int *sel = pan->selected_exg;
+	unsigned int *sel = pan->exgsel.selection;
 	unsigned int num_ch = pan->nexg;
 	unsigned int nmax_ch = pan->nmax_exg;
 	
@@ -217,7 +217,7 @@ void remove_electrode_ref(float* data, unsigned int nchann, const float* fullset
 }
 
 
-int set_data_input(EEGPanel* pan, int num_samples, ChannelSelection* eeg_selec, ChannelSelection* exg_selec)
+int set_data_input(EEGPanel* pan, int num_samples)
 {
 	unsigned int num_eeg_points, num_exg_points, num_tri_points, num_eeg, num_exg;
 	float *eeg, *exg;
@@ -227,8 +227,8 @@ int set_data_input(EEGPanel* pan, int num_samples, ChannelSelection* eeg_selec, 
 
 	// Use the previous values if unspecified
 	num_samples = (num_samples>=0) ? num_samples : (int)(pan->num_samples);
-	num_eeg = eeg_selec ? eeg_selec->num_chann : pan->neeg;
-	num_exg = exg_selec ? exg_selec->num_chann : pan->nexg;
+	num_eeg = pan->eegsel.num_chann;
+	num_exg = pan->exgsel.num_chann;
 
 	num_eeg_points = num_samples*num_eeg;
 	num_exg_points = num_samples*num_exg;
@@ -253,29 +253,17 @@ int set_data_input(EEGPanel* pan, int num_samples, ChannelSelection* eeg_selec, 
 		pan->triggers = triggers;
 	}
 
-	// Store the eeg selection and update the labels
-	if (eeg_selec) {
-		if (num_eeg != pan->neeg) {
-			g_free(pan->selected_eeg);
-			g_free(pan->eeg_offset);
-			pan->selected_eeg = g_malloc(num_eeg*sizeof(*(pan->selected_eeg)));
-			pan->eeg_offset = g_malloc0(num_eeg*sizeof(*(pan->eeg_offset)));
-			pan->neeg = num_eeg;
-		}
-		memcpy(pan->selected_eeg, eeg_selec->selection, num_eeg*sizeof(*(pan->selected_eeg)));
+	if (num_eeg != pan->neeg) {
+		g_free(pan->eeg_offset);
+		pan->eeg_offset = g_malloc0(num_eeg*sizeof(*(pan->eeg_offset)));
+		pan->neeg = num_eeg;
 	}
 
 
-	// Store the exg selection
-	if (exg_selec) {
-		if (num_exg != pan->nexg) {
-			g_free(pan->selected_exg);
-			g_free(pan->exg_offset);
-			pan->selected_exg = g_malloc(num_exg*sizeof(*(pan->selected_exg)));
-			pan->exg_offset = g_malloc0(num_exg*sizeof(*(pan->exg_offset)));
-			pan->nexg = num_exg;
-		}
-		memcpy(pan->selected_exg, exg_selec->selection, num_exg*sizeof(*(pan->selected_exg)));
+	if (num_exg != pan->nexg) {
+		g_free(pan->exg_offset);
+		pan->exg_offset = g_malloc0(num_exg*sizeof(*(pan->exg_offset)));
+		pan->nexg = num_exg;
 	}
 
 
@@ -306,8 +294,8 @@ void add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32
 	num_exg_ch = pan->nexg;
 	nmax_eeg = pan->nmax_eeg;
 	nmax_exg = pan->nmax_exg;
-	eeg_sel = pan->selected_eeg;
-	exg_sel = pan->selected_exg;
+	eeg_sel = pan->eegsel.selection;
+	exg_sel = pan->exgsel.selection;
 
 	
 

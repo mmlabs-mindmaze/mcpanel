@@ -52,7 +52,7 @@ struct PanelDataProc {
 };
 
 void add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples);
-int set_data_input(EEGPanel* pan, int num_samples, ChannelSelection* eeg_selec, ChannelSelection* exg_selec);
+int set_data_input(EEGPanel* pan, int num_samples);
 
 #endif /* EEGPANEL_DATAPROC_H */
 
