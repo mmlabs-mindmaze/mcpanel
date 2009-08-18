@@ -215,7 +215,7 @@ void run_dialog(EEGPanel* pan, struct DialogParam* dlgprm)
 		g_cond_free(dlgprm->cond);
 	}
 	else
-		 dlgprm->func(dlgprm);
+		dlgprm->func(dlgprm);
 }
 
 void popup_message_gui(EEGPanel* pan, const char* message)
@@ -437,7 +437,7 @@ int fill_selec_from_treeselec(ChannelSelection* sel, GtkTreeSelection* tree_sel,
 	const char** labelv = NULL;
 
 	// Allocation
-	chann_select = g_malloc(num*sizeof(*chann_select));
+	chann_select = malloc(num*sizeof(*chann_select));
 
 	// Fill the array of the selected channels
 	list = gtk_tree_selection_get_selected_rows(tree_sel, NULL);
@@ -450,7 +450,8 @@ int fill_selec_from_treeselec(ChannelSelection* sel, GtkTreeSelection* tree_sel,
 
 	// Add labels name if provided
 	if (labels) {
-		labelv = g_malloc0((num+1)*sizeof(*labelv));
+		labelv = malloc((num+1)*sizeof(*labelv));
+		labelv[num] = NULL;
 		for (i=0; i<num; i++)
 			 labelv[i] = labels[chann_select[i]];
 	}

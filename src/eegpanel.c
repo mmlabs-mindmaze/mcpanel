@@ -51,7 +51,9 @@ EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename, 
 
 
 	// Allocate memory for the structures
-	pan = g_malloc0(sizeof(*pan));
+	pan = calloc(1,sizeof(*pan));
+	if (!pan)
+		return NULL;
 	pan->data_mutex = g_mutex_new();
 
 	// Set callbacks
@@ -142,13 +144,13 @@ void eegpanel_destroy(EEGPanel* pan)
 	g_strfreev(pan->bipole_labels);
 
 	
-	g_free(pan->eeg);
-	g_free(pan->exg);
+	free(pan->eeg);
+	free(pan->exg);
 	clean_selec(&(pan->eegsel));
 	clean_selec(&(pan->exgsel));
-	g_free(pan->triggers);
+	free(pan->triggers);
 	
-	g_free(pan);
+	free(pan);
 }
 
 
@@ -223,8 +225,8 @@ void clean_selec(ChannelSelection* selection)
 	if (!selection)
 		return;
 
-	g_free(selection->selection);
-	g_free(selection->labels);
+	free(selection->selection);
+	free(selection->labels);
 	selection->selection = NULL;
 	selection->labels = NULL;
 }
@@ -235,11 +237,11 @@ void copy_selec(ChannelSelection* dst, ChannelSelection* src)
 	
 	dst->num_chann = src->num_chann;
 
-	dst->selection = g_malloc(src->num_chann*sizeof(*(src->selection)));
+	dst->selection = malloc(src->num_chann*sizeof(*(src->selection)));
 	memcpy(dst->selection, src->selection, (src->num_chann)*sizeof(*(src->selection)));
 
 	if (src->labels) {
-		dst->labels = g_malloc((src->num_chann+1)*sizeof(*(src->labels)));
+		dst->labels = malloc((src->num_chann+1)*sizeof(*(src->labels)));
 		memcpy(dst->labels, src->labels, (src->num_chann+1)*sizeof(*(src->labels)));
 	}
 }
@@ -433,24 +435,3 @@ void set_default_values(EEGPanel* pan, const char* filename)
 	g_key_file_free(key_file);
 }
 
-/*
-gint run_model_dialog(EEGPanel* pan, GtkDialog* dialog)
-{
-	gint retval;
-
-	if ((pan->main_loop_thread) && (pan->main_loop_thread != g_thread_self()))
-		retval = gtk_dialog_run(dialog);
-	else {
-		g_mutex_lock(pan->dialog_mutex);		
-		
-		pan->dialog = dialog;
-
-		g_mutex_lock(pan->dlg_completion_mutex);
-		retval = pan->dlg_retval;
-
-		g_mutex_unlock(pan->dialog_mutex);		
-	}
-
-	return retval;
-}
-*/

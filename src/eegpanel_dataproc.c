@@ -18,6 +18,7 @@
 #include "eegpanel.h"
 #include "eegpanel_shared.h"
 #include "eegpanel_dataproc.h"
+#include <stdlib.h>
 #include <string.h>
 
 
@@ -235,43 +236,39 @@ int set_data_input(EEGPanel* pan, int num_samples)
 	num_tri_points = num_samples;
 
 	if (num_eeg_points != pan->neeg*pan->num_samples) {
-		eeg = g_malloc0(num_eeg_points * sizeof(*eeg));
-		g_free(pan->eeg);
-		pan->eeg = eeg;
+		free(pan->eeg);
+		pan->eeg = malloc(num_eeg_points*sizeof(*eeg));
 	}
 	memset(pan->eeg, 0, num_eeg_points*sizeof(*eeg));
 
 	if (num_exg_points != pan->nexg*pan->num_samples) {
-		exg = g_malloc0(num_exg_points * sizeof(*exg));
-		g_free(pan->exg);
-		pan->exg = exg;
+		free(pan->exg);
+		pan->exg = malloc(num_exg_points * sizeof(*exg));
 	}
+	memset(pan->exg, 0, num_exg_points*sizeof(*eeg));
 
 	if (num_tri_points != pan->num_samples) {
-		triggers = g_malloc0(num_tri_points * sizeof(*triggers));
-		g_free(pan->triggers);
-		pan->triggers = triggers;
+		free(pan->triggers);
+		pan->triggers = malloc(num_tri_points * sizeof(*triggers));
 	}
+	memset(pan->triggers, 0, num_tri_points*sizeof(*triggers));
 
 	if (num_eeg != pan->neeg) {
-		g_free(pan->eeg_offset);
-		pan->eeg_offset = g_malloc0(num_eeg*sizeof(*(pan->eeg_offset)));
+		free(pan->eeg_offset);
+		pan->eeg_offset = malloc(num_eeg*sizeof(*(pan->eeg_offset)));
 		pan->neeg = num_eeg;
 	}
 
 
 	if (num_exg != pan->nexg) {
-		g_free(pan->exg_offset);
-		pan->exg_offset = g_malloc0(num_exg*sizeof(*(pan->exg_offset)));
+		free(pan->exg_offset);
+		pan->exg_offset = malloc(num_exg*sizeof(*(pan->exg_offset)));
 		pan->nexg = num_exg;
 	}
-
 
 	// Update the filters
 	set_all_filters(pan, NULL);
 	
-
-
 	pan->last_drawn_sample = pan->current_sample = 0;
 	pan->num_samples = num_samples;
 
@@ -284,7 +281,7 @@ int set_data_input(EEGPanel* pan, int num_samples)
 void add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples)
 {
 	unsigned int num_eeg_ch, num_exg_ch, nmax_eeg, nmax_exg;
-	unsigned int num_samples_written = 0;
+	unsigned int ns_w = 0;
 	unsigned int pointer = pan->current_sample;
 	unsigned int *eeg_sel, *exg_sel; 
 	void* buff = NULL;
@@ -301,21 +298,21 @@ void add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32
 
 	// if we need to wrap, first add the tail
 	if (num_samples+pointer > pan->num_samples) {
-		num_samples_written = pan->num_samples - pointer;
+		ns_w = pan->num_samples - pointer;
 		
-		add_samples(pan, eeg, exg, triggers, num_samples_written);
+		add_samples(pan, eeg, exg, triggers, ns_w);
 
-		eeg += nmax_eeg*num_samples_written;
-		exg += nmax_exg*num_samples_written;
-		triggers += num_samples_written;
-		num_samples -= num_samples_written;
+		eeg += nmax_eeg*ns_w;
+		exg += nmax_exg*ns_w;
+		triggers += ns_w;
+		num_samples -= ns_w;
 		pointer = pan->current_sample;
 	}
 	
 	// Create a buffer big enough to hold incoming eeg or exg data
 	buff_len = (num_eeg_ch > num_exg_ch) ? num_eeg_ch : num_exg_ch;
 	buff_len *= num_samples;
-	buff = g_malloc(buff_len*sizeof(*eeg));
+	buff = malloc(buff_len*sizeof(*eeg));
 
 	// copy data
 	if (eeg) 
@@ -325,7 +322,7 @@ void add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32
 	if (triggers)
 		process_tri(pan, triggers, buff, num_samples);
 
-	g_free(buff);
+	free(buff);
 
 	// Update current pointer
 	pointer += num_samples;
