@@ -193,7 +193,7 @@ binary_scope_draw_samples(const BinaryScope* self, unsigned int first, unsigned 
 		iColor = iChannel % nColors;
 		gdk_gc_set_foreground(plotgc, colors+iColor);
 
-		bScanning = (values[i] & channelMask) ? 1 : 0;
+		bScanning = (values[first] & channelMask) ? 1 : 0;
 		iSample = first;
 		for (i=first; i<=last; i++) {
 			if ((values[i] & channelMask) && !bScanning) {
