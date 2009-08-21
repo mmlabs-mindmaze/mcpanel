@@ -42,7 +42,7 @@ void process_tri(EEGPanel* pan, const uint32_t* tri, uint32_t* temp_buff, unsign
 void remove_electrode_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples, unsigned int elec_ref);
 void remove_common_avg_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples);
 void set_all_filters(EEGPanel* pan, FilterParam* options);
-
+static void reinit_filter(struct InternalFilterState* filprm, const float* val);
 
 
 
@@ -56,7 +56,7 @@ void process_eeg(EEGPanel* pan, const float* eeg, float* temp_buff, unsigned int
 {
 	unsigned int i, j;
 	unsigned int nchann = pan->neeg;
-	hfilter filt;
+	struct InternalFilterState* filprm;
 	float* buff1, *buff2, *curr_eeg;
 	unsigned int *sel = pan->eegsel.selection;
 	unsigned int num_ch = pan->neeg;
@@ -75,9 +75,10 @@ void process_eeg(EEGPanel* pan, const float* eeg, float* temp_buff, unsigned int
 	SWAP_POINTERS(buff1, buff2);
 
 	
-	filt = pan->dta.filt[EEG_OFFSET_FILTER];
-	if (filt) {
-		filter_f(filt, buff1, buff2, n_samples);
+	filprm = &(pan->dta.filstate[EEG_OFFSET_FILTER]);
+	if (filprm->filt) {
+		reinit_filter(filprm, buff1);
+		filter_f(filprm->filt, buff1, buff2, n_samples);
 		// copy last samples
 		for (i=0; i<num_ch; i++)
 			pan->eeg_offset[i] = buff2[nchann*(n_samples-1)+i];
@@ -94,15 +95,17 @@ void process_eeg(EEGPanel* pan, const float* eeg, float* temp_buff, unsigned int
 	
 	
 
-	filt = pan->dta.filt[EEG_LOWPASS_FILTER];
-	if (filt) {
-		filter_f(filt, buff1, buff2, n_samples);
+	filprm = &(pan->dta.filstate[EEG_LOWPASS_FILTER]);
+	if (filprm->filt) {
+		reinit_filter(filprm, buff1);
+		filter_f(filprm->filt, buff1, buff2, n_samples);
 		SWAP_POINTERS(buff1, buff2);		
 	}
 
-	filt = pan->dta.filt[EEG_HIGHPASS_FILTER];
-	if (filt) {
-		filter_f(filt, buff1, buff2, n_samples);
+	filprm = &(pan->dta.filstate[EEG_HIGHPASS_FILTER]);
+	if (filprm->filt) {
+		reinit_filter(filprm, buff1);
+		filter_f(filprm->filt, buff1, buff2, n_samples);
 		SWAP_POINTERS(buff1, buff2);
 	}
 	
@@ -116,7 +119,7 @@ void process_exg(EEGPanel* pan, const float* exg, float* temp_buff, unsigned int
 {
 	unsigned int i, j, k;
 	unsigned int nchann = pan->nexg;
-	hfilter filt;
+	struct InternalFilterState* filprm;
 	float* buff1, *buff2, *curr_exg;
 	unsigned int *sel = pan->exgsel.selection;
 	unsigned int num_ch = pan->nexg;
@@ -137,9 +140,10 @@ void process_exg(EEGPanel* pan, const float* exg, float* temp_buff, unsigned int
 	SWAP_POINTERS(buff1, buff2);
 
 	
-	filt = pan->dta.filt[EXG_OFFSET_FILTER];
-	if (filt) {
-		filter_f(filt, buff1, buff2, n_samples);
+	filprm = &(pan->dta.filstate[EXG_OFFSET_FILTER]);
+	if (filprm->filt) {
+		reinit_filter(filprm, buff1);
+		filter_f(filprm->filt, buff1, buff2, n_samples);
 		// copy last samples
 		for (i=0; i<num_ch; i++)
 			pan->exg_offset[i] = buff2[nchann*(n_samples-1)+i];
@@ -148,15 +152,17 @@ void process_exg(EEGPanel* pan, const float* exg, float* temp_buff, unsigned int
 	// Process decimation
 	// TODO
 
-	filt = pan->dta.filt[EXG_LOWPASS_FILTER];
-	if (filt) {
-		filter_f(filt, buff1, buff2, n_samples);
+	filprm = &(pan->dta.filstate[EXG_LOWPASS_FILTER]);
+	if (filprm->filt) {
+		reinit_filter(filprm, buff1);
+		filter_f(filprm->filt, buff1, buff2, n_samples);
 		SWAP_POINTERS(buff1, buff2);		
 	}
 
-	filt = pan->dta.filt[EXG_HIGHPASS_FILTER];
-	if (filt) {
-		filter_f(filt, buff1, buff2, n_samples);
+	filprm = &(pan->dta.filstate[EXG_HIGHPASS_FILTER]);
+	if (filprm->filt) {
+		reinit_filter(filprm, buff1);
+		filter_f(filprm->filt, buff1, buff2, n_samples);
 		SWAP_POINTERS(buff1, buff2);
 	}
 	
@@ -224,8 +230,12 @@ int set_data_input(EEGPanel* pan, int num_samples)
 	unsigned int num_eeg_points, num_exg_points, num_tri_points, num_eeg, num_exg;
 	float *eeg, *exg;
 	uint32_t *triggers;
+	int reset_filters = 1;
 
 	pan->decimation_offset = 0;
+
+	if (num_samples >= 0)
+		reset_filters = 0;
 
 	// Use the previous values if unspecified
 	num_samples = (num_samples>=0) ? num_samples : (int)(pan->num_samples);
@@ -268,7 +278,8 @@ int set_data_input(EEGPanel* pan, int num_samples)
 	}
 
 	// Update the filters
-	set_all_filters(pan, NULL);
+	if (reset_filters)
+		set_all_filters(pan, NULL);
 	
 	pan->last_drawn_sample = pan->current_sample = 0;
 	pan->num_samples = num_samples;
@@ -332,32 +343,40 @@ void add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32
 	pan->current_sample = pointer;
 }
 
+static void reinit_filter(struct InternalFilterState* filprm, const float* val)
+{
+	if (filprm->reinit) {
+		init_filter(filprm->filt, val);
+		filprm->reinit = 0;
+	}
+}
 
-void set_one_filter(EEGPanel* pan, EnumFilter type, FilterParam* options, unsigned int nchann, int highpass)
+void set_one_filter(EEGPanel* pan, EnumFilter type)
 {
 	float fs = pan->fs;
-	hfilter filt = pan->dta.filt[type];
-	FilterParam* curr_param =  &(pan->filter_param[type]);
-	FilterParam* param = options + type;
+	FilterParam* param =  &(pan->filter_param[type]);
+	struct InternalFilterState* iprm = &(pan->dta.filstate[type]);
 
 	
 	if (param->state) {
-		if (!filt || ((param->freq/fs!=curr_param->fc) || (pan->dta.numch[type] != nchann))) {
-			destroy_filter(filt);
-			param->fc = param->freq/fs;
-			filt = create_butterworth_filter(param->fc, 2, nchann, highpass, DATATYPE_FLOAT);
-			pan->filter_param[type] = *param;
-			pan->dta.numch[type] = nchann;
+		if (!iprm->filt || ((param->freq/fs!=iprm->fc) || (iprm->numch != param->numch))) {
+			destroy_filter(iprm->filt);
+			iprm->fc = param->freq/fs;
+			iprm->numch = param->numch;
+			iprm->filt = create_butterworth_filter(iprm->fc, 2,
+			                                 iprm->numch, 
+							 param->highpass, 
+							 DATATYPE_FLOAT);
 		}
 		else
-			reset_filter(filt);
+			reset_filter(iprm->filt);
 	}
 	else {
-		destroy_filter(filt);
-		filt = NULL;
+		destroy_filter(iprm->filt);
+		iprm->filt = NULL;
 	}
 
-	pan->dta.filt[type] = filt;
+	iprm->reinit = 1;
 }
 
 void destroy_dataproc(EEGPanel* pan)
@@ -365,7 +384,7 @@ void destroy_dataproc(EEGPanel* pan)
 	int i;
 
 	for (i=0; i<NUM_FILTERS; i++)
-		destroy_filter(pan->dta.filt[i]);
+		destroy_filter(pan->dta.filstate[i].filt);
 	
 	free(pan->eeg);
 	free(pan->exg);

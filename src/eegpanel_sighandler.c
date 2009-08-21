@@ -19,6 +19,8 @@
 #include "eegpanel_shared.h"
 #include "eegpanel_gui.h"
 #include "eegpanel_sighandler.h"
+#include <gtk/gtktogglebutton.h>
+#include <gtk/gtkspinbutton.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -204,10 +206,15 @@ extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer u
 
 	g_mutex_lock(pan->data_mutex);
 	if (!pan->cb.process_selection || (pan->cb.process_selection(&select, type, pan->cb.user_data) > 0)) {
-		if (type == EEG)
+		if (type == EEG) {
 			copy_selec(&(pan->eegsel), &select);
-		else
+			set_one_filter(pan, EEG_LOWPASS_FILTER);
+			set_one_filter(pan, EEG_HIGHPASS_FILTER);
+		} else {
 			copy_selec(&(pan->exgsel), &select);
+			set_one_filter(pan, EXG_LOWPASS_FILTER);
+			set_one_filter(pan, EXG_HIGHPASS_FILTER);
+		}
 		set_data_input(pan, -1);
 	}
 	g_mutex_unlock(pan->data_mutex);
@@ -306,6 +313,29 @@ void time_window_combo_changed_cb(GtkComboBox* combo, gpointer user_data)
 	g_mutex_unlock(pan->data_mutex);
 }
 
+int guess_filter(EEGPanel* pan, GObject* widg)
+{
+	int type = -1;
+
+	if ((widg == pan->gui.widgets[EEG_LOWPASS_SPIN]) || 
+	    (widg == pan->gui.widgets[EEG_LOWPASS_CHECK])) {
+		type = EEG_LOWPASS_FILTER;
+	}
+	if ((widg == pan->gui.widgets[EEG_HIGHPASS_SPIN]) || 
+	    (widg == pan->gui.widgets[EEG_HIGHPASS_CHECK])) {
+		type = EEG_HIGHPASS_FILTER;
+	}
+	if ((widg == pan->gui.widgets[EXG_LOWPASS_SPIN]) || 
+	    (widg == pan->gui.widgets[EXG_LOWPASS_CHECK])) {
+		type = EXG_LOWPASS_FILTER;
+	}
+	if ((widg == pan->gui.widgets[EXG_HIGHPASS_SPIN]) || 
+	    (widg == pan->gui.widgets[EXG_HIGHPASS_CHECK])) {
+		type = EXG_HIGHPASS_FILTER;
+	}
+	return type;
+}
+
 void filter_button_changed_cb(GtkButton* button, gpointer user_data)
 {
 	FilterParam options[NUM_FILTERS];
@@ -313,40 +343,26 @@ void filter_button_changed_cb(GtkButton* button, gpointer user_data)
 	int eeg_low_state, eeg_high_state, exg_low_state, exg_high_state;
 	float fs;
 	(void)user_data;
+	int type, reset = 0;
 
 	EEGPanel* pan = GET_PANEL_FROM(button);
 
-	// Get the cut-off frequencies specified by the spin buttons
-	eeg_low_fc = gtk_spin_button_get_value(GTK_SPIN_BUTTON(pan->gui.widgets[EEG_LOWPASS_SPIN]));
-	eeg_high_fc = gtk_spin_button_get_value(GTK_SPIN_BUTTON(pan->gui.widgets[EEG_HIGHPASS_SPIN]));
-	exg_low_fc = gtk_spin_button_get_value(GTK_SPIN_BUTTON(pan->gui.widgets[EXG_LOWPASS_SPIN]));
-	exg_high_fc = gtk_spin_button_get_value(GTK_SPIN_BUTTON(pan->gui.widgets[EXG_HIGHPASS_SPIN]));
-
-	// Retrieve the state of the check boxes
-	eeg_low_state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pan->gui.widgets[EEG_LOWPASS_CHECK]));
-	eeg_high_state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pan->gui.widgets[EEG_HIGHPASS_CHECK]));
-	exg_low_state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pan->gui.widgets[EXG_LOWPASS_CHECK]));
-	exg_high_state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(pan->gui.widgets[EXG_HIGHPASS_CHECK]));
-
+	type = guess_filter(pan, G_OBJECT(button));
+	if (type == -1)
+		return;
 
 	g_mutex_lock(pan->data_mutex);
-	fs = pan->fs / pan->decimation_factor;
-	memcpy(options, pan->filter_param, sizeof(options));
-	
-	// Set the cutoff frequencies of every filters
-	options[EEG_LOWPASS_FILTER].freq = eeg_low_fc;
-	options[EEG_LOWPASS_FILTER].state = eeg_low_state;
-	options[EEG_HIGHPASS_FILTER].freq = eeg_high_fc;
-	options[EEG_HIGHPASS_FILTER].state = eeg_high_state;
-	options[EXG_LOWPASS_FILTER].freq = exg_low_fc;
-	options[EXG_LOWPASS_FILTER].state = exg_low_state;
-	options[EXG_HIGHPASS_FILTER].freq = exg_high_fc;
-	options[EXG_HIGHPASS_FILTER].state = exg_high_state;
-	
-	
-	memcpy(pan->filter_param, options, sizeof(options));
-	set_data_input(pan, -1);
-//	set_all_filters(pan, options);
+	if (GTK_IS_SPIN_BUTTON(button)) {
+		pan->filter_param[type].freq = gtk_spin_button_get_value(GTK_SPIN_BUTTON(button));
+		if (pan->filter_param[type].state)
+			reset = 1;
+	}
+	if (GTK_IS_TOGGLE_BUTTON(button)) {
+		pan->filter_param[type].state = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
+		reset = 1;
+	}
+
+	set_one_filter(pan, type);
 	g_mutex_unlock(pan->data_mutex);
 }
 

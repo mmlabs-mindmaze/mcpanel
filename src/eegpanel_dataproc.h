@@ -33,28 +33,24 @@ typedef enum {
 } EnumFilter;
 
 
-typedef struct _FilterParam {
-	float fc;
-	float freq;
-	int state;
-} FilterParam;
-
-
-
 typedef struct _Indicators {
 	unsigned int cms_in_range	: 1;
 	unsigned int low_battery	: 1;
 } Indicators;
 
-
+struct InternalFilterState {
+	hfilter filt;
+	float fc;
+	unsigned int numch;
+	int reinit;
+};
 struct PanelDataProc {
-	hfilter filt[NUM_FILTERS];
-	unsigned int numch[NUM_FILTERS];
+	struct InternalFilterState filstate[NUM_FILTERS];
 };
 
 void add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples);
 int set_data_input(EEGPanel* pan, int num_samples);
-void set_one_filter(EEGPanel* pan, EnumFilter type, FilterParam* options, unsigned int nchann, int highpass);
+void set_one_filter(EEGPanel* pan, EnumFilter type);
 void destroy_dataproc(EEGPanel* pan);
 
 #endif /* EEGPANEL_DATAPROC_H */

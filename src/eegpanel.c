@@ -302,18 +302,26 @@ void set_all_filters(EEGPanel* pan, FilterParam* options)
 
 	options[EEG_DECIMATION_FILTER].state = dec_state;
 	options[EXG_DECIMATION_FILTER].state = dec_state;
+	options[EEG_LOWPASS_FILTER].numch = pan->neeg;
+	options[EXG_LOWPASS_FILTER].numch = pan->nexg;
+	options[EEG_HIGHPASS_FILTER].numch = pan->neeg;
+	options[EXG_HIGHPASS_FILTER].numch = pan->nexg;
+	options[EEG_DECIMATION_FILTER].numch = pan->neeg;
+	options[EXG_DECIMATION_FILTER].numch = pan->nexg;
+	options[EEG_OFFSET_FILTER].numch = pan->neeg;
+	options[EXG_OFFSET_FILTER].numch = pan->nexg;
 
 	// Set the filters
-	set_one_filter(pan, EEG_LOWPASS_FILTER, options, pan->neeg, 0);
-	set_one_filter(pan, EEG_HIGHPASS_FILTER, options, pan->neeg, 1);
-	set_one_filter(pan, EXG_LOWPASS_FILTER, options, pan->nexg, 0);
-	set_one_filter(pan, EXG_HIGHPASS_FILTER, options, pan->nexg, 1);
+	set_one_filter(pan, EEG_LOWPASS_FILTER);
+	set_one_filter(pan, EEG_HIGHPASS_FILTER);
+	set_one_filter(pan, EXG_LOWPASS_FILTER);
+	set_one_filter(pan, EXG_HIGHPASS_FILTER);
 
-	set_one_filter(pan, EEG_DECIMATION_FILTER, options, pan->neeg, 0);
-	set_one_filter(pan, EXG_DECIMATION_FILTER, options, pan->nexg, 0);
+	set_one_filter(pan, EEG_DECIMATION_FILTER);
+	set_one_filter(pan, EXG_DECIMATION_FILTER);
 
-	set_one_filter(pan, EEG_OFFSET_FILTER, options, pan->neeg, 0);
-	set_one_filter(pan, EXG_OFFSET_FILTER, options, pan->nexg, 0);
+	set_one_filter(pan, EEG_OFFSET_FILTER);
+	set_one_filter(pan, EXG_OFFSET_FILTER);
 }
 
 
@@ -329,20 +337,28 @@ void initialize_all_filters(EEGPanel* pan)
 
 	options[EEG_OFFSET_FILTER].state = 1;
 	options[EEG_OFFSET_FILTER].freq = 1.0;
+	options[EEG_OFFSET_FILTER].highpass = 0;
 	options[EXG_OFFSET_FILTER].state = 1;
 	options[EXG_OFFSET_FILTER].freq = 1.0;
+	options[EXG_OFFSET_FILTER].highpass = 0;
 	options[EEG_DECIMATION_FILTER].freq = dec_fc;
 	options[EEG_DECIMATION_FILTER].state = dec_state;
+	options[EEG_DECIMATION_FILTER].highpass = 0;
 	options[EXG_DECIMATION_FILTER].freq = dec_fc;
 	options[EXG_DECIMATION_FILTER].state = dec_state;
+	options[EXG_DECIMATION_FILTER].highpass = 0;
 	options[EEG_LOWPASS_FILTER].state = 0;
 	options[EEG_LOWPASS_FILTER].freq = 0.1;
+	options[EEG_LOWPASS_FILTER].highpass = 0;
 	options[EEG_HIGHPASS_FILTER].state = 0;
 	options[EEG_HIGHPASS_FILTER].freq = 0.4*fs;
-	options[EEG_LOWPASS_FILTER].state = 0;
-	options[EEG_LOWPASS_FILTER].freq = 0.1;
-	options[EEG_HIGHPASS_FILTER].state = 0;
-	options[EEG_HIGHPASS_FILTER].freq = 0.4*fs;
+	options[EEG_HIGHPASS_FILTER].highpass = 1;
+	options[EXG_LOWPASS_FILTER].state = 0;
+	options[EXG_LOWPASS_FILTER].freq = 0.1;
+	options[EXG_LOWPASS_FILTER].highpass = 0;
+	options[EXG_HIGHPASS_FILTER].state = 0;
+	options[EXG_HIGHPASS_FILTER].freq = 0.4*fs;
+	options[EXG_HIGHPASS_FILTER].highpass = 1;
 }
 
 

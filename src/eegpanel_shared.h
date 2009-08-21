@@ -28,6 +28,15 @@ typedef enum {
 	ELECTRODE_REF
 } RefType;
 
+
+
+typedef struct _FilterParam {
+	float freq;
+	int state;
+	int highpass;
+	int numch;
+} FilterParam;
+
 struct _EEGPanel {
 
 	GThread* main_loop_thread;
