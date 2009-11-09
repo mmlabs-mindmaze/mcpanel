@@ -369,7 +369,7 @@ void set_one_filter(EEGPanel* pan, EnumFilter type)
 							 DATATYPE_FLOAT);
 		}
 		else
-			reset_filter(iprm->filt);
+			init_filter(iprm->filt, NULL);
 	}
 	else {
 		destroy_filter(iprm->filt);
