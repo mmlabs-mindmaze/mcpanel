@@ -363,10 +363,10 @@ void set_one_filter(EEGPanel* pan, EnumFilter type)
 			destroy_filter(iprm->filt);
 			iprm->fc = param->freq/fs;
 			iprm->numch = param->numch;
-			iprm->filt = create_butterworth_filter(iprm->fc, 2,
-			                                 iprm->numch, 
-							 param->highpass, 
-							 DATATYPE_FLOAT);
+			iprm->filt = create_butterworth_filter(iprm->numch,
+			                                 DATATYPE_FLOAT,
+			                                 iprm->fc, 2,
+							 param->highpass);
 		}
 		else
 			init_filter(iprm->filt, NULL);
