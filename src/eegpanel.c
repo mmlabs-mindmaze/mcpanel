@@ -65,6 +65,10 @@ EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename, 
 	pan->display_length = 1.0f;
 	pan->decimation_factor = 1;
 
+	// Initialize the content of the widgets
+	if (settingsfilename)
+		set_default_values(pan, settingsfilename);
+
 	// Create the panel widgets according to the ui definition files
 	if (!create_panel_gui(pan, uifilename)) {
 		eegpanel_destroy(pan);
@@ -73,9 +77,6 @@ EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename, 
 		
 	initialize_all_filters(pan);
 	
-	// Initialize the content of the widgets
-	if (settingsfilename)
-		set_default_values(pan, settingsfilename);
 	get_initial_values(pan);
 	eegpanel_define_input(pan, 0, 0, 16, 2048);
 
@@ -399,7 +400,7 @@ void set_default_values(EEGPanel* pan, const char* filename)
 	GKeyFile* key_file;
 
 	key_file = g_key_file_new();
-	if (!g_key_file_load_from_file(key_file, "settings.ini", G_KEY_FILE_NONE, NULL)) {
+	if (!g_key_file_load_from_file(key_file, filename, G_KEY_FILE_NONE, NULL)) {
 		g_key_file_free(key_file);
 		return;
 	}

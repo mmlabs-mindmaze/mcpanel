@@ -179,6 +179,7 @@ int main(int argc, char* argv[])
 {
 	EEGPanel* panel;
 	struct PanelCb cb;
+	char settingfile[128];
 
 	cb.user_data = NULL;
 	cb.process_selection = NULL;
@@ -189,7 +190,8 @@ int main(int argc, char* argv[])
 	
 	init_eegpanel_lib(&argc, &argv);
 
-	panel = eegpanel_create(NULL/*"eegpanel.ui"*/, NULL, &cb);
+	sprintf(settingfile, "%s/settings.ini", getenv("srcdir"));
+	panel = eegpanel_create(NULL, settingfile, &cb);
 	if (!panel) {
 		fprintf(stderr,"error at the creation of the panel\n");
 		return 1;
