@@ -77,10 +77,10 @@ void* reading_thread(void* arg)
 			eegpanel_add_samples(panel, eeg, exg, tri, NSAMPLES);
 			isample += NSAMPLES;
 
-			if ((isample<201*NSAMPLES)&&(isample >= 200*NSAMPLES)) {
+			/*if ((isample<201*NSAMPLES)&&(isample >= 200*NSAMPLES)) {
 				eegpanel_popup_message(panel, "Hello!");
 				isample = 201*NSAMPLES;
-			}
+			}*/
 //			prev = curr;
 //		}
 	}

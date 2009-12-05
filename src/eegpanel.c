@@ -26,7 +26,7 @@
 gpointer loop_thread(gpointer user_data);
 char** add_default_labels(char** labels, unsigned int requested_num_labels, const char* prefix);
 void set_bipole_labels(EEGPanel* pan);
-void initialize_all_filters(EEGPanel* pan);
+void init_filter_params(EEGPanel* pan);
 void set_default_values(EEGPanel* pan, const char* filename);
 gint run_model_dialog(EEGPanel* pan, GtkDialog* dialog);
 void get_initial_values(EEGPanel* pan);
@@ -64,6 +64,7 @@ EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename, 
 	// Needed initializations
 	pan->display_length = 1.0f;
 	pan->decimation_factor = 1;
+	init_filter_params(pan);
 
 	// Initialize the content of the widgets
 	if (settingsfilename)
@@ -75,8 +76,6 @@ EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename, 
 		return NULL;
 	}
 		
-	initialize_all_filters(pan);
-	
 	get_initial_values(pan);
 	eegpanel_define_input(pan, 0, 0, 16, 2048);
 
@@ -326,7 +325,7 @@ void set_all_filters(EEGPanel* pan, FilterParam* options)
 }
 
 
-void initialize_all_filters(EEGPanel* pan)
+void init_filter_params(EEGPanel* pan)
 {
 	FilterParam* options = pan->filter_param;
 	float fs = pan->fs;
