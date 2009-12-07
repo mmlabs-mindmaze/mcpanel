@@ -44,20 +44,40 @@ typedef int (*ToggleRecordingFunc)(int start, void* user_data);
 
 
 struct PanelCb {
-	// function supplied by the user
+	/* function supplied by the user */
 	ProcessSelectionFunc process_selection;
 	SystemConnectionFunc system_connection;
 	SetupRecordingFunc setup_recording;
 	StopRecordingFunc stop_recording;
 	ToggleRecordingFunc toggle_recording; 
 
-	// pointer used to pass data to the user functions
+	/* pointer used to pass data to the user functions */
 	void* user_data;
 };
 
+struct FilterSettings {
+	int state;
+	float freq;
+};
+
+enum FilterNames {
+	EEG_LOWPASS_FLT = 0,
+	EEG_HIGHPASS_FLT,
+	SENSOR_LOWPASS_FLT,
+	SENSOR_HIGHPASS_FLT,
+	NUMMAX_FLT
+};
+
+struct PanelSettings {
+	const char* uifilename;
+	const struct FilterSettings* filt[NUMMAX_FLT];
+	unsigned int num_eeg, num_sensor;
+	const char** eeglabels;
+	const char** sensorlabels;
+};
+
 void init_eegpanel_lib(int *argc, char ***argv);
-EEGPanel* eegpanel_create(const char* uifilename, 
-                          const char* settingsfilename, 
+EEGPanel* eegpanel_create(const struct PanelSettings* settings, 
 			  const struct PanelCb* cb);
 void eegpanel_destroy(EEGPanel* panel);
 void eegpanel_show(EEGPanel* panel, int state);
@@ -69,4 +89,4 @@ int eegpanel_define_input(EEGPanel* panel, unsigned int num_eeg_channels,
 				unsigned int num_exg_channels, unsigned int num_tri_lines,
 				unsigned int sampling_rate);
 
-#endif //_EEGPANEL_H_
+#endif /*_EEGPANEL_H_*/

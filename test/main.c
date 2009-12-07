@@ -24,6 +24,16 @@ uint32_t *gtri = NULL;
 	(timeout).tv_nsec = nsec_duration%1000000000;			\
 } while (0)
 
+char* eeg_labels[64] = {"Fp1","AF7","AF3","F1","F3","F5","F7","FT7",
+			"FC5","FC3","FC1","C1","C3","C5","T7","TP7",
+			"CP5","CP3","CP1","P1","P3","P5","P7","P9",
+			"PO7","PO3","O1","Iz","Oz","POz","Pz","CPz",
+			"Fpz","Fp2","AF8","AF4","AFz","Fz","F2","F4",
+			"F6","F8","FT8","FC6","FC4","FC2","FCz","Cz",
+			"C2","C4","C6","T8","TP8","CP6","CP4","CP2",
+			"P2","P4","P6","P8","P10","PO8","PO4","O2"
+};
+
 void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 {
 	int i, j;
@@ -180,6 +190,16 @@ int main(int argc, char* argv[])
 	EEGPanel* panel;
 	struct PanelCb cb;
 	char settingfile[128];
+	struct FilterSettings lowpass = { .state = 1, .freq = 100.0f };
+	struct FilterSettings highpass = { .state = 1, .freq = 1.0f };
+	struct PanelSettings settings = {
+		.filt[EEG_LOWPASS_FLT] = &lowpass,
+		.filt[SENSOR_LOWPASS_FLT] = &lowpass,
+		.filt[EEG_HIGHPASS_FLT] = &highpass,
+		.filt[SENSOR_HIGHPASS_FLT] = &highpass,
+		.eeglabels = eeg_labels,
+		.num_eeg = 64
+	};
 
 	cb.user_data = NULL;
 	cb.process_selection = NULL;
@@ -190,8 +210,7 @@ int main(int argc, char* argv[])
 	
 	init_eegpanel_lib(&argc, &argv);
 
-	sprintf(settingfile, "%s/settings.ini", getenv("srcdir"));
-	panel = eegpanel_create(NULL, settingfile, &cb);
+	panel = eegpanel_create(&settings, &cb);
 	if (!panel) {
 		fprintf(stderr,"error at the creation of the panel\n");
 		return 1;

@@ -234,11 +234,15 @@ int set_data_input(EEGPanel* pan, int num_samples)
 
 	pan->decimation_offset = 0;
 
+
+	// A positive values indicates that we wanted to change
+	// specifically the number of samples displayed
 	if (num_samples >= 0)
 		reset_filters = 0;
+	else
+		num_samples = pan->num_samples;
 
 	// Use the previous values if unspecified
-	num_samples = (num_samples>=0) ? num_samples : (int)(pan->num_samples);
 	num_eeg = pan->eegsel.num_chann;
 	num_exg = pan->exgsel.num_chann;
 

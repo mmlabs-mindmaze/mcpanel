@@ -27,6 +27,8 @@ gpointer loop_thread(gpointer user_data);
 char** add_default_labels(char** labels, unsigned int requested_num_labels, const char* prefix);
 void set_bipole_labels(EEGPanel* pan);
 void init_filter_params(EEGPanel* pan);
+void get_default_channel_labels_str(char*** labels, const char** src, unsigned int numch);
+void set_default_values_str(EEGPanel* pan, const struct PanelSettings* settings);
 void set_default_values(EEGPanel* pan, const char* filename);
 gint run_model_dialog(EEGPanel* pan, GtkDialog* dialog);
 void get_initial_values(EEGPanel* pan);
@@ -43,10 +45,11 @@ void init_eegpanel_lib(int *argc, char ***argv)
 	gtk_init(argc, argv);
 }
 
-EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename, const struct PanelCb* cb)
+EEGPanel* eegpanel_create(const struct PanelSettings* settings, const struct PanelCb* cb)
 {
 	EEGPanel* pan = NULL;
 	guint success = 0;
+	const char* uifilename = NULL;
 
 
 	// Allocate memory for the structures
@@ -67,8 +70,10 @@ EEGPanel* eegpanel_create(const char* uifilename, const char* settingsfilename, 
 	init_filter_params(pan);
 
 	// Initialize the content of the widgets
-	if (settingsfilename)
-		set_default_values(pan, settingsfilename);
+	if (settings) {
+		uifilename = settings->uifilename;
+		set_default_values_str(pan, settings);
+	}
 
 	// Create the panel widgets according to the ui definition files
 	if (!create_panel_gui(pan, uifilename)) {
@@ -255,7 +260,7 @@ char** add_default_labels(char** labels, unsigned int requested_num_labels, cons
 	if(prev_length < requested_num_labels) {
 		/* Calculate the size of the prefix to know the size that should be allocated to the strings */
 		alloc_length = 0;
-		while(prefix[alloc_length])
+		while (prefix[alloc_length])
 			alloc_length++;
 
 		alloc_length += 5;
@@ -392,6 +397,40 @@ void get_default_channel_labels(GKeyFile* key_file, char*** labels, const char* 
 		i++;
 	}
 	g_strfreev(keys);
+}
+
+
+void get_default_channel_labels_str(char*** labels, const char** src, unsigned int numch)
+{
+	int i;
+	if (!src || !numch)
+		return;
+
+	g_strfreev(*labels);
+	*labels = g_malloc0((numch+1)*sizeof(char*));
+	
+	for (i=0; i<numch; i++) {
+		(*labels)[i] = g_malloc0(strlen(src[i])+1);
+		strcpy((*labels)[i], src[i]);
+	}
+}
+
+void set_default_values_str(EEGPanel* pan, const struct PanelSettings* settings)
+{
+	int i;
+
+	if (!settings)
+		return;
+
+	for (i=0; i<NUMMAX_FLT; i++) {
+		if (settings->filt[i]) {
+			pan->filter_param[i].state = settings->filt[i]->state;
+			pan->filter_param[i].freq = settings->filt[i]->freq;
+		}
+	}
+
+	get_default_channel_labels_str(&(pan->eeg_labels),settings->eeglabels, settings->num_eeg);
+	get_default_channel_labels_str(&(pan->exg_labels),settings->sensorlabels, settings->num_sensor);
 }
 
 void set_default_values(EEGPanel* pan, const char* filename)
