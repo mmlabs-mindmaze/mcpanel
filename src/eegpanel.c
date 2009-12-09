@@ -423,10 +423,8 @@ void set_default_values_str(EEGPanel* pan, const struct PanelSettings* settings)
 		return;
 
 	for (i=0; i<NUMMAX_FLT; i++) {
-		if (settings->filt[i]) {
-			pan->filter_param[i].state = settings->filt[i]->state;
-			pan->filter_param[i].freq = settings->filt[i]->freq;
-		}
+		pan->filter_param[i].state = settings->filt[i].state;
+		pan->filter_param[i].freq = settings->filt[i].freq;
 	}
 
 	get_default_channel_labels_str(&(pan->eeg_labels),settings->eeglabels, settings->num_eeg);

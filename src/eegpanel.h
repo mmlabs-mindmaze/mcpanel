@@ -70,7 +70,7 @@ enum FilterNames {
 
 struct PanelSettings {
 	const char* uifilename;
-	const struct FilterSettings* filt[NUMMAX_FLT];
+	struct FilterSettings filt[NUMMAX_FLT];
 	unsigned int num_eeg, num_sensor;
 	const char** eeglabels;
 	const char** sensorlabels;
