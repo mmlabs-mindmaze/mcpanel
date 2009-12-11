@@ -208,12 +208,12 @@ extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer u
 	if (!pan->cb.process_selection || (pan->cb.process_selection(&select, type, pan->cb.user_data) > 0)) {
 		if (type == EEG) {
 			copy_selec(&(pan->eegsel), &select);
-			set_one_filter(pan, EEG_LOWPASS_FILTER);
-			set_one_filter(pan, EEG_HIGHPASS_FILTER);
+			update_filter(pan, EEG_LOWPASS_FILTER);
+			update_filter(pan, EEG_HIGHPASS_FILTER);
 		} else {
 			copy_selec(&(pan->exgsel), &select);
-			set_one_filter(pan, EXG_LOWPASS_FILTER);
-			set_one_filter(pan, EXG_HIGHPASS_FILTER);
+			update_filter(pan, EXG_LOWPASS_FILTER);
+			update_filter(pan, EXG_HIGHPASS_FILTER);
 		}
 		set_data_input(pan, -1);
 	}
@@ -362,7 +362,7 @@ void filter_button_changed_cb(GtkButton* button, gpointer user_data)
 		reset = 1;
 	}
 
-	set_one_filter(pan, type);
+	update_filter(pan, type);
 	g_mutex_unlock(pan->data_mutex);
 }
 

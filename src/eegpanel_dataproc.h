@@ -51,7 +51,7 @@ struct PanelDataProc {
 
 void add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples);
 int set_data_input(EEGPanel* pan, int num_samples);
-void set_one_filter(EEGPanel* pan, EnumFilter type);
+void update_filter(EEGPanel* pan, EnumFilter type);
 void destroy_dataproc(EEGPanel* pan);
 
 #endif /* EEGPANEL_DATAPROC_H */

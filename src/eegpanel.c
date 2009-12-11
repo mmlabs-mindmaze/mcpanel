@@ -317,16 +317,16 @@ void set_all_filters(EEGPanel* pan, FilterParam* options)
 	options[EXG_OFFSET_FILTER].numch = pan->nexg;
 
 	// Set the filters
-	set_one_filter(pan, EEG_LOWPASS_FILTER);
-	set_one_filter(pan, EEG_HIGHPASS_FILTER);
-	set_one_filter(pan, EXG_LOWPASS_FILTER);
-	set_one_filter(pan, EXG_HIGHPASS_FILTER);
+	update_filter(pan, EEG_LOWPASS_FILTER);
+	update_filter(pan, EEG_HIGHPASS_FILTER);
+	update_filter(pan, EXG_LOWPASS_FILTER);
+	update_filter(pan, EXG_HIGHPASS_FILTER);
 
-	set_one_filter(pan, EEG_DECIMATION_FILTER);
-	set_one_filter(pan, EXG_DECIMATION_FILTER);
+	update_filter(pan, EEG_DECIMATION_FILTER);
+	update_filter(pan, EXG_DECIMATION_FILTER);
 
-	set_one_filter(pan, EEG_OFFSET_FILTER);
-	set_one_filter(pan, EXG_OFFSET_FILTER);
+	update_filter(pan, EEG_OFFSET_FILTER);
+	update_filter(pan, EXG_OFFSET_FILTER);
 }
 
 

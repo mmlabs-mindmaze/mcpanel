@@ -42,7 +42,7 @@ void process_tri(EEGPanel* pan, const uint32_t* tri, uint32_t* temp_buff, unsign
 void remove_electrode_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples, unsigned int elec_ref);
 void remove_common_avg_ref(float* data, unsigned int nchann, const float* fullset, unsigned int nchann_full, unsigned int num_samples);
 void set_all_filters(EEGPanel* pan, FilterParam* options);
-static void reinit_filter(struct InternalFilterState* filprm, const float* val);
+static int apply_filter(struct InternalFilterState* filst, float** buff, float** temp, unsigned int ns);
 
 
 
@@ -52,123 +52,84 @@ static void reinit_filter(struct InternalFilterState* filprm, const float* val);
  *                                                                       *
  *************************************************************************/
 
-void process_eeg(EEGPanel* pan, const float* eeg, float* temp_buff, unsigned int n_samples)
+void process_eeg(EEGPanel* pan, const float* eeg, float* tmpbuf, unsigned int ns)
 {
 	unsigned int i, j;
-	unsigned int nchann = pan->neeg;
-	struct InternalFilterState* filprm;
-	float* buff1, *buff2, *curr_eeg;
+	struct InternalFilterState* filprm = pan->dta.filstate;
+	float* data, *cureeg;
 	unsigned int *sel = pan->eegsel.selection;
-	unsigned int num_ch = pan->neeg;
+	unsigned int nc = pan->neeg;
 	unsigned int nmax_ch = pan->nmax_eeg;
-	
-	buff1 = temp_buff;
-	curr_eeg = pan->eeg + pan->current_sample*nchann;
-	buff2 = curr_eeg;
- 
+
+	cureeg = data = pan->eeg + pan->current_sample*nc;
 
 	// Copy data of the selected channels
-	for (i=0; i<n_samples; i++) {
-		for (j=0; j<num_ch; j++)
-			buff2[i*num_ch+j] = eeg[i*nmax_ch + sel[j]];
-	}
-	SWAP_POINTERS(buff1, buff2);
+	for (i=0; i<ns; i++) 
+		for (j=0; j<nc; j++) 
+			data[i*nc+j] = eeg[i*nmax_ch + sel[j]];
 
-	
-	filprm = &(pan->dta.filstate[EEG_OFFSET_FILTER]);
-	if (filprm->filt) {
-		reinit_filter(filprm, buff1);
-		filter_f(filprm->filt, buff1, buff2, n_samples);
+	if (apply_filter(&(filprm[EEG_OFFSET_FILTER]),&data, &tmpbuf, ns)) {
 		// copy last samples
-		for (i=0; i<num_ch; i++)
-			pan->eeg_offset[i] = buff2[nchann*(n_samples-1)+i];
+		for (i=0; i<nc; i++)
+			pan->eeg_offset[i] = data[nc*(ns-1)+i];
+		// We restart the processing from the previous data
+		SWAP_POINTERS(data, tmpbuf);
 	}
 	
-	// Do referencing
-	if (pan->eeg_ref_type == AVERAGE_REF)
-		remove_common_avg_ref(buff1, nchann, eeg, nmax_ch, n_samples);
-	else if (pan->eeg_ref_type == ELECTRODE_REF)
-		remove_electrode_ref(buff1, nchann, eeg, nmax_ch, n_samples, pan->eeg_ref_elec);
-
 	// Process decimation
 	// TODO
-	
-	
 
-	filprm = &(pan->dta.filstate[EEG_LOWPASS_FILTER]);
-	if (filprm->filt) {
-		reinit_filter(filprm, buff1);
-		filter_f(filprm->filt, buff1, buff2, n_samples);
-		SWAP_POINTERS(buff1, buff2);		
-	}
+	// Do referencing
+	if (pan->eeg_ref_type == AVERAGE_REF)
+		remove_common_avg_ref(data, nc, eeg, nmax_ch, ns);
+	else if (pan->eeg_ref_type == ELECTRODE_REF)
+		remove_electrode_ref(data, nc, eeg, nmax_ch, ns, pan->eeg_ref_elec);
 
-	filprm = &(pan->dta.filstate[EEG_HIGHPASS_FILTER]);
-	if (filprm->filt) {
-		reinit_filter(filprm, buff1);
-		filter_f(filprm->filt, buff1, buff2, n_samples);
-		SWAP_POINTERS(buff1, buff2);
-	}
+	apply_filter(&(filprm[EEG_LOWPASS_FILTER]),&data, &tmpbuf, ns);
+	apply_filter(&(filprm[EEG_HIGHPASS_FILTER]),&data, &tmpbuf, ns);
 	
 	// copy data to the destination buffer
-	if (buff1 != curr_eeg)
-		memcpy(curr_eeg, buff1, n_samples*nchann*sizeof(*buff1));
+	if (data != cureeg)
+		memcpy(cureeg, data, ns*nc*sizeof(*data));
 }
 
 
-void process_exg(EEGPanel* pan, const float* exg, float* temp_buff, unsigned int n_samples)
+void process_exg(EEGPanel* pan, const float* exg, float* tmpbuf, unsigned int ns)
 {
 	unsigned int i, j, k;
-	unsigned int nchann = pan->nexg;
-	struct InternalFilterState* filprm;
-	float* buff1, *buff2, *curr_exg;
+	unsigned int nc = pan->nexg;
+	struct InternalFilterState* filprm = pan->dta.filstate;
+	float *data, *curexg;
 	unsigned int *sel = pan->exgsel.selection;
-	unsigned int num_ch = pan->nexg;
 	unsigned int nmax_ch = pan->nmax_exg;
 	
-	buff1 = temp_buff;
-	curr_exg = pan->exg + pan->current_sample*nchann;
-	buff2 = curr_exg;
- 
+	curexg = data = pan->exg + pan->current_sample*nc;
 
 	// Copy data of the selected channels
-	for (i=0; i<n_samples; i++) {
-		for (j=0; j<num_ch; j++) {
+	for (i=0; i<ns; i++) {
+		for (j=0; j<nc; j++) {
 			k = (sel[j]+1)%nmax_ch;
-			buff2[i*num_ch+j] = exg[i*nmax_ch + sel[j]] - exg[i*nmax_ch + k];
+			data[i*nc+j] = exg[i*nmax_ch + sel[j]] - exg[i*nmax_ch + k];
 		}
 	}
-	SWAP_POINTERS(buff1, buff2);
 
-	
-	filprm = &(pan->dta.filstate[EXG_OFFSET_FILTER]);
-	if (filprm->filt) {
-		reinit_filter(filprm, buff1);
-		filter_f(filprm->filt, buff1, buff2, n_samples);
+	if (apply_filter(&(filprm[EXG_OFFSET_FILTER]),&data, &tmpbuf, ns)) {
 		// copy last samples
-		for (i=0; i<num_ch; i++)
-			pan->exg_offset[i] = buff2[nchann*(n_samples-1)+i];
+		for (i=0; i<nc; i++)
+			pan->exg_offset[i] = data[nc*(ns-1)+i];
+		// We restart the processing from the previous data
+		SWAP_POINTERS(data, tmpbuf);
 	}
-
+	
 	// Process decimation
 	// TODO
 
-	filprm = &(pan->dta.filstate[EXG_LOWPASS_FILTER]);
-	if (filprm->filt) {
-		reinit_filter(filprm, buff1);
-		filter_f(filprm->filt, buff1, buff2, n_samples);
-		SWAP_POINTERS(buff1, buff2);		
-	}
-
-	filprm = &(pan->dta.filstate[EXG_HIGHPASS_FILTER]);
-	if (filprm->filt) {
-		reinit_filter(filprm, buff1);
-		filter_f(filprm->filt, buff1, buff2, n_samples);
-		SWAP_POINTERS(buff1, buff2);
-	}
+	apply_filter(&(filprm[EXG_LOWPASS_FILTER]),&data, &tmpbuf, ns);
+	apply_filter(&(filprm[EXG_HIGHPASS_FILTER]),&data, &tmpbuf, ns);
 	
 	// copy data to the destination buffer
-	if (buff1 != curr_exg)
-		memcpy(curr_exg, buff1, n_samples*nchann*sizeof(*buff1));
+	if (data != curexg)
+		memcpy(curexg, data, ns*nc*sizeof(*data));
 }
 
 #define CMS_IN_RANGE	0x100000
@@ -347,15 +308,8 @@ void add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32
 	pan->current_sample = pointer;
 }
 
-static void reinit_filter(struct InternalFilterState* filprm, const float* val)
-{
-	if (filprm->reinit) {
-		init_filter(filprm->filt, val);
-		filprm->reinit = 0;
-	}
-}
 
-void set_one_filter(EEGPanel* pan, EnumFilter type)
+void update_filter(EEGPanel* pan, EnumFilter type)
 {
 	float fs = pan->fs;
 	FilterParam* param =  &(pan->filter_param[type]);
@@ -372,8 +326,6 @@ void set_one_filter(EEGPanel* pan, EnumFilter type)
 			                                 iprm->fc, 2,
 							 param->highpass);
 		}
-		else
-			init_filter(iprm->filt, NULL);
 	}
 	else {
 		destroy_filter(iprm->filt);
@@ -395,4 +347,22 @@ void destroy_dataproc(EEGPanel* pan)
 	free(pan->triggers);
 	free(pan->eeg_offset);
 	free(pan->exg_offset);
+}
+
+static int apply_filter(struct InternalFilterState* filprm, float** inout, float** tmpbuff, unsigned int ns)
+{
+	if (!filprm->filt)
+		return 0;
+
+	// Reset filter with incoming values if it has changed previously
+	if (filprm->reinit) {
+		init_filter(filprm->filt, *inout);
+		filprm->reinit = 0;
+	}
+		
+	// Filter and swap so that inout still hold the data
+	filter_f(filprm->filt, *inout, *tmpbuff, ns);
+	SWAP_POINTERS(*tmpbuff, *inout);
+
+	return 1;
 }
