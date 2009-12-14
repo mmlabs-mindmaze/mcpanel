@@ -25,6 +25,7 @@
 
 #define REFRESH_INTERVAL	30
 
+
 const LinkWidgetName widget_name_table[] = {
 	{TOP_WINDOW, "topwindow", "GtkWindow"},
 	{EEG_SCOPE, "eeg_scope", "Scope"},
@@ -75,6 +76,7 @@ int initialize_widgets(EEGPanel* pan);
 GtkListStore* initialize_list_treeview(GtkTreeView* treeview, const gchar* attr_name);
 void initialize_combo(GtkComboBox* combo);
 int RegisterCustomDefinition(void);
+gboolean blocking_funcall_cb(gpointer data);
 
 
 gboolean check_redraw_scopes_cb(gpointer user_data)
@@ -113,8 +115,9 @@ gboolean check_redraw_scopes_cb(gpointer user_data)
 	return TRUE;
 }
 
-void popup_message_dialog(struct DialogParam* dlgprm)
+void popup_message_dialog(void* data)
 {
+	struct DialogParam* dlgprm = data;
 	GtkWidget* dialog;
 	const char* message = dlgprm->str_in1;
 
@@ -127,8 +130,9 @@ void popup_message_dialog(struct DialogParam* dlgprm)
 	gtk_widget_destroy(dialog);
 }
 
-void open_filename_dialog(struct DialogParam* dlgprm)
+void open_filename_dialog(void* data)
 {
+	struct DialogParam* dlgprm = data;
 	GtkWidget* dialog;
 	char* filename = NULL;
 	GtkFileFilter* ffilter;
@@ -169,98 +173,82 @@ void open_filename_dialog(struct DialogParam* dlgprm)
 	dlgprm->str_out = filename;
 }
 
-gboolean blocking_dialog_cb(gpointer data)
+gboolean blocking_funcall_cb(gpointer data)
 {
-	struct DialogParam* dlgprm = data;
+	struct BlockingCallParam* bcprm = data;
 	gdk_threads_enter();
 
 	// Run the function
-	dlgprm->func(dlgprm);
+	bcprm->func(bcprm->data);
 
 	// Signal that it is done
-	g_mutex_lock(dlgprm->mtx);
-	dlgprm->done = 1;
-	g_cond_signal(dlgprm->cond);
-	g_mutex_unlock(dlgprm->mtx);
+	g_mutex_lock(bcprm->mtx);
+	bcprm->done = 1;
+	g_cond_signal(bcprm->cond);
+	g_mutex_unlock(bcprm->mtx);
 	
 	gdk_threads_leave();
 	return FALSE;
 }
+
+
+void run_func_in_guithread(EEGPanel* pan, BCProc func, void* data)
+{
+	if (pan->main_loop_thread != g_thread_self()) {
+		// Init synchronization objects
+		// Warning: Assume that the creation will not fail
+		struct BlockingCallParam bcprm = {
+			.mtx = g_mutex_new(),
+			.cond = g_cond_new(),
+			.done = 0,
+			.data = data,
+			.func = func
+		};
+
+		// queue job into GTK main loop
+		// and wait for completion
+		g_mutex_lock(bcprm.mtx);
+		g_idle_add(blocking_funcall_cb, &bcprm);
+		while (!bcprm.done)
+			g_cond_wait(bcprm.cond, bcprm.mtx);
+		g_mutex_unlock(bcprm.mtx);
+
+		// free sync objects
+		g_mutex_free(bcprm.mtx);
+		g_cond_free(bcprm.cond);
+	}
+	else
+		func(data);
+}
+
 
 /*************************************************************************
  *                                                                       *
  *                         GUI functions                                 *
  *                                                                       *
  *************************************************************************/
-void run_dialog(EEGPanel* pan, struct DialogParam* dlgprm)
-{
-	if (pan->main_loop_thread != g_thread_self()) {
-		// Init synchronization objects
-		dlgprm->mtx = g_mutex_new();
-		dlgprm->done = 0;
-		dlgprm->cond = g_cond_new();
-
-		g_mutex_lock(dlgprm->mtx);
-		
-		// queue job into GTK main loop
-		g_idle_add(blocking_dialog_cb, dlgprm);
-		
-		// Wait for completion
-		while (!dlgprm->done)
-			g_cond_wait(dlgprm->cond, dlgprm->mtx);
-		g_mutex_unlock(dlgprm->mtx);
-
-		// free sync objects
-		g_mutex_free(dlgprm->mtx);
-		g_cond_free(dlgprm->cond);
-	}
-	else
-		dlgprm->func(dlgprm);
-}
 
 void popup_message_gui(EEGPanel* pan, const char* message)
 {
-	struct DialogParam* dlgprm;
+	struct DialogParam dlgprm = {
+		.str_in1 = message,
+		.gui = &(pan->gui),
+	};
 
-	// Allocate 
-	dlgprm = malloc(sizeof(*dlgprm));
-	if (!dlgprm) {
-		free(dlgprm);
-		return;
-	}
-
-	dlgprm->str_in1 = message;
-	dlgprm->gui = &(pan->gui);
-
-	dlgprm->func = popup_message_dialog;
-	run_dialog(pan, dlgprm);
-
-	free(dlgprm);
+	run_func_in_guithread(pan, popup_message_dialog, &dlgprm);
 }
 
 char* open_filename_dialog_gui(EEGPanel* pan, const char* filter, const char* filtername)
 {
-	struct DialogParam* dlgprm;
-	char* filename = NULL;
+	struct DialogParam dlgprm = {
+		.str_in1 = filter,
+		.str_in2 = filtername,
+		.gui = &(pan->gui)
+	};
 
-	// Allocate 
-	dlgprm = malloc(sizeof(*dlgprm));
-	if (!dlgprm) {
-		free(dlgprm);
-		return NULL;
-	}
+	run_func_in_guithread(pan, open_filename_dialog, &dlgprm);
 
-	dlgprm->str_in1 = filter;
-	dlgprm->str_in2 = filtername;
-	dlgprm->gui = &(pan->gui);
-
-	dlgprm->func = open_filename_dialog;
-	run_dialog(pan, dlgprm);
-
-	filename = dlgprm->str_out;
-
-	free(dlgprm);
-	return filename;
+	return dlgprm.str_out;
 }
 
 void get_initial_values(EEGPanel* pan)
@@ -648,4 +636,22 @@ void set_databuff_gui(EEGPanel* pan)
 	g_object_set(pan->gui.widgets[EEG_OFFSET_AXES1], "xtick-labelv", pan->eegsel.labels, NULL);	
 	g_object_set(pan->gui.widgets[EEG_OFFSET_AXES2], "xtick-labelv", pan->eegsel.labels+num_elec_bar1, NULL);	
 	g_object_set(pan->gui.widgets[EXG_AXES], "ytick-labelv", pan->exgsel.labels, NULL);
+}
+
+void updategui_toggle_recording(EEGPanel* pan, int state)
+{
+	gtk_led_set_state(GTK_LED(pan->gui.widgets[RECORDING_LED]), state);
+	gtk_button_set_label(GTK_BUTTON(pan->gui.widgets[PAUSE_RECORDING_BUTTON]), state ? "Pause": "Record");
+}
+
+void updategui_toggle_connection(EEGPanel* pan, int state)
+{
+	gtk_led_set_state(GTK_LED(pan->gui.widgets[CONNECT_LED]), state);
+	gtk_button_set_label(GTK_BUTTON(pan->gui.widgets[STARTACQUISITION_BUTTON]), state ? "Disconnect" : "Connect");
+}
+
+void updategui_toggle_rec_openclose(EEGPanel* pan, int state)
+{
+	gtk_button_set_label(GTK_BUTTON(pan->gui.widgets[START_RECORDING_BUTTON]), state ? "Stop" : "Setup");
+	gtk_widget_set_sensitive(GTK_WIDGET(pan->gui.widgets[PAUSE_RECORDING_BUTTON]),state);
 }

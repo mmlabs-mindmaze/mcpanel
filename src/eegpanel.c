@@ -207,6 +207,11 @@ char* eegpanel_open_filename_dialog(EEGPanel* pan, const char* filter, const cha
 {
 	return open_filename_dialog_gui(pan, filter, filtername);
 }
+
+int eegpanel_notify(EEGPanel* panel, enum notification event)
+{
+	
+}
 ///////////////////////////////////////////////////
 //
 //	Internal functions

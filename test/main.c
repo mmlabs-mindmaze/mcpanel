@@ -76,23 +76,16 @@ void* reading_thread(void* arg)
 	curr.tv_sec = 0;
 	curr.tv_nsec = UPDATE_DELAY*1000000;
 
-//	clock_gettime(CLOCK_REALTIME, &prev);
 	while(run_eeg) {
-//		clock_gettime(CLOCK_REALTIME, &curr);
-//		interval = (curr.tv_sec - prev.tv_sec)*1000 + (curr.tv_nsec - prev.tv_nsec)/1000000;
+		nanosleep(&curr, NULL);
+		set_signals(eeg, exg, tri, NSAMPLES);
+		eegpanel_add_samples(panel, eeg, exg, tri, NSAMPLES);
+		isample += NSAMPLES;
 
-//		if (interval > UPDATE_DELAY) {
-			nanosleep(&curr, NULL);
-			set_signals(eeg, exg, tri, NSAMPLES);
-			eegpanel_add_samples(panel, eeg, exg, tri, NSAMPLES);
-			isample += NSAMPLES;
-
-			/*if ((isample<201*NSAMPLES)&&(isample >= 200*NSAMPLES)) {
-				eegpanel_popup_message(panel, "Hello!");
-				isample = 201*NSAMPLES;
-			}*/
-//			prev = curr;
-//		}
+		if ((isample<201*NSAMPLES)&&(isample >= 200*NSAMPLES)) {
+			eegpanel_popup_message(panel, "Hello!");
+			isample = 201*NSAMPLES;
+		}
 	}
 
 	free(eeg);

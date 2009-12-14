@@ -94,18 +94,21 @@ struct PanelGUI {
 	BinaryScope *tri_scope;
 };
 
-struct DialogParam;
-typedef void (*DlgProc)(struct DialogParam* dlgprm);
 
 struct DialogParam {
 	const char *str_in1, *str_in2;
 	char *str_out;
-
 	struct PanelGUI* gui;
+};
+
+typedef void (*BCProc)(void* data);
+
+struct BlockingCallParam {
+	void* data;
 	GMutex* mtx;
 	GCond* cond;
 	int done;
-	DlgProc func;
+	BCProc func;
 };
 
 int create_panel_gui(EEGPanel* pan, const char* uifilename);
@@ -118,7 +121,11 @@ void set_scopes_xticks(EEGPanel* pan);
 void set_bargraphs_yticks(EEGPanel* pan, float max);
 void popup_message_gui(EEGPanel* pan, const char* message);
 char* open_filename_dialog_gui(EEGPanel* pan, const char* filter, const char* filtername);
-gboolean popup_dialog_cb(gpointer data);
+void run_func_in_guithread(EEGPanel* pan, BCProc func, void* data);
+void updategui_toggle_recording(EEGPanel* pan, int state);
+void updategui_toggle_connection(EEGPanel* pan, int state);
+void updategui_toggle_rec_openclose(EEGPanel* pan, int state);
+
 
 #endif /* EEGPANEL_GUI_H */
 

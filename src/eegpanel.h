@@ -68,6 +68,15 @@ enum FilterNames {
 	NUMMAX_FLT
 };
 
+enum notification {
+	DISCONNECTED = 0,
+	CONNECTED,
+	REC_OPENED,
+	REC_CLOSED,
+	REC_ON,
+	REC_PAUSED
+};
+
 struct PanelSettings {
 	const char* uifilename;
 	struct FilterSettings filt[NUMMAX_FLT];
@@ -88,5 +97,6 @@ void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, c
 int eegpanel_define_input(EEGPanel* panel, unsigned int num_eeg_channels,
 				unsigned int num_exg_channels, unsigned int num_tri_lines,
 				unsigned int sampling_rate);
+int eegpanel_notify(EEGPanel* panel, enum notification event);
 
 #endif /*_EEGPANEL_H_*/

@@ -40,8 +40,7 @@ gboolean startacquisition_button_clicked_cb(GtkButton* button, gpointer data)
 	if (pan->cb.system_connection) {
 		if (pan->cb.system_connection(pan->connected ? 0 : 1, pan->cb.user_data)) {
 			pan->connected = !pan->connected;
-			gtk_led_set_state(GTK_LED(pan->gui.widgets[CONNECT_LED]), pan->connected);
-			gtk_button_set_label(button, pan->connected ? "Disconnect" : "Connect");
+			updategui_toggle_connection(pan, pan->connected);
 		}
 	}
 	
@@ -57,17 +56,14 @@ gboolean pause_recording_button_clicked_cb(GtkButton* button, gpointer data)
 
 	(void)data;
 
-
 	if (pan->cb.toggle_recording) {
 		retcode = pan->cb.toggle_recording(pan->recording ? 0 : 1, pan->cb.user_data);
+		if (!retcode)
+			return FALSE;
 		pan->recording = !pan->recording;
+		updategui_toggle_recording(pan, pan->recording);
 	}
 	
-	if (retcode) {
-		gtk_led_set_state(GTK_LED(pan->gui.widgets[RECORDING_LED]), pan->recording);
-		gtk_button_set_label(button,pan->recording ? "Pause": "Record");
-	}
-
 	return retcode ? TRUE : FALSE;
 }
 
@@ -95,9 +91,7 @@ gboolean start_recording_button_clicked_cb(GtkButton* button, gpointer data)
 		if (pan->cb.setup_recording) {
 			if (pan->cb.setup_recording(&eeg_sel, &exg_sel, pan->cb.user_data)) {
 				pan->fileopened = TRUE;
-				gtk_button_set_label(GTK_BUTTON(pan->gui.widgets[PAUSE_RECORDING_BUTTON]),"Record");
-				gtk_button_set_label(button, "Stop");
-				gtk_widget_set_sensitive(GTK_WIDGET(pan->gui.widgets[PAUSE_RECORDING_BUTTON]),TRUE);
+				updategui_toggle_rec_openclose(pan, 1);
 			}
 		}
 		
@@ -116,8 +110,7 @@ gboolean start_recording_button_clicked_cb(GtkButton* button, gpointer data)
 
 			if (pan->cb.stop_recording(pan->cb.user_data)) {
 				pan->fileopened = FALSE;
-				gtk_button_set_label(button, "Setup");
-				gtk_widget_set_sensitive(GTK_WIDGET(pan->gui.widgets[PAUSE_RECORDING_BUTTON]),FALSE);
+				updategui_toggle_rec_openclose(pan, 0);
 			}
 		}
 	}

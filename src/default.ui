@@ -1210,7 +1210,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="label" translatable="yes">Pause</property>
+                            <property name="label" translatable="yes">Record</property>
                           </object>
                           <packing>
                             <property name="position">3</property>
