@@ -617,18 +617,21 @@ void set_databuff_gui(EEGPanel* pan)
 
 void updategui_toggle_recording(EEGPanel* pan, int state)
 {
+	pan->recording = state;
 	gtk_led_set_state(GTK_LED(pan->gui.widgets[RECORDING_LED]), state);
 	gtk_button_set_label(GTK_BUTTON(pan->gui.widgets[PAUSE_RECORDING_BUTTON]), state ? "Pause": "Record");
 }
 
 void updategui_toggle_connection(EEGPanel* pan, int state)
 {
+	pan->connected = state;
 	gtk_led_set_state(GTK_LED(pan->gui.widgets[CONNECT_LED]), state);
 	gtk_button_set_label(GTK_BUTTON(pan->gui.widgets[STARTACQUISITION_BUTTON]), state ? "Disconnect" : "Connect");
 }
 
 void updategui_toggle_rec_openclose(EEGPanel* pan, int state)
 {
+	pan->fileopened = state;
 	gtk_button_set_label(GTK_BUTTON(pan->gui.widgets[START_RECORDING_BUTTON]), state ? "Stop" : "Setup");
 	gtk_widget_set_sensitive(GTK_WIDGET(pan->gui.widgets[PAUSE_RECORDING_BUTTON]),state);
 }

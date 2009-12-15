@@ -88,12 +88,9 @@ gboolean start_recording_button_clicked_cb(GtkButton* button, gpointer data)
 		fill_selec_from_treeselec(&exg_sel, selection, pan->exg_labels);
 
 		// Send the setup event through the callback
-		if (pan->cb.setup_recording) {
-			if (pan->cb.setup_recording(&eeg_sel, &exg_sel, pan->cb.user_data)) {
-				pan->fileopened = TRUE;
+		if (pan->cb.setup_recording) 
+			if (pan->cb.setup_recording(&eeg_sel, &exg_sel, pan->cb.user_data)) 
 				updategui_toggle_rec_openclose(pan, 1);
-			}
-		}
 		
 		// free selection
 		g_free(eeg_sel.selection);
@@ -108,10 +105,8 @@ gboolean start_recording_button_clicked_cb(GtkButton* button, gpointer data)
 			if (pan->recording) 
 				pause_recording_button_clicked_cb(GTK_BUTTON(pan->gui.widgets[PAUSE_RECORDING_BUTTON]),NULL);
 
-			if (pan->cb.stop_recording(pan->cb.user_data)) {
-				pan->fileopened = FALSE;
+			if (pan->cb.stop_recording(pan->cb.user_data)) 
 				updategui_toggle_rec_openclose(pan, 0);
-			}
 		}
 	}
 

@@ -14,6 +14,8 @@
 
 pthread_t thread_id = 0;
 volatile int run_eeg = 0;
+volatile int recording = 0;
+volatile int recsamples = 0;
 
 float *geeg=NULL, *gexg=NULL;
 uint32_t *gtri = NULL;
@@ -73,6 +75,7 @@ void* reading_thread(void* arg)
 	raweeg = (int32_t*)eeg;
 	rawexg = (int32_t*)exg;
 
+
 	curr.tv_sec = 0;
 	curr.tv_nsec = UPDATE_DELAY*1000000;
 
@@ -81,6 +84,14 @@ void* reading_thread(void* arg)
 		set_signals(eeg, exg, tri, NSAMPLES);
 		eegpanel_add_samples(panel, eeg, exg, tri, NSAMPLES);
 		isample += NSAMPLES;
+
+		if (recording) {
+			recsamples += NSAMPLES;
+			if (recsamples > 201*NSAMPLES) {
+				recording = 0;
+				eegpanel_notify(panel, REC_PAUSED);
+			}
+		}
 
 		if ((isample<201*NSAMPLES)&&(isample >= 200*NSAMPLES)) {
 			eegpanel_popup_message(panel, "Hello!");
@@ -118,6 +129,7 @@ int SetupRecording(const ChannelSelection* eeg_sel, const ChannelSelection* exg_
 		fprintf(stderr,"filename %s\n", filename);
 		free(filename);
 		retval = 1;
+		recsamples = 0;
 	}
 	return retval;
 }
@@ -157,12 +169,10 @@ int SystemConnection(int start, void* user_data)
 	EEGPanel* panel = user_data;
 	int retval;
 
-	if (start) {
+	if (start) 
 		retval = Connect(panel);
-	}
-	else {
+	else 
 		retval = Disconnect(panel);
-	}
 
 	return (retval < 0) ? 0 : 1;
 }
@@ -174,6 +184,8 @@ int StopRecording(void* user_data)
 
 int ToggleRecording(int start, void* user_data)
 {
+	if (start)
+		recording = 1;
 	return 1;
 }
 

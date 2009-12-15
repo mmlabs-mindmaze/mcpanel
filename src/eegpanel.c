@@ -33,6 +33,12 @@ void set_default_values(EEGPanel* pan, const char* filename);
 gint run_model_dialog(EEGPanel* pan, GtkDialog* dialog);
 void get_initial_values(EEGPanel* pan);
 
+struct notification_param {
+	enum notification event;
+	EEGPanel* pan;
+};
+int process_notification(struct notification_param* notprm);
+
 ///////////////////////////////////////////////////
 //
 //	API functions
@@ -220,9 +226,14 @@ char* eegpanel_open_filename_dialog(EEGPanel* pan, const char* filefilters)
 	return dlgprm.str_out;
 }
 
-int eegpanel_notify(EEGPanel* panel, enum notification event)
+int eegpanel_notify(EEGPanel* pan, enum notification event)
 {
-	
+	struct notification_param prm = {
+		.pan = pan,
+		.event = event
+	};
+
+	return run_func_in_guithread(pan, (BCProc)process_notification, &prm);
 }
 ///////////////////////////////////////////////////
 //
@@ -473,5 +484,25 @@ void set_default_values(EEGPanel* pan, const char* filename)
 	get_default_channel_labels(key_file, &(pan->exg_labels), "exg_channels", "EXG");
 
 	g_key_file_free(key_file);
+}
+
+int process_notification(struct notification_param* prm)
+{
+	if (prm->event == DISCONNECTED)
+		updategui_toggle_connection(prm->pan, 0);
+	else if (prm->event == CONNECTED)
+		updategui_toggle_connection(prm->pan, 1);
+	else if (prm->event == REC_OPENED)
+		updategui_toggle_rec_openclose(prm->pan, 0);
+	else if (prm->event == REC_CLOSED)
+		updategui_toggle_rec_openclose(prm->pan, 1);
+	else if (prm->event == REC_ON)
+		updategui_toggle_recording(prm->pan, 1);
+	else if (prm->event == REC_PAUSED)
+		updategui_toggle_recording(prm->pan, 0);
+	else
+		return -1;
+	
+	return 0;
 }
 
