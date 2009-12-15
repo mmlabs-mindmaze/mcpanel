@@ -114,7 +114,7 @@ int SetupRecording(const ChannelSelection* eeg_sel, const ChannelSelection* exg_
 	char* filename;
 	int retval = 0;
 
-	if (filename = eegpanel_open_filename_dialog(panel, "*.bdf", "BDF files (*.bdf)")) {
+	if (filename = eegpanel_open_filename_dialog(panel, "BDF files|*.bdf||Any files|*")) {
 		fprintf(stderr,"filename %s\n", filename);
 		free(filename);
 		retval = 1;

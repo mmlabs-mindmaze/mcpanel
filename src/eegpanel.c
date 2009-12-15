@@ -200,12 +200,24 @@ void eegpanel_add_samples(EEGPanel* pan, const float* eeg, const float* exg, con
 
 void eegpanel_popup_message(EEGPanel* pan, const char* message)
 {
-	popup_message_gui(pan, message);
+	struct DialogParam dlgprm = {
+		.str_in = message,
+		.gui = &(pan->gui),
+	};
+
+	run_func_in_guithread(pan, (BCProc)popup_message_dialog, &dlgprm);
 }
 
-char* eegpanel_open_filename_dialog(EEGPanel* pan, const char* filter, const char* filtername)
+char* eegpanel_open_filename_dialog(EEGPanel* pan, const char* filefilters)
 {
-	return open_filename_dialog_gui(pan, filter, filtername);
+	struct DialogParam dlgprm = {
+		.str_in = filefilters,
+		.gui = &(pan->gui)
+	};
+
+	run_func_in_guithread(pan, (BCProc)open_filename_dialog, &dlgprm);
+
+	return dlgprm.str_out;
 }
 
 int eegpanel_notify(EEGPanel* panel, enum notification event)

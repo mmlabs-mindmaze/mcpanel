@@ -96,18 +96,19 @@ struct PanelGUI {
 
 
 struct DialogParam {
-	const char *str_in1, *str_in2;
+	const char *str_in;
 	char *str_out;
 	struct PanelGUI* gui;
 };
 
-typedef void (*BCProc)(void* data);
+typedef int (*BCProc)(void* data);
 
 struct BlockingCallParam {
 	void* data;
 	GMutex* mtx;
 	GCond* cond;
 	int done;
+	int retcode;
 	BCProc func;
 };
 
@@ -119,9 +120,9 @@ void fill_combo(GtkComboBox* combo, char** labels, int num_labels);
 int fill_selec_from_treeselec(ChannelSelection* selection, GtkTreeSelection* tree_sel, char** labels);
 void set_scopes_xticks(EEGPanel* pan);
 void set_bargraphs_yticks(EEGPanel* pan, float max);
-void popup_message_gui(EEGPanel* pan, const char* message);
-char* open_filename_dialog_gui(EEGPanel* pan, const char* filter, const char* filtername);
-void run_func_in_guithread(EEGPanel* pan, BCProc func, void* data);
+int popup_message_dialog(struct DialogParam* dlgparam);
+int open_filename_dialog(struct DialogParam* dlgparam);
+int run_func_in_guithread(EEGPanel* pan, BCProc func, void* data);
 void updategui_toggle_recording(EEGPanel* pan, int state);
 void updategui_toggle_connection(EEGPanel* pan, int state);
 void updategui_toggle_rec_openclose(EEGPanel* pan, int state);

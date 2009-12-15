@@ -115,11 +115,10 @@ gboolean check_redraw_scopes_cb(gpointer user_data)
 	return TRUE;
 }
 
-void popup_message_dialog(void* data)
+int popup_message_dialog(struct DialogParam* dlgprm)
 {
-	struct DialogParam* dlgprm = data;
 	GtkWidget* dialog;
-	const char* message = dlgprm->str_in1;
+	const char* message = dlgprm->str_in;
 
 	dialog = gtk_message_dialog_new(dlgprm->gui->window,
 					GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
@@ -128,19 +127,15 @@ void popup_message_dialog(void* data)
 					"%s", message);
 	gtk_dialog_run(GTK_DIALOG(dialog));
 	gtk_widget_destroy(dialog);
+
+	return 0;
 }
 
-void open_filename_dialog(void* data)
+int open_filename_dialog(struct DialogParam* dlgprm)
 {
-	struct DialogParam* dlgprm = data;
 	GtkWidget* dialog;
-	char* filename = NULL;
-	GtkFileFilter* ffilter;
-	const char *filter, *filtername;
-
-	filter = dlgprm->str_in1;
-	filtername = dlgprm->str_in2;
-
+	char string[64];
+	const char* currstr = dlgprm->str_in;
 
 	dialog = gtk_file_chooser_dialog_new("Choose a filename",
 					     dlgprm->gui->window,
@@ -148,38 +143,43 @@ void open_filename_dialog(void* data)
 					     GTK_STOCK_OK,GTK_RESPONSE_ACCEPT,
 					     GTK_STOCK_CANCEL,GTK_RESPONSE_CANCEL,
 					     NULL);
-	if (filter && filtername) {
-		ffilter = gtk_file_filter_new();
-		gtk_file_filter_add_pattern(ffilter, filter);
-		gtk_file_filter_set_name(ffilter, filtername);
+	
+	while (sscanf(currstr, "%[^|]", string)) {
+		GtkFileFilter* ffilter = gtk_file_filter_new();
+		gtk_file_filter_set_name(ffilter, string);
+		while (currstr = strchr(currstr, '|')) {
+			if (currstr[1] == '|')
+				break;	
+			sscanf(++currstr, "%[^|]", string);
+			gtk_file_filter_add_pattern(ffilter, string);
+		}
 		gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), ffilter);
+		if (!currstr)
+			break;
+		currstr += 2;
 	}
-	ffilter = gtk_file_filter_new();
-	gtk_file_filter_add_pattern(ffilter, "*");
-	gtk_file_filter_set_name(ffilter, "any files");
-	gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dialog), ffilter);
-
 
 	if (gtk_dialog_run(GTK_DIALOG(dialog))==GTK_RESPONSE_ACCEPT) {
 		gchar* retfile = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 		if (retfile) {
-			filename = malloc(strlen(retfile)+1);
-			strcpy(filename, retfile);
+			dlgprm->str_out = malloc(strlen(retfile)+1);
+			strcpy(dlgprm->str_out, retfile);
 			g_free(retfile);
 		}
 	}
 	gtk_widget_destroy(dialog);
 
-	dlgprm->str_out = filename;
+	return 0;
 }
 
 gboolean blocking_funcall_cb(gpointer data)
 {
 	struct BlockingCallParam* bcprm = data;
-	gdk_threads_enter();
 
 	// Run the function
-	bcprm->func(bcprm->data);
+	gdk_threads_enter();
+	bcprm->retcode = bcprm->func(bcprm->data);
+	gdk_threads_leave();
 
 	// Signal that it is done
 	g_mutex_lock(bcprm->mtx);
@@ -187,12 +187,11 @@ gboolean blocking_funcall_cb(gpointer data)
 	g_cond_signal(bcprm->cond);
 	g_mutex_unlock(bcprm->mtx);
 	
-	gdk_threads_leave();
 	return FALSE;
 }
 
 
-void run_func_in_guithread(EEGPanel* pan, BCProc func, void* data)
+int run_func_in_guithread(EEGPanel* pan, BCProc func, void* data)
 {
 	if (pan->main_loop_thread != g_thread_self()) {
 		// Init synchronization objects
@@ -216,9 +215,11 @@ void run_func_in_guithread(EEGPanel* pan, BCProc func, void* data)
 		// free sync objects
 		g_mutex_free(bcprm.mtx);
 		g_cond_free(bcprm.cond);
+
+		return bcprm.retcode;
 	}
 	else
-		func(data);
+		return func(data);
 }
 
 
@@ -227,30 +228,6 @@ void run_func_in_guithread(EEGPanel* pan, BCProc func, void* data)
  *                         GUI functions                                 *
  *                                                                       *
  *************************************************************************/
-
-void popup_message_gui(EEGPanel* pan, const char* message)
-{
-	struct DialogParam dlgprm = {
-		.str_in1 = message,
-		.gui = &(pan->gui),
-	};
-
-	run_func_in_guithread(pan, popup_message_dialog, &dlgprm);
-}
-
-char* open_filename_dialog_gui(EEGPanel* pan, const char* filter, const char* filtername)
-{
-	struct DialogParam dlgprm = {
-		.str_in1 = filter,
-		.str_in2 = filtername,
-		.gui = &(pan->gui)
-	};
-
-	run_func_in_guithread(pan, open_filename_dialog, &dlgprm);
-
-	return dlgprm.str_out;
-}
-
 void get_initial_values(EEGPanel* pan)
 {
 	GtkTreeModel* model;
