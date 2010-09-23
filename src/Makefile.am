@@ -42,7 +42,8 @@ nodist_libeegpanel_la_SOURCES = led-images.h default-ui.h
 BUILT_SOURCES = led-images.h default-ui.h
 CLEANFILES = led-images.h default-ui.h
 
-libeegpanel_la_LDFLAGS = $(GTK_LIBS)
+libeegpanel_la_LIBADD = $(GTK_LIBS)
+libeegpanel_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined 
 			 
 #libeegpanel_la_LIBADD = $(top_builddir)/res/libres.a
 
