@@ -18,7 +18,7 @@
 #ifndef EEGPANEL_DATAPROC_H
 #define EEGPANEL_DATAPROC_H
 
-#include <filter.h>
+#include <rtfilter.h>
 #include "eegpanel.h"
 
 typedef enum {

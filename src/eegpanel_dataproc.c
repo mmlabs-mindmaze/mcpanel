@@ -20,7 +20,7 @@
 #include "eegpanel_dataproc.h"
 #include <stdlib.h>
 #include <string.h>
-#include <common-filters.h>
+#include <rtf_common.h>
 
 
 #define SWAP_POINTERS(pointer1, pointer2)	do {	\
@@ -318,17 +318,17 @@ void update_filter(EEGPanel* pan, EnumFilter type)
 	
 	if (param->state) {
 		if (!iprm->filt || ((param->freq/fs!=iprm->fc) || (iprm->numch != param->numch))) {
-			destroy_filter(iprm->filt);
+			rtf_destroy_filter(iprm->filt);
 			iprm->fc = param->freq/fs;
 			iprm->numch = param->numch;
-			iprm->filt = create_butterworth_filter(iprm->numch,
-			                                 DATATYPE_FLOAT,
+			iprm->filt = rtf_create_butterworth(iprm->numch,
+			                                 RTF_FLOAT,
 			                                 iprm->fc, 2,
 							 param->highpass);
 		}
 	}
 	else {
-		destroy_filter(iprm->filt);
+		rtf_destroy_filter(iprm->filt);
 		iprm->filt = NULL;
 	}
 
@@ -340,7 +340,7 @@ void destroy_dataproc(EEGPanel* pan)
 	int i;
 
 	for (i=0; i<NUM_FILTERS; i++)
-		destroy_filter(pan->dta.filstate[i].filt);
+		rtf_destroy_filter(pan->dta.filstate[i].filt);
 	
 	free(pan->eeg);
 	free(pan->exg);
@@ -356,12 +356,12 @@ static int apply_filter(struct InternalFilterState* filprm, float** inout, float
 
 	// Reset filter with incoming values if it has changed previously
 	if (filprm->reinit) {
-		init_filter(filprm->filt, *inout);
+		rtf_init_filter(filprm->filt, *inout);
 		filprm->reinit = 0;
 	}
 		
 	// Filter and swap so that inout still hold the data
-	filter_f(filprm->filt, *inout, *tmpbuff, ns);
+	rtf_filter(filprm->filt, *inout, *tmpbuff, ns);
 	SWAP_POINTERS(*tmpbuff, *inout);
 
 	return 1;

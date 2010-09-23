@@ -20,7 +20,7 @@ AC_HEADER_TIME
 AC_C_CONST
 AC_C_VOLATILE
 
-AC_SEARCH_LIBS([create_filter], [rtfilter], [], AC_MSG_ERROR([The rtfilter library must be installed.]))
+AC_SEARCH_LIBS([rtf_create_filter], [rtfilter], [], AC_MSG_ERROR([The rtfilter library must be installed.]))
 
 AC_CONFIG_FILES([Makefile src/Makefile test/Makefile])
 AC_OUTPUT
