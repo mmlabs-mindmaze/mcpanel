@@ -41,6 +41,7 @@ typedef int (*SystemConnectionFunc)(int start, void* user_data);
 typedef int (*SetupRecordingFunc)(const ChannelSelection* eeg_sel, const ChannelSelection* exg_sel, void* user_data);
 typedef int (*StopRecordingFunc)(void* user_data);
 typedef int (*ToggleRecordingFunc)(int start, void* user_data);
+typedef int (*ClosePanelFunc)(void* user_data);
 
 
 struct PanelCb {
@@ -50,6 +51,7 @@ struct PanelCb {
 	SetupRecordingFunc setup_recording;
 	StopRecordingFunc stop_recording;
 	ToggleRecordingFunc toggle_recording; 
+	ClosePanelFunc close_panel;
 
 	/* pointer used to pass data to the user functions */
 	void* user_data;

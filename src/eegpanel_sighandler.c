@@ -31,6 +31,23 @@
  *************************************************************************/
 #define GET_PANEL_FROM(widget)  ((EEGPanel*)(g_object_get_data(G_OBJECT(gtk_widget_get_toplevel(GTK_WIDGET(widget))), "eeg_panel")))
 
+static
+gboolean on_close_panel(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+	(void)event;
+	EEGPanel* pan = user_data;
+	int retval = 1;
+
+	g_mutex_lock(pan->gui.syncmtx);
+	if (pan->cb.close_panel)
+		retval = pan->cb.close_panel(pan->cb.user_data);
+	if (retval)
+		pan->gui.is_destroyed = 1;
+	g_mutex_unlock(pan->gui.syncmtx);
+
+	return (retval) ? FALSE : TRUE;
+}
+
 gboolean startacquisition_button_clicked_cb(GtkButton* button, gpointer data)
 {
 	EEGPanel* pan = GET_PANEL_FROM(button);
@@ -389,6 +406,8 @@ void connect_panel_signals(EEGPanel* pan)
 	g_signal_connect(pan->gui.widgets[ELECREF_COMBO], "changed", (GCallback)refelec_combo_changed_cb, NULL);
 
 	g_signal_connect(pan->gui.widgets[ELECSET_COMBO], "changed", (GCallback)elecset_combo_changed_cb, NULL);
+
+	g_signal_connect(pan->gui.window, "delete-event", (GCallback)on_close_panel, pan);
 }
 
 

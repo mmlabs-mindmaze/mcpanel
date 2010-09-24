@@ -88,6 +88,8 @@ typedef struct _LinkWidgetName {
 
 struct PanelGUI {
 	GtkWindow* window;
+	GMutex* syncmtx;
+	int is_destroyed;
 	GObject* widgets[NUM_PANEL_WIDGETS_DEFINED];
 	Scope *eeg_scope, *exg_scope;
 	Bargraph *eeg_offset_bar1, *eeg_offset_bar2;
@@ -113,6 +115,7 @@ struct BlockingCallParam {
 };
 
 int create_panel_gui(EEGPanel* pan, const char* uifilename);
+void destroy_panel_gui(EEGPanel* pan);
 void set_databuff_gui(EEGPanel* pan);
 void update_input_gui(EEGPanel* pan);
 void fill_treeview(GtkTreeView* treeview, unsigned int num_labels, const char** labels);

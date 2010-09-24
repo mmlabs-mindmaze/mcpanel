@@ -133,15 +133,7 @@ void eegpanel_destroy(EEGPanel* pan)
 	// Stop refreshing the scopes content
 	g_source_remove_by_user_data(pan);
 
-	// Stop recording
-	if (pan->recording && pan->cb.toggle_recording)
-		pan->cb.toggle_recording(0, pan->cb.user_data);
-	if (pan->fileopened && pan->cb.stop_recording)
-		pan->cb.stop_recording(pan->cb.user_data);
-
-	// Disconnect the system if applicable
-	if (pan->connected && pan->cb.system_connection)
-		pan->cb.system_connection(FALSE, pan->cb.user_data);
+	destroy_panel_gui(pan);
 
 	// If called from another thread than the one of the main loop
 	// wait for the termination of the main loop

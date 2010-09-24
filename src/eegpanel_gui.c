@@ -562,6 +562,10 @@ int create_panel_gui(EEGPanel* pan, const char* uifilename)
 	}
 
 	gtk_builder_connect_signals(builder, pan);
+
+	pan->gui.syncmtx = g_mutex_new();
+	pan->gui.is_destroyed = 0;
+	
 	
 	// Get the pointers of the control widgets
 	poll_widgets(pan, builder);
@@ -572,6 +576,18 @@ int create_panel_gui(EEGPanel* pan, const char* uifilename)
 out:
 	g_object_unref(builder);
 	return res;
+}
+
+
+void destroy_panel_gui(EEGPanel* pan)
+{
+	g_mutex_lock(pan->gui.syncmtx);
+	if (!pan->gui.is_destroyed)
+		gtk_widget_destroy(GTK_WIDGET(pan->gui.window));
+	pan->gui.is_destroyed = 1;
+	g_mutex_unlock(pan->gui.syncmtx);
+
+	g_mutex_free(pan->gui.syncmtx);
 }
 
 void update_input_gui(EEGPanel* pan)

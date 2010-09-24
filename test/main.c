@@ -190,6 +190,18 @@ int ToggleRecording(int start, void* user_data)
 }
 
 
+int ClosePanel(void* user_data)
+{
+	EEGPanel* panel = user_data;
+	if (run_eeg) {
+		Disconnect(panel);
+		eegpanel_popup_message(panel, "Acquisition disconnected by close func");
+	}
+	
+	return 1;
+}
+
+
 int main(int argc, char* argv[])
 {
 	EEGPanel* panel;
@@ -206,6 +218,7 @@ int main(int argc, char* argv[])
 
 	cb.user_data = NULL;
 	cb.process_selection = NULL;
+	cb.close_panel = ClosePanel;
 	cb.system_connection = SystemConnection;
 	cb.setup_recording = SetupRecording;
 	cb.stop_recording = StopRecording;
@@ -218,8 +231,6 @@ int main(int argc, char* argv[])
 		fprintf(stderr,"error at the creation of the panel\n");
 		return 1;
 	}
-	
-
 
 	eegpanel_show(panel, 1);
 	eegpanel_run(panel, 0);
