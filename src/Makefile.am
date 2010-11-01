@@ -9,7 +9,7 @@ default-ui.h: default.ui
 lib_LTLIBRARIES = libeegpanel.la
 include_HEADERS = eegpanel.h
 
-libeegpanel_la_CPPFLAGS = $(GTK_CFLAGS)
+#libeegpanel_la_CPPFLAGS = $(GTK_CFLAGS)
 libeegpanel_la_SOURCES = eegpanel.c		\
                          eegpanel_shared.h	\
 			 eegpanel_dataproc.h	\
@@ -42,7 +42,7 @@ nodist_libeegpanel_la_SOURCES = led-images.h default-ui.h
 BUILT_SOURCES = led-images.h default-ui.h
 CLEANFILES = led-images.h default-ui.h
 
-libeegpanel_la_LIBADD = $(GTK_LIBS)
+#libeegpanel_la_LIBADD = $(GTK_LIBS)
 libeegpanel_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined 
 			 
 #libeegpanel_la_LIBADD = $(top_builddir)/res/libres.a

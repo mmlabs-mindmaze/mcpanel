@@ -4,6 +4,9 @@
 #include <pthread.h>
 #include <time.h>
 //#include <gtk/gtk.h>
+#if !HAVE_DECL_CLOCK_NANOSLEEP
+#include "../lib/clock_nanosleep.h"
+#endif
 
 #define EEGSET	AB
 #define NEEG	64
@@ -12,7 +15,7 @@
 #define NSAMPLES	32
 #define SAMPLING_RATE	2048
 
-pthread_t thread_id = 0;
+pthread_t thread_id;
 volatile int run_eeg = 0;
 volatile int recording = 0;
 volatile int recsamples = 0;
@@ -80,7 +83,7 @@ void* reading_thread(void* arg)
 	curr.tv_nsec = UPDATE_DELAY*1000000;
 
 	while(run_eeg) {
-		nanosleep(&curr, NULL);
+		clock_nanosleep(CLOCK_REALTIME, 0, &curr, NULL);
 		set_signals(eeg, exg, tri, NSAMPLES);
 		eegpanel_add_samples(panel, eeg, exg, tri, NSAMPLES);
 		isample += NSAMPLES;
