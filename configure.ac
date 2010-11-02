@@ -42,8 +42,6 @@ PKG_CHECK_MODULES(GTHREAD2, gthread-2.0)
 #AM_PATH_GTK_2_0(2.12.0,,AC_MSG_ERROR(GTK+ libraries 2.12 or more recent should be installed),[gthread])
 
 AC_SEARCH_LIBS([rtf_create_filter], [rtfilter], [], AC_MSG_ERROR([The rtfilter library must be installed.]))
-AC_SEARCH_LIBS([pthread_create], [pthread posix4], 
-               [], AC_MSG_ERROR([The pthread library has not been found]))
 
 # Replacement checks
 AC_SEARCH_LIBS([clock_gettime], [rt posix4])

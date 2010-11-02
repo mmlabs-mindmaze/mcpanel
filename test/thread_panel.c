@@ -1,9 +1,12 @@
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <stdio.h>
 #include <eegpanel.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <time.h>
-//#include <gtk/gtk.h>
+#include <gtk/gtk.h>
 #if !HAVE_DECL_CLOCK_NANOSLEEP
 #include "../lib/clock_nanosleep.h"
 #endif
@@ -15,13 +18,10 @@
 #define NSAMPLES	32
 #define SAMPLING_RATE	2048
 
-pthread_t thread_id;
+GThread* thread_id;
 volatile int run_eeg = 0;
 volatile int recording = 0;
 volatile int recsamples = 0;
-
-float *geeg=NULL, *gexg=NULL;
-uint32_t *gtri = NULL;
 
 #define increase_timespec(timeout, delay)	do {			\
 	unsigned int nsec_duration = (delay) + (timeout).tv_nsec;	\
@@ -62,21 +62,17 @@ void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 }
 
 #define UPDATE_DELAY	((NSAMPLES*1000)/SAMPLING_RATE)
-void* reading_thread(void* arg)
+gpointer reading_thread(gpointer arg)
 {
 	float *eeg, *exg;
 	uint32_t *tri;
-	int32_t *raweeg, *rawexg;
 	EEGPanel* panel = arg;
-	struct timespec curr, prev;
-	int interval;
+	struct timespec curr;
 	unsigned int isample = 0;
 
 	eeg = calloc(NEEG*NSAMPLES, sizeof(*eeg));
 	exg = calloc(NEXG*NSAMPLES, sizeof(*exg));
 	tri = calloc(NSAMPLES, sizeof(*tri));
-	raweeg = (int32_t*)eeg;
-	rawexg = (int32_t*)exg;
 
 
 	curr.tv_sec = 0;
@@ -109,26 +105,15 @@ void* reading_thread(void* arg)
 	return 0;
 }
 
-/*
-gboolean iteration_func(gpointer data)
-{
-	EEGPanel *panel = data;
-
-	if (!run_eeg)
-		return FALSE;
-
-	set_signals(geeg, gexg, gtri, NSAMPLES);
-	eegpanel_add_samples(panel, geeg, gexg, gtri, NSAMPLES);
-	return TRUE;
-}*/
-
 int SetupRecording(const ChannelSelection* eeg_sel, const ChannelSelection* exg_sel, void* user_data)
 {
+	(void)eeg_sel;
+	(void)exg_sel;
 	EEGPanel* panel = user_data;
 	char* filename;
 	int retval = 0;
 
-	if (filename = eegpanel_open_filename_dialog(panel, "BDF files|*.bdf||Any files|*")) {
+	if ((filename = eegpanel_open_filename_dialog(panel, "BDF files|*.bdf||Any files|*"))) {
 		fprintf(stderr,"filename %s\n", filename);
 		free(filename);
 		retval = 1;
@@ -143,25 +128,16 @@ int Connect(EEGPanel* panel)
 
 	eegpanel_define_input(panel, NEEG, NEXG, 16, SAMPLING_RATE);
 
-	pthread_create(&thread_id, NULL, reading_thread, panel);
+	thread_id = g_thread_create(reading_thread, panel, TRUE, NULL);
 
-/*	geeg = calloc(NEEG*NSAMPLES, sizeof(*geeg));
-	gexg = calloc(NEXG*NSAMPLES, sizeof(*gexg));
-	gtri = calloc(NSAMPLES, sizeof(*gtri));
-	g_timeout_add(UPDATE_DELAY, iteration_func, panel);
-*/
 	return 0;
 }
 
 int Disconnect(EEGPanel* panel)
 {
+	(void)panel;
 	run_eeg = 0;
-	pthread_join(thread_id, NULL);
-
-	/*free(geeg);
-	free(gexg);
-	free(gtri);
-	*/
+	g_thread_join(thread_id);
 
 	return 0;
 }
@@ -182,11 +158,13 @@ int SystemConnection(int start, void* user_data)
 
 int StopRecording(void* user_data)
 {
+	(void)user_data;
 	return 1;
 }
 
 int ToggleRecording(int start, void* user_data)
 {
+	(void)user_data;
 	if (start)
 		recording = 1;
 	return 1;
@@ -209,7 +187,6 @@ int main(int argc, char* argv[])
 {
 	EEGPanel* panel;
 	struct PanelCb cb;
-	char settingfile[128];
 	struct PanelSettings settings = {
 		.filt[EEG_LOWPASS_FLT] = { .state = 1, .freq = 100.0f },
 		.filt[SENSOR_LOWPASS_FLT] = { .state = 1, .freq = 100.0f },
