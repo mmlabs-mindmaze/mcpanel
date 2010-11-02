@@ -85,6 +85,7 @@ gboolean check_redraw_scopes_cb(gpointer user_data)
 	unsigned int curr, prev;
 	GObject** widg = pan->gui.widgets;
 
+	gdk_threads_enter();
 	// Redraw all the scopes
 	g_mutex_lock(pan->data_mutex);
 
@@ -111,6 +112,7 @@ gboolean check_redraw_scopes_cb(gpointer user_data)
 		pan->dlg_retval = gtk_dialog_run(pan->dialog);
 		g_mutex_unlock(pan->dlg_completion_mutex);
 	}
+	gdk_threads_leave();
 
 	return TRUE;
 }
@@ -147,7 +149,7 @@ int open_filename_dialog(struct DialogParam* dlgprm)
 	while (sscanf(currstr, "%[^|]", string)) {
 		GtkFileFilter* ffilter = gtk_file_filter_new();
 		gtk_file_filter_set_name(ffilter, string);
-		while (currstr = strchr(currstr, '|')) {
+		while ((currstr = strchr(currstr, '|')) != NULL) {
 			if (currstr[1] == '|')
 				break;	
 			sscanf(++currstr, "%[^|]", string);
@@ -193,6 +195,7 @@ gboolean blocking_funcall_cb(gpointer data)
 
 int run_func_in_guithread(EEGPanel* pan, BCProc func, void* data)
 {
+	int retcode;
 	if (pan->main_loop_thread != g_thread_self()) {
 		// Init synchronization objects
 		// Warning: Assume that the creation will not fail
@@ -216,10 +219,13 @@ int run_func_in_guithread(EEGPanel* pan, BCProc func, void* data)
 		g_mutex_free(bcprm.mtx);
 		g_cond_free(bcprm.cond);
 
-		return bcprm.retcode;
+		retcode = bcprm.retcode;
+	} else {
+		gdk_threads_enter();
+		retcode = func(data);
+		gdk_threads_leave();
 	}
-	else
-		return func(data);
+	return retcode;
 }
 
 

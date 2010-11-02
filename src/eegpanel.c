@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <glib.h>
+#include <gtk/gtk.h>
 #include <glib/gprintf.h>
 #include <memory.h>
 #include <stdlib.h>
@@ -105,10 +106,12 @@ void eegpanel_show(EEGPanel* pan, int state)
 	//	than the main loop thread
 	/////////////////////////////////////////////////////////////
 
+	gdk_threads_enter();
 	if (state)
 		gtk_widget_show_all(GTK_WIDGET(pan->gui.window));
 	else
 		gtk_widget_hide_all(GTK_WIDGET(pan->gui.window));
+	gdk_threads_leave();
 
 }
 
@@ -116,10 +119,11 @@ void eegpanel_show(EEGPanel* pan, int state)
 
 void eegpanel_run(EEGPanel* pan, int nonblocking)
 {
-
 	if (!nonblocking) {
 		pan->main_loop_thread = g_thread_self();
+		gdk_threads_enter();
 		gtk_main();
+		gdk_threads_leave();
 		return;
 	}
 	
@@ -236,7 +240,9 @@ gpointer loop_thread(gpointer user_data)
 {
 	(void)user_data;
 
+	gdk_threads_enter();
 	gtk_main();
+	gdk_threads_leave();
 	return 0;
 }
 

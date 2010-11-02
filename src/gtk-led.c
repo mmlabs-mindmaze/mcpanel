@@ -20,6 +20,7 @@
 
 #include <gdk-pixbuf/gdk-pixdata.h>
 #include "led-images.h"
+
 const GdkPixdata const* led_image_data[NUM_COLORS_LED] = {&pix_led_gray, &pix_led_red, &pix_led_green, &pix_led_blue};
 
 enum {

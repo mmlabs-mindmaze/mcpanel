@@ -39,8 +39,11 @@ gboolean on_close_panel(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 	int retval = 1;
 
 	g_mutex_lock(pan->gui.syncmtx);
-	if (pan->cb.close_panel)
+	if (pan->cb.close_panel) {
+		gdk_threads_leave();
 		retval = pan->cb.close_panel(pan->cb.user_data);
+		gdk_threads_enter();
+	}
 	if (retval)
 		pan->gui.is_destroyed = 1;
 	g_mutex_unlock(pan->gui.syncmtx);
@@ -50,12 +53,16 @@ gboolean on_close_panel(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 
 gboolean startacquisition_button_clicked_cb(GtkButton* button, gpointer data)
 {
-	EEGPanel* pan = GET_PANEL_FROM(button);
-
 	(void)data;
+	EEGPanel* pan = GET_PANEL_FROM(button);
+	int retval;
+
 
 	if (pan->cb.system_connection) {
-		if (pan->cb.system_connection(pan->connected ? 0 : 1, pan->cb.user_data)) {
+		gdk_threads_leave();
+		retval = pan->cb.system_connection(pan->connected ? 0 : 1, pan->cb.user_data);
+		gdk_threads_enter();
+		if (retval) {
 			pan->connected = !pan->connected;
 			updategui_toggle_connection(pan, pan->connected);
 		}
@@ -68,13 +75,15 @@ gboolean startacquisition_button_clicked_cb(GtkButton* button, gpointer data)
 
 gboolean pause_recording_button_clicked_cb(GtkButton* button, gpointer data)
 {
+	(void)data;
 	int retcode = 0;
 	EEGPanel* pan = GET_PANEL_FROM(button);
 
-	(void)data;
 
 	if (pan->cb.toggle_recording) {
+		gdk_threads_leave();
 		retcode = pan->cb.toggle_recording(pan->recording ? 0 : 1, pan->cb.user_data);
+		gdk_threads_enter();
 		if (!retcode)
 			return FALSE;
 		pan->recording = !pan->recording;
@@ -91,13 +100,13 @@ gboolean start_recording_button_clicked_cb(GtkButton* button, gpointer data)
 	ChannelSelection eeg_sel, exg_sel;
 	GtkTreeSelection* selection;
 	EEGPanel* pan = GET_PANEL_FROM(button);
+	int retcode;
 
 	(void)data;
 
 
 	if (!pan->fileopened) {
-		// setup recording
-		
+		// Setup recording
 		// Prepare selections
 		selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(pan->gui.widgets[EEG_TREEVIEW]));
 		fill_selec_from_treeselec(&eeg_sel, selection, pan->eeg_labels);
@@ -105,9 +114,13 @@ gboolean start_recording_button_clicked_cb(GtkButton* button, gpointer data)
 		fill_selec_from_treeselec(&exg_sel, selection, pan->exg_labels);
 
 		// Send the setup event through the callback
-		if (pan->cb.setup_recording) 
-			if (pan->cb.setup_recording(&eeg_sel, &exg_sel, pan->cb.user_data)) 
+		if (pan->cb.setup_recording)  {
+			gdk_threads_leave();
+			retcode = pan->cb.setup_recording(&eeg_sel, &exg_sel, pan->cb.user_data);
+			gdk_threads_enter();
+			if (retcode) 
 				updategui_toggle_rec_openclose(pan, 1);
+		}
 		
 		// free selection
 		g_free(eeg_sel.selection);
@@ -119,15 +132,16 @@ gboolean start_recording_button_clicked_cb(GtkButton* button, gpointer data)
 		// Stop recording
 		if (pan->cb.stop_recording) {
 			// Pause recording before
-			if (pan->recording) 
+			if (pan->recording)
 				pause_recording_button_clicked_cb(GTK_BUTTON(pan->gui.widgets[PAUSE_RECORDING_BUTTON]),NULL);
 
-			if (pan->cb.stop_recording(pan->cb.user_data)) 
+			gdk_threads_leave();
+			retcode = pan->cb.stop_recording(pan->cb.user_data);
+			gdk_threads_enter();
+			if (retcode)
 				updategui_toggle_rec_openclose(pan, 0);
 		}
 	}
-
-
 
 	return TRUE;
 }
@@ -200,6 +214,7 @@ void elecset_combo_changed_cb(GtkComboBox* combo, gpointer data)
 extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer user_data)
 {
 	char** labels;
+	int retcode;
 	ChannelSelection select;
 	ChannelType type = (ChannelType)user_data;
 	EEGPanel* pan = GET_PANEL_FROM(gtk_tree_selection_get_tree_view(selection));
@@ -210,7 +225,12 @@ extern void channel_selection_changed_cb(GtkTreeSelection* selection, gpointer u
 	fill_selec_from_treeselec(&select, selection, labels);
 
 	g_mutex_lock(pan->data_mutex);
-	if (!pan->cb.process_selection || (pan->cb.process_selection(&select, type, pan->cb.user_data) > 0)) {
+	if (pan->cb.process_selection != NULL) {
+		gdk_threads_leave();
+		retcode = pan->cb.process_selection(&select, type, pan->cb.user_data);
+		gdk_threads_enter();
+	}
+	if ((pan->cb.process_selection == NULL) || (retcode > 0)) {
 		if (type == EEG) {
 			copy_selec(&(pan->eegsel), &select);
 			update_filter(pan, EEG_LOWPASS_FILTER);
