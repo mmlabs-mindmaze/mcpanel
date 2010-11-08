@@ -15,6 +15,9 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <memory.h>
@@ -74,6 +77,7 @@ plot_area_set_property (GObject *object, guint property_id,
 	}
 }
 
+
 static void
 plot_area_finalize (GObject *object)
 {
@@ -87,6 +91,7 @@ plot_area_finalize (GObject *object)
 	if (G_OBJECT_CLASS (plot_area_parent_class)->finalize)
 		G_OBJECT_CLASS (plot_area_parent_class)->finalize (object);
 }
+
 
 static void
 plot_area_class_init (PlotAreaClass *klass)
@@ -213,6 +218,7 @@ void plot_area_set_color(PlotArea* self, const gchar* colorstr, GdkColor* color)
 	if (GTK_WIDGET_REALIZED(self))
 		gdk_colormap_alloc_color(colormap, color, FALSE, TRUE);
 }
+
 
 void plot_area_set_channel_colors(PlotArea* self, const gchar* colorstr)
 {

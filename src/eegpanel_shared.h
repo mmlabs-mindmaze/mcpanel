@@ -18,24 +18,14 @@
 #ifndef EEGPANEL_SHARED_H
 #define EEGPANEL_SHARED_H
 
-#include "eegpanel_dataproc.h"
 #include "eegpanel_gui.h"
-#include "eegpanel_dataproc.h"
+#include "signaltab.h"
 
-typedef enum {
-	NONE_REF,
-	AVERAGE_REF,
-	ELECTRODE_REF
-} RefType;
+typedef struct _Indicators {
+	unsigned int cms_in_range	: 1;
+	unsigned int low_battery	: 1;
+} Indicators;
 
-
-
-typedef struct _FilterParam {
-	float freq;
-	int state;
-	int highpass;
-	int numch;
-} FilterParam;
 
 struct _EEGPanel {
 
@@ -48,6 +38,9 @@ struct _EEGPanel {
 	GtkDialog* dialog;
 	gint dlg_retval;
 
+	unsigned int ntab;
+	struct signaltab** tabs;
+
 	// states
 	gboolean connected;
 	gboolean fileopened;
@@ -55,41 +48,22 @@ struct _EEGPanel {
 
 	//
 	unsigned int fs;
-	unsigned int decimation_factor;
-	unsigned int decimation_offset;
-	unsigned int nmax_eeg, nmax_exg, nlines_tri;
+	unsigned int nlines_tri;
 	unsigned int num_samples;
 	float display_length;
 	unsigned int current_sample;
 	unsigned int last_drawn_sample;
 
-	// Labels
-	char** eeg_labels;
-	char** exg_labels;
-	char** bipole_labels;
 
 	// data
-	ChannelSelection eegsel;
-	ChannelSelection exgsel;
 	Indicators flags;
-	unsigned int neeg, nexg;
-	float *eeg, *exg;
-	float *eeg_offset, *exg_offset;
 	uint32_t *triggers;
-	RefType eeg_ref_type;
-	int eeg_ref_elec;
-
-	// filters
-	FilterParam filter_param[NUM_FILTERS];
 
 	// callbacks
 	struct PanelCb cb;
-	
 	struct PanelGUI gui;
-	struct PanelDataProc dta;
 };
 
-void clean_selec(ChannelSelection* selection);
-void copy_selec(ChannelSelection* dst, ChannelSelection* src);
+LOCAL_FN int set_data_length(EEGPanel* pan, float len);
 
 #endif /*EEGPANEL_SHARED_H*/

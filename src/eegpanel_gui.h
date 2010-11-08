@@ -34,42 +34,14 @@ typedef enum {
 
 typedef enum {
 	TOP_WINDOW,
-	EEG_SCOPE,
-	EXG_SCOPE,
+	SCOPE_NOTEBOOK,
 	TRI_SCOPE,
-	EEG_OFFSET_BAR1,
-	EEG_OFFSET_BAR2,
-	EXG_OFFSET_BAR1,
-	EXG_OFFSET_BAR2,
-	EEG_AXES,
-	EXG_AXES,
 	TRI_AXES,
-	EEG_OFFSET_AXES1,
-	EEG_OFFSET_AXES2,
-	EXG_OFFSET_AXES1,
-	EXG_OFFSET_AXES2,
-	EEG_SCALE_COMBO,
-	EEG_LOWPASS_CHECK,
-	EEG_LOWPASS_SPIN,
-	EEG_HIGHPASS_CHECK,
-	EEG_HIGHPASS_SPIN,
-	REFTYPE_COMBO,
-	ELECREF_COMBO,
-	ELECSET_COMBO,
-	EEG_TREEVIEW,
-	OFFSET_SCALE_COMBO,
-	EXG_SCALE_COMBO,
-	EXG_LOWPASS_CHECK,
-	EXG_LOWPASS_SPIN,
-	EXG_HIGHPASS_CHECK,
-	EXG_HIGHPASS_SPIN,
-	EXG_TREEVIEW,
 	STARTACQUISITION_BUTTON,
 	CONNECT_LED,
 	CMS_LED,
 	BATTERY_LED,
 	NATIVE_FREQ_LABEL,
-	DECIMATION_COMBO,
 	DISPLAYED_FREQ_LABEL,
 	TIME_WINDOW_COMBO,
 	RECORDING_LIMIT_ENTRY,
@@ -91,8 +63,7 @@ struct PanelGUI {
 	GMutex* syncmtx;
 	int is_destroyed;
 	GObject* widgets[NUM_PANEL_WIDGETS_DEFINED];
-	Scope *eeg_scope, *exg_scope;
-	Bargraph *eeg_offset_bar1, *eeg_offset_bar2;
+	GtkNotebook* notebook;
 	BinaryScope *tri_scope;
 };
 
@@ -114,21 +85,19 @@ struct BlockingCallParam {
 	BCProc func;
 };
 
-int create_panel_gui(EEGPanel* pan, const char* uifilename);
-void destroy_panel_gui(EEGPanel* pan);
-void set_databuff_gui(EEGPanel* pan);
-void update_input_gui(EEGPanel* pan);
-void fill_treeview(GtkTreeView* treeview, unsigned int num_labels, const char** labels);
-void fill_combo(GtkComboBox* combo, char** labels, int num_labels);
-int fill_selec_from_treeselec(ChannelSelection* selection, GtkTreeSelection* tree_sel, char** labels);
-void set_scopes_xticks(EEGPanel* pan);
-void set_bargraphs_yticks(EEGPanel* pan, float max);
-int popup_message_dialog(struct DialogParam* dlgparam);
-int open_filename_dialog(struct DialogParam* dlgparam);
-int run_func_in_guithread(EEGPanel* pan, BCProc func, void* data);
-void updategui_toggle_recording(EEGPanel* pan, int state);
-void updategui_toggle_connection(EEGPanel* pan, int state);
-void updategui_toggle_rec_openclose(EEGPanel* pan, int state);
+LOCAL_FN int create_panel_gui(EEGPanel* pan, const char* uifile,
+                              unsigned int ntab,
+                              const struct panel_tabconf* tabconf);
+LOCAL_FN void get_initial_values(EEGPanel* pan);
+LOCAL_FN void destroy_panel_gui(EEGPanel* pan);
+LOCAL_FN void update_triggers_gui(EEGPanel* pan);
+LOCAL_FN int popup_message_dialog(struct DialogParam* dlgparam);
+LOCAL_FN int open_filename_dialog(struct DialogParam* dlgparam);
+LOCAL_FN int run_func_in_guithread(EEGPanel* pan, BCProc func, void* data);
+LOCAL_FN void update_input_gui(EEGPanel* pan);
+LOCAL_FN void updategui_toggle_recording(EEGPanel* pan, int state);
+LOCAL_FN void updategui_toggle_connection(EEGPanel* pan, int state);
+LOCAL_FN void updategui_toggle_rec_openclose(EEGPanel* pan, int state);
 
 
 #endif /* EEGPANEL_GUI_H */

@@ -23,22 +23,8 @@
 
 typedef struct _EEGPanel EEGPanel;
 
-typedef enum
-{
-	EEG,
-	EXG,
-	TRIGGERS
-} ChannelType;
-
-typedef struct _ChannelSelection {
-	unsigned int *selection;
-	unsigned int num_chann;
-	const char** labels;
-} ChannelSelection;
-
-typedef int (*ProcessSelectionFunc)(const ChannelSelection* selection, ChannelType type, void* user_data);
 typedef int (*SystemConnectionFunc)(int start, void* user_data);
-typedef int (*SetupRecordingFunc)(const ChannelSelection* eeg_sel, const ChannelSelection* exg_sel, void* user_data);
+typedef int (*SetupRecordingFunc)(void* user_data);
 typedef int (*StopRecordingFunc)(void* user_data);
 typedef int (*ToggleRecordingFunc)(int start, void* user_data);
 typedef int (*ClosePanelFunc)(void* user_data);
@@ -46,7 +32,6 @@ typedef int (*ClosePanelFunc)(void* user_data);
 
 struct PanelCb {
 	/* function supplied by the user */
-	ProcessSelectionFunc process_selection;
 	SystemConnectionFunc system_connection;
 	SetupRecordingFunc setup_recording;
 	StopRecordingFunc stop_recording;
@@ -55,19 +40,6 @@ struct PanelCb {
 
 	/* pointer used to pass data to the user functions */
 	void* user_data;
-};
-
-struct FilterSettings {
-	int state;
-	float freq;
-};
-
-enum FilterNames {
-	EEG_LOWPASS_FLT = 0,
-	EEG_HIGHPASS_FLT,
-	SENSOR_LOWPASS_FLT,
-	SENSOR_HIGHPASS_FLT,
-	NUMMAX_FLT
 };
 
 enum notification {
@@ -79,26 +51,32 @@ enum notification {
 	REC_PAUSED
 };
 
-struct PanelSettings {
-	const char* uifilename;
-	struct FilterSettings filt[NUMMAX_FLT];
-	unsigned int num_eeg, num_sensor;
-	const char** eeglabels;
-	const char** sensorlabels;
+enum tabtype {
+	TABTYPE_SCOPE,
+	TABTYPE_BARGRAPH
+};
+
+struct panel_tabconf {
+	enum tabtype type;
+	const char* name;
 };
 
 void init_eegpanel_lib(int *argc, char ***argv);
-EEGPanel* eegpanel_create(const struct PanelSettings* settings, 
-			  const struct PanelCb* cb);
+EEGPanel* eegpanel_create(const char* uifilename, const struct PanelCb* cb,
+                        unsigned int ntab, const struct panel_tabconf* tab);
 void eegpanel_destroy(EEGPanel* panel);
 void eegpanel_show(EEGPanel* panel, int state);
 void eegpanel_popup_message(EEGPanel* panel, const char* message);
 char* eegpanel_open_filename_dialog(EEGPanel* panel, const char* filefilters);
 void eegpanel_run(EEGPanel* panel, int nonblocking);
-void eegpanel_add_samples(EEGPanel* panel, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples);
-int eegpanel_define_input(EEGPanel* panel, unsigned int num_eeg_channels,
-				unsigned int num_exg_channels, unsigned int num_tri_lines,
-				unsigned int sampling_rate);
 int eegpanel_notify(EEGPanel* panel, enum notification event);
+int eegpanel_define_tab_input(EEGPanel* pan, int tabid,
+                              unsigned int nch, float fs, 
+			      const char** labels);
+void eegpanel_add_samples(EEGPanel* pan, int tabid,
+                         unsigned int ns, const float* data);
+int eegpanel_define_triggers(EEGPanel* pan, unsigned int nline, float fs);
+void eegpanel_add_triggers(EEGPanel* pan, unsigned int ns,
+                          const uint32_t* trigg);
 
 #endif /*_EEGPANEL_H_*/

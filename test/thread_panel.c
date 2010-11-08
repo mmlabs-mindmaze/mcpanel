@@ -29,7 +29,7 @@ volatile int recsamples = 0;
 	(timeout).tv_nsec = nsec_duration%1000000000;			\
 } while (0)
 
-const char* eeg_labels[64] = {"Fp1","AF7","AF3","F1","F3","F5","F7","FT7",
+const char* eeg_lab[NEEG] = {"Fp1","AF7","AF3","F1","F3","F5","F7","FT7",
 			"FC5","FC3","FC1","C1","C3","C5","T7","TP7",
 			"CP5","CP3","CP1","P1","P3","P5","P7","P9",
 			"PO7","PO3","O1","Iz","Oz","POz","Pz","CPz",
@@ -37,6 +37,9 @@ const char* eeg_labels[64] = {"Fp1","AF7","AF3","F1","F3","F5","F7","FT7",
 			"F6","F8","FT8","FC6","FC4","FC2","FCz","Cz",
 			"C2","C4","C6","T8","TP8","CP6","CP4","CP2",
 			"P2","P4","P6","P8","P10","PO8","PO4","O2"
+};
+const char* exg_lab[NEXG] = {
+	"EXG1","EXG2", "EXG3", "EXG4", "EXG5", "EXG6", "EXG7", "EXG8"
 };
 
 void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
@@ -81,7 +84,10 @@ gpointer reading_thread(gpointer arg)
 	while(run_eeg) {
 		clock_nanosleep(CLOCK_REALTIME, 0, &curr, NULL);
 		set_signals(eeg, exg, tri, NSAMPLES);
-		eegpanel_add_samples(panel, eeg, exg, tri, NSAMPLES);
+		eegpanel_add_samples(panel, 0, NSAMPLES, eeg);
+		eegpanel_add_samples(panel, 1, NSAMPLES, eeg);
+		eegpanel_add_samples(panel, 2, NSAMPLES, exg);
+		eegpanel_add_triggers(panel, NSAMPLES, tri);
 		isample += NSAMPLES;
 
 		if (recording) {
@@ -105,10 +111,8 @@ gpointer reading_thread(gpointer arg)
 	return 0;
 }
 
-int SetupRecording(const ChannelSelection* eeg_sel, const ChannelSelection* exg_sel, void* user_data)
+int SetupRecording(void* user_data)
 {
-	(void)eeg_sel;
-	(void)exg_sel;
 	EEGPanel* panel = user_data;
 	char* filename;
 	int retval = 0;
@@ -126,7 +130,10 @@ int Connect(EEGPanel* panel)
 {
 	run_eeg = 1;
 
-	eegpanel_define_input(panel, NEEG, NEXG, 16, SAMPLING_RATE);
+	eegpanel_define_triggers(panel, 16, SAMPLING_RATE);
+	eegpanel_define_tab_input(panel, 0, NEEG, SAMPLING_RATE, eeg_lab);
+	eegpanel_define_tab_input(panel, 1, NEEG, SAMPLING_RATE, eeg_lab);
+	eegpanel_define_tab_input(panel, 2, NEXG, SAMPLING_RATE, exg_lab);
 
 	thread_id = g_thread_create(reading_thread, panel, TRUE, NULL);
 
@@ -186,27 +193,23 @@ int ClosePanel(void* user_data)
 int main(int argc, char* argv[])
 {
 	EEGPanel* panel;
-	struct PanelCb cb;
-	struct PanelSettings settings = {
-		.filt[EEG_LOWPASS_FLT] = { .state = 1, .freq = 100.0f },
-		.filt[SENSOR_LOWPASS_FLT] = { .state = 1, .freq = 100.0f },
-		.filt[EEG_HIGHPASS_FLT] = { .state = 1, .freq = 1.0f },
-		.filt[SENSOR_HIGHPASS_FLT] = { .state = 1, .freq = 1.0f },
-		.eeglabels = eeg_labels,
-		.num_eeg = 64
+	struct PanelCb cb = {
+		.user_data = NULL,
+		.close_panel = ClosePanel,
+		.system_connection = SystemConnection,
+		.setup_recording = SetupRecording,
+		.stop_recording = StopRecording,
+		.toggle_recording = ToggleRecording
 	};
-
-	cb.user_data = NULL;
-	cb.process_selection = NULL;
-	cb.close_panel = ClosePanel;
-	cb.system_connection = SystemConnection;
-	cb.setup_recording = SetupRecording;
-	cb.stop_recording = StopRecording;
-	cb.toggle_recording = ToggleRecording;
+	struct panel_tabconf tabconf[3] = {
+		[0] = {.type = TABTYPE_SCOPE, .name = "EEG"},
+		[1] = {.type = TABTYPE_BARGRAPH, .name = "EEG offsets"},
+		[2] = {.type = TABTYPE_SCOPE, .name = "Sensors"},
+	};
 	
 	init_eegpanel_lib(&argc, &argv);
 
-	panel = eegpanel_create(&settings, &cb);
+	panel = eegpanel_create(NULL, &cb, 3, tabconf);
 	if (!panel) {
 		fprintf(stderr,"error at the creation of the panel\n");
 		return 1;

@@ -30,7 +30,7 @@ uint32_t *gtri = NULL;
 	(timeout).tv_nsec = nsec_duration%1000000000;			\
 } while (0)
 
-const char* eeg_labels[64] = {"Fp1","AF7","AF3","F1","F3","F5","F7","FT7",
+const char* eeg_lab[NEEG] = {"Fp1","AF7","AF3","F1","F3","F5","F7","FT7",
 			"FC5","FC3","FC1","C1","C3","C5","T7","TP7",
 			"CP5","CP3","CP1","P1","P3","P5","P7","P9",
 			"PO7","PO3","O1","Iz","Oz","POz","Pz","CPz",
@@ -39,6 +39,22 @@ const char* eeg_labels[64] = {"Fp1","AF7","AF3","F1","F3","F5","F7","FT7",
 			"C2","C4","C6","T8","TP8","CP6","CP4","CP2",
 			"P2","P4","P6","P8","P10","PO8","PO4","O2"
 };
+const char* exg_lab[NEXG] = {
+	"EXG1","EXG2", "EXG3", "EXG4", "EXG5", "EXG6", "EXG7", "EXG8"
+};
+
+#define BAR_NSCALES 2
+const char* bar_sclabels[BAR_NSCALES] = {"25 mV", "50 mV"};
+const float bar_scales[BAR_NSCALES] = {25.0e3, 50.0e3};
+
+struct panel_tabconf tabconf[] = {
+	[0] = {.type = TABTYPE_SCOPE, .name = "EEG"},
+	[1] = {.type = TABTYPE_BARGRAPH, .name = "EEG offsets",
+	       .nscales = BAR_NSCALES, .sclabels = bar_sclabels,
+	       .scales = bar_scales},
+	[2] = {.type = TABTYPE_SCOPE, .name = "Sensors"},
+};
+#define NTAB	(sizeof(tabconf)/sizeof(tabconf[0]))
 
 void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 {
@@ -71,7 +87,10 @@ gboolean iteration_func(gpointer data)
 		return FALSE;
 
 	set_signals(geeg, gexg, gtri, NSAMPLES);
-	eegpanel_add_samples(panel, geeg, gexg, gtri, NSAMPLES);
+	eegpanel_add_samples(panel, 0, NSAMPLES, geeg);
+	eegpanel_add_samples(panel, 1, NSAMPLES, geeg);
+	eegpanel_add_samples(panel, 2, NSAMPLES, gexg);
+	eegpanel_add_triggers(panel, NSAMPLES, gtri);
 	isample += NSAMPLES;
 
 	if (recording) {
@@ -89,13 +108,13 @@ gboolean iteration_func(gpointer data)
 	return TRUE;
 }
 
-int SetupRecording(const ChannelSelection* eeg_sel, const ChannelSelection* exg_sel, void* user_data)
+int SetupRecording(void* user_data)
 {
 	EEGPanel* panel = user_data;
 	char* filename;
 	int retval = 0;
 
-	if (filename = eegpanel_open_filename_dialog(panel, "BDF files|*.bdf||Any files|*")) {
+	if ((filename = eegpanel_open_filename_dialog(panel, "BDF files|*.bdf||Any files|*"))) {
 		fprintf(stderr,"filename %s\n", filename);
 		free(filename);
 		retval = 1;
@@ -108,7 +127,10 @@ int Connect(EEGPanel* panel)
 {
 	run_eeg = 1;
 
-	eegpanel_define_input(panel, NEEG, NEXG, 16, SAMPLING_RATE);
+	eegpanel_define_triggers(panel, 16, SAMPLING_RATE);
+	eegpanel_define_tab_input(panel, 0, NEEG, SAMPLING_RATE, eeg_lab);
+	eegpanel_define_tab_input(panel, 1, NEEG, SAMPLING_RATE, eeg_lab);
+	eegpanel_define_tab_input(panel, 2, NEXG, SAMPLING_RATE, exg_lab);
 
 	geeg = calloc(NEEG*NSAMPLES, sizeof(*geeg));
 	gexg = calloc(NEXG*NSAMPLES, sizeof(*gexg));
@@ -146,11 +168,13 @@ int SystemConnection(int start, void* user_data)
 
 int StopRecording(void* user_data)
 {
+	(void)user_data;
 	return 1;
 }
 
 int ToggleRecording(int start, void* user_data)
 {
+	(void)user_data;
 	if (start)
 		recording = 1;
 	return 1;
@@ -172,28 +196,18 @@ int ClosePanel(void* user_data)
 int main(int argc, char* argv[])
 {
 	EEGPanel* panel;
-	struct PanelCb cb;
-	char settingfile[128];
-	struct PanelSettings settings = {
-		.filt[EEG_LOWPASS_FLT] = { .state = 1, .freq = 100.0f },
-		.filt[SENSOR_LOWPASS_FLT] = { .state = 1, .freq = 100.0f },
-		.filt[EEG_HIGHPASS_FLT] = { .state = 1, .freq = 1.0f },
-		.filt[SENSOR_HIGHPASS_FLT] = { .state = 1, .freq = 1.0f },
-		.eeglabels = eeg_labels,
-		.num_eeg = 64
+	struct PanelCb cb = {
+		.user_data = NULL,
+		.close_panel = ClosePanel,
+		.system_connection = SystemConnection,
+		.setup_recording = SetupRecording,
+		.stop_recording = StopRecording,
+		.toggle_recording = ToggleRecording
 	};
-
-	cb.user_data = NULL;
-	cb.process_selection = NULL;
-	cb.close_panel = ClosePanel;
-	cb.system_connection = SystemConnection;
-	cb.setup_recording = SetupRecording;
-	cb.stop_recording = StopRecording;
-	cb.toggle_recording = ToggleRecording;
 	
 	init_eegpanel_lib(&argc, &argv);
 
-	panel = eegpanel_create(&settings, &cb);
+	panel = eegpanel_create(NULL, &cb, NTAB, tabconf);
 	if (!panel) {
 		fprintf(stderr,"error at the creation of the panel\n");
 		return 1;

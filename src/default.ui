@@ -1,38 +1,23 @@
-<?xml version="1.0"?>
-<!--Generated with glade3 3.4.5 on Tue May 20 19:45:16 2008 -->
+<?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <object class="GtkAdjustment" id="adjustment1">
+  <!-- interface-requires gtk+ 2.12 -->
+  <!-- interface-naming-policy toplevel-contextual -->
+  <object class="GtkAdjustment" id="lowpass_adjustment">
     <property name="upper">99999</property>
-    <property name="lower">0</property>
-    <property name="page_increment">10</property>
     <property name="step_increment">0.10000000000000001</property>
-    <property name="value">0</property>
+    <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment2">
+  <object class="GtkAdjustment" id="highpass_adjustment">
     <property name="upper">99999</property>
-    <property name="lower">0</property>
-    <property name="page_increment">10</property>
     <property name="step_increment">0.10000000000000001</property>
-    <property name="value">0</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment3">
-    <property name="upper">99999</property>
-    <property name="lower">0</property>
     <property name="page_increment">10</property>
-    <property name="step_increment">0.10000000000000001</property>
-    <property name="value">0</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment4">
-    <property name="upper">99999</property>
-    <property name="lower">0</property>
-    <property name="page_increment">10</property>
-    <property name="step_increment">0.10000000000000001</property>
-    <property name="value">0</property>
-  </object>
-  <object class="GtkListStore" id="model1">
+  <object class="GtkListStore" id="reftype_model">
     <columns>
+      <!-- column-name gchararray -->
       <column type="gchararray"/>
-      <column type="guint"/>
+      <!-- column-name guint -->
+      <column type="gint"/>
     </columns>
     <data>
       <row>
@@ -47,10 +32,15 @@
         <col id="0">Electrode</col>
         <col id="1">2</col>
       </row>
+      <row>
+        <col id="0">Bipole</col>
+        <col id="1">3</col>
+      </row>
     </data>
   </object>
-  <object class="GtkListStore" id="model2">
+  <object class="GtkListStore" id="refelec_model">
     <columns>
+      <!-- column-name gchararray -->
       <column type="gchararray"/>
     </columns>
     <data>
@@ -59,28 +49,19 @@
       </row>
     </data>
   </object>
-  <object class="GtkListStore" id="model3">
+  <object class="GtkListStore" id="channel_model">
     <columns>
+      <!-- column-name gchararray -->
       <column type="gchararray"/>
     </columns>
     <data>
-      <row>
-        <col id="0">All</col>
-      </row>
-      <row>
-        <col id="0">Set A</col>
-      </row>
-      <row>
-        <col id="0">Sets AB</col>
-      </row>
-      <row>
-        <col id="0">Sets A-D</col>
-      </row>
     </data>
   </object>
   <object class="GtkListStore" id="model4">
     <columns>
+      <!-- column-name gchararray -->
       <column type="gchararray"/>
+      <!-- column-name guint -->
       <column type="guint"/>
     </columns>
     <data>
@@ -102,9 +83,11 @@
       </row>
     </data>
   </object>
-  <object class="GtkListStore" id="model5">
+  <object class="GtkListStore" id="timewnd_model">
     <columns>
+      <!-- column-name gchararray -->
       <column type="gchararray"/>
+      <!-- column-name gfloat -->
       <column type="gfloat"/>
     </columns>
     <data>
@@ -136,13 +119,15 @@
   </object>
   <object class="GtkListStore" id="scale_model">
     <columns>
+      <!-- column-name gchararray -->
       <column type="gchararray"/>
+      <!-- column-name gdouble -->
       <column type="gdouble"/>
     </columns>
     <data>
       <row>
         <col id="0">1 uV</col>
-        <col id="1">1.0</col>
+        <col id="1">1</col>
       </row>
       <row>
         <col id="0">2.5 uV</col>
@@ -150,60 +135,450 @@
       </row>
       <row>
         <col id="0">5 uV</col>
-        <col id="1">5.0</col>
+        <col id="1">5</col>
       </row>
       <row>
         <col id="0">10 uV</col>
-        <col id="1">10.0</col>
+        <col id="1">10</col>
       </row>
       <row>
         <col id="0">25 uV</col>
-        <col id="1">25.0</col>
+        <col id="1">25</col>
       </row>
       <row>
         <col id="0">50 uV</col>
-        <col id="1">50.0</col>
+        <col id="1">50</col>
       </row>
       <row>
         <col id="0">100 uV</col>
-        <col id="1">100.0</col>
+        <col id="1">100</col>
       </row>
       <row>
         <col id="0">250 uV</col>
-        <col id="1">250.0</col>
+        <col id="1">250</col>
       </row>
       <row>
         <col id="0">500 uV</col>
-        <col id="1">500.0</col>
+        <col id="1">500</col>
       </row>
       <row>
         <col id="0">1 mV</col>
-        <col id="1">1000.0</col>
+        <col id="1">1000</col>
       </row>
       <row>
         <col id="0">2.5 mV</col>
-        <col id="1">2500.0</col>
+        <col id="1">2500</col>
       </row>
       <row>
         <col id="0">5 mV</col>
-        <col id="1">5000.0</col>
+        <col id="1">5000</col>
       </row>
       <row>
         <col id="0">10 mV</col>
-        <col id="1">10000.0</col>
+        <col id="1">10000</col>
       </row>
       <row>
         <col id="0">25 mV</col>
-        <col id="1">25000.0</col>
+        <col id="1">25000</col>
       </row>
       <row>
         <col id="0">50 mV</col>
-        <col id="1">50000.0</col>
+        <col id="1">50000</col>
       </row>
     </data>
   </object>
+
+
+  <object class="GtkAlignment" id="scopetab_template">
+    <property name="visible">True</property>
+    <property name="top_padding">5</property>
+    <property name="bottom_padding">5</property>
+    <property name="left_padding">5</property>
+    <property name="right_padding">5</property>
+    <child>
+      <object class="GtkHBox" id="hbox2">
+        <property name="visible">True</property>
+        <property name="spacing">4</property>
+        <child>
+          <object class="GtkVBox" id="vbox8">
+            <property name="width_request">100</property>
+            <property name="visible">True</property>
+            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+            <property name="spacing">3</property>
+            <child>
+              <object class="GtkFrame" id="frame2">
+                <property name="visible">True</property>
+                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">etched-out</property>
+                <child>
+                  <object class="GtkComboBox" id="scopetab_scale_combo">
+                    <property name="visible">True</property>
+                    <property name="model">scale_model</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="scopetab_scale_renderer"/>
+                      <attributes>
+                        <attribute name="text">0</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="label11">
+                    <property name="visible">True</property>
+                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                    <property name="label" translatable="yes">Scale</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="frame5">
+                <property name="visible">True</property>
+                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">etched-out</property>
+                <child>
+                  <object class="GtkVBox" id="vbox9">
+                    <property name="visible">True</property>
+                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                    <child>
+                      <object class="GtkCheckButton" id="scopetab_lp_check">
+                        <property name="label" translatable="yes">Low pass</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                        <property name="draw_indicator">True</property>
+                      </object>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="scopetab_lp_spin">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                        <property name="invisible_char">•</property>
+                        <property name="width_chars">7</property>
+                        <property name="adjustment">lowpass_adjustment</property>
+                        <property name="digits">3</property>
+                        <property name="numeric">True</property>
+                      </object>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkCheckButton" id="scopetab_hp_check">
+                        <property name="label" translatable="yes">High pass</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                        <property name="draw_indicator">True</property>
+                      </object>
+                      <packing>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="scopetab_hp_spin">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                        <property name="invisible_char">•</property>
+                        <property name="width_chars">7</property>
+                        <property name="adjustment">highpass_adjustment</property>
+                        <property name="digits">3</property>
+                        <property name="numeric">True</property>
+                      </object>
+                      <packing>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="label10">
+                    <property name="visible">True</property>
+                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                    <property name="label" translatable="yes">Filtering</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="frame1">
+                <property name="visible">True</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">etched-out</property>
+                <child>
+                  <object class="GtkVBox" id="vbox4">
+                    <property name="visible">True</property>
+                    <child>
+                      <object class="GtkComboBox" id="scopetab_reftype_combo">
+                        <property name="visible">True</property>
+                        <property name="model">reftype_model</property>
+                        <child>
+                          <object class="GtkCellRendererText" id="renderer1"/>
+                          <attributes>
+                            <attribute name="text">0</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBox" id="scopetab_elecref_combo">
+                        <property name="visible">True</property>
+                        <property name="model">refelec_model</property>
+                        <child>
+                          <object class="GtkCellRendererText" id="renderer2"/>
+                          <attributes>
+                            <attribute name="text">0</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="label4">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Reference</property>
+                    <property name="use_markup">True</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="frame4">
+                <property name="visible">True</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">etched-out</property>
+                <child>
+                  <object class="GtkScrolledWindow" id="scrolledwindow1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="hscrollbar_policy">automatic</property>
+                    <property name="shadow_type">in</property>
+                    <child>
+                      <object class="GtkTreeView" id="scopetab_treeview">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="headers_visible">False</property>
+                        <property name="level_indentation">3</property>
+                        <property name="model">channel_model</property>
+                        <child>
+                          <object class="GtkTreeViewColumn" id="scopetab_channel_column">
+		            <property name="title">Channels</property>
+		            <child>
+		              <object class="GtkCellRendererText" id="scopetab_channel_renderer"/>
+                              <attributes>
+                                <attribute name="text">0</attribute>
+                              </attributes>
+                            </child>
+		          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="label7">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Electrodes</property>
+                    <property name="use_markup">True</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="position">3</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="LabelizedPlot" id="scopetab_axes">
+            <property name="left-padding">40</property>
+            <child>
+              <object class="Scope" id="scopetab_scope">
+                <property name="background">white</property>
+                <property name="channel-colors">blue;yellow;red;green;orange;brown;magenta;cyan</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+
+
+  <object class="GtkAlignment" id="bartab_template">
+    <property name="visible">True</property>
+    <property name="top_padding">5</property>
+    <property name="bottom_padding">5</property>
+    <property name="left_padding">5</property>
+    <property name="right_padding">5</property>
+    <child>
+      <object class="GtkHBox" id="hbox3">
+        <property name="visible">True</property>
+        <child>
+          <object class="GtkVBox" id="vbox7">
+            <property name="width_request">100</property>
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkFrame" id="frame9">
+                <property name="visible">True</property>
+                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">etched-out</property>
+                <child>
+                  <object class="GtkComboBox" id="bartab_scale_combo">
+                    <property name="visible">True</property>
+                    <property name="model">scale_model</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="bartab_scale_renderer"/>
+                      <attributes>
+                        <attribute name="text">0</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="label14">
+                    <property name="visible">True</property>
+                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                    <property name="label" translatable="yes">Scale</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+	    <child>
+              <object class="GtkFrame" id="bartab_elec_frame">
+                <property name="visible">True</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">etched-out</property>
+                <child>
+                  <object class="GtkScrolledWindow" id="scrolledwindow2">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="hscrollbar_policy">automatic</property>
+                    <property name="shadow_type">in</property>
+                    <child>
+                      <object class="GtkTreeView" id="bartab_treeview">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="headers_visible">False</property>
+                        <property name="level_indentation">3</property>
+                        <property name="model">channel_model</property>
+                        <child>
+                          <object class="GtkTreeViewColumn" id="bartab_channel_column">
+		            <property name="title">Channels</property>
+		            <child>
+		              <object class="GtkCellRendererText" id="bartab_channel_renderer"/>
+                              <attributes>
+                                <attribute name="text">0</attribute>
+                              </attributes>
+                            </child>
+		          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="bartab_elec_label">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Electrodes</property>
+                    <property name="use_markup">True</property>
+                  </object>
+                </child>
+              </object>
+	    </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkVBox" id="vbox11">
+            <property name="visible">True</property>
+            <child>
+          <object class="LabelizedPlot" id="bartab_axes1">
+            <property name="visible">True</property>
+            <property name="left-padding">40</property>
+            <child>
+              <object class="Bargraph" id="bartab_bar1">
+                <property name="background">white</property>
+              </object>
+            </child>
+          </object>
+            </child>
+            <child>
+          <object class="LabelizedPlot" id="bartab_axes2">
+            <property name="visible">True</property>
+            <property name="left-padding">40</property>
+            <child>
+              <object class="Bargraph" id="bartab_bar2">
+                <property name="background">white</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
   <object class="GtkWindow" id="topwindow">
-    <signal handler="gtk_main_quit" name="destroy"/>
+    <signal name="destroy" handler="gtk_main_quit"/>
     <child>
       <object class="GtkAlignment" id="alignment1">
         <property name="visible">True</property>
@@ -216,314 +591,52 @@
             <property name="visible">True</property>
             <property name="spacing">2</property>
             <child>
-              <object class="GtkNotebook" id="notebook1">
+              <object class="GtkVBox" id="vbox1">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="tab_vborder">0</property>
+                <property name="spacing">2</property>
                 <child>
-                  <object class="GtkAlignment" id="alignment2">
+                  <object class="GtkNotebook" id="scope_notebook">
                     <property name="visible">True</property>
-                    <property name="top_padding">5</property>
-                    <property name="bottom_padding">5</property>
-                    <property name="left_padding">5</property>
-                    <property name="right_padding">5</property>
+                    <property name="can_focus">True</property>
+                    <property name="tab_vborder">0</property>
+                  </object>
+                  <packing>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkAlignment" id="alignment5">
+                    <property name="visible">True</property>
+                    <property name="left_padding">9</property>
+                    <property name="right_padding">9</property>
                     <child>
-                      <object class="GtkHBox" id="hbox2">
+                      <object class="GtkHBox" id="hbox7">
                         <property name="visible">True</property>
                         <property name="spacing">4</property>
                         <child>
-                          <object class="GtkVBox" id="vbox8">
+                          <object class="GtkLabel" id="label5">
                             <property name="width_request">100</property>
                             <property name="visible">True</property>
-                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                            <property name="spacing">3</property>
-                            <child>
-                              <object class="GtkFrame" id="frame2">
-                                <property name="visible">True</property>
-                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                <property name="label_xalign">0</property>
-                                <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
-                                <child>
-                                  <object class="GtkComboBox" id="eeg_scale_combo">
-                                    <property name="visible">True</property>
-                                    <property name="model">scale_model</property>
-                                    <child>
-                                      <object class="GtkCellRendererText" id="eeg_scale_renderer"/>
-                                      <attributes>
-                                        <attribute name="text">0</attribute>
-                                      </attributes>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child type="label">
-                                  <object class="GtkLabel" id="label11">
-                                    <property name="visible">True</property>
-                                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                    <property name="label" translatable="yes">Scale</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkFrame" id="frame5">
-                                <property name="visible">True</property>
-                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                <property name="label_xalign">0</property>
-                                <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
-                                <child>
-                                  <object class="GtkVBox" id="vbox9">
-                                    <property name="visible">True</property>
-                                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                    <child>
-                                      <object class="GtkCheckButton" id="eeg_lowpass_check">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="label" translatable="yes">Low pass</property>
-                                        <property name="draw_indicator">True</property>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="GtkSpinButton" id="eeg_lowpass_spin">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="width_chars">7</property>
-                                        <property name="adjustment">adjustment1</property>
-                                        <property name="digits">3</property>
-                                        <property name="numeric">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkCheckButton" id="eeg_highpass_check">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="label" translatable="yes">High pass</property>
-                                        <property name="draw_indicator">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="position">2</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkSpinButton" id="eeg_highpass_spin">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="width_chars">7</property>
-                                        <property name="adjustment">adjustment2</property>
-                                        <property name="digits">3</property>
-                                        <property name="numeric">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="position">3</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child type="label">
-                                  <object class="GtkLabel" id="label10">
-                                    <property name="visible">True</property>
-                                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                    <property name="label" translatable="yes">Filtering</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkFrame" id="frame1">
-                                <property name="visible">True</property>
-                                <property name="label_xalign">0</property>
-                                <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
-                                <child>
-                                  <object class="GtkVBox" id="vbox1">
-                                    <property name="visible">True</property>
-                                    <child>
-                                      <object class="GtkComboBox" id="reftype_combo">
-                                        <property name="visible">True</property>
-                                        <property name="model">model1</property>
-                                        <child>
-                                          <object class="GtkCellRendererText" id="renderer1"/>
-                                          <attributes>
-                                            <attribute name="text">0</attribute>
-                                          </attributes>
-                                        </child>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="GtkComboBox" id="elecref_combo">
-                                        <property name="visible">True</property>
-                                        <property name="model">model2</property>
-                                        <child>
-                                          <object class="GtkCellRendererText" id="renderer2"/>
-                                          <attributes>
-                                            <attribute name="text">0</attribute>
-                                          </attributes>
-                                        </child>
-                                      </object>
-                                      <packing>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child type="label">
-                                  <object class="GtkLabel" id="label4">
-                                    <property name="visible">True</property>
-                                    <property name="label" translatable="yes">Reference</property>
-                                    <property name="use_markup">True</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkFrame" id="frame4">
-                                <property name="visible">True</property>
-                                <property name="label_xalign">0</property>
-                                <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
-                                <child>
-                                  <object class="GtkVBox" id="vbox4">
-                                    <property name="visible">True</property>
-                                    <child>
-                                      <object class="GtkComboBox" id="elecset_combo">
-                                        <property name="visible">True</property>
-                                        <property name="model">model3</property>
-                                        <child>
-                                          <object class="GtkCellRendererText" id="renderer3"/>
-                                          <attributes>
-                                            <attribute name="text">0</attribute>
-                                          </attributes>
-                                        </child>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkScrolledWindow" id="scrolledwindow1">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                                        <property name="shadow_type">GTK_SHADOW_IN</property>
-                                        <child>
-                                          <object class="GtkTreeView" id="eeg_treeview">
-                                            <property name="visible">True</property>
-                                            <property name="can_focus">True</property>
-                                            <property name="headers_visible">False</property>
-                                            <property name="headers_clickable">True</property>
-                                            <property name="level_indentation">3</property>
-                                          </object>
-                                        </child>
-                                      </object>
-                                      <packing>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child type="label">
-                                  <object class="GtkLabel" id="label7">
-                                    <property name="visible">True</property>
-                                    <property name="label" translatable="yes">Electrodes</property>
-                                    <property name="use_markup">True</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="position">3</property>
-                              </packing>
-                            </child>
+                            <property name="label" translatable="yes">Triggers</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
                             <property name="fill">False</property>
+                            <property name="position">0</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkTable" id="table2">
-                            <property name="visible">True</property>
-                            <property name="n_rows">2</property>
-                            <property name="n_columns">2</property>
-                            <child>
-                              <object class="GtkLabel" id="label5">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">EEG Channels</property>
-                                <property name="justify">GTK_JUSTIFY_CENTER</property>
-                                <property name="angle">90</property>
-                              </object>
-                              <packing>
-                                <property name="x_options">GTK_FILL</property>
-                                <property name="y_options">GTK_FILL</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkLabel" id="label6">
-                                <property name="visible">True</property>
-                                <property name="label" translatable="yes">Triggers</property>
-                                <property name="justify">GTK_JUSTIFY_CENTER</property>
-                                <property name="angle">90</property>
-                              </object>
-                              <packing>
-                                <property name="top_attach">1</property>
-                                <property name="bottom_attach">2</property>
-                                <property name="x_options">GTK_FILL</property>
-                                <property name="y_options">GTK_FILL</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="LabelizedPlot" id="tri_axes">
-                                <property name="left-padding">40</property>
-                                <child>
-                                  <object class="BinaryScope" id="tri_scope">
-                                    <property name="height-request">48</property>
-                                    <property name="background">white</property>
-                                    <property name="channel-colors">blue;yellow;red;green;orange;brown;magenta;cyan</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="right_attach">2</property>
-                                <property name="top_attach">1</property>
-                                <property name="bottom_attach">2</property>
-                                <property name="y_options">GTK_FILL</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="LabelizedPlot" id="eeg_axes">
-                                <property name="left-padding">40</property>
-                                <child>
-                                  <object class="Scope" id="eeg_scope">
-                                    <property name="background">white</property>
-                                    <property name="channel-colors">blue;yellow;red;green;orange;brown;magenta;cyan</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="right_attach">2</property>
-                              </packing>
-                            </child>
-                          </object>
+                          <object class="LabelizedPlot" id="tri_axes">
+                            <property name="left-padding">40</property>
+                              <child>
+                                <object class="BinaryScope" id="tri_scope">
+                                  <property name="height-request">48</property>
+                                  <property name="width_request">100</property>
+                                  <property name="background">white</property>
+                                  <property name="channel-colors">blue;yellow;red;green;orange;brown;magenta;cyan</property>
+                                </object>
+                              </child>
+                            </object>
                           <packing>
                             <property name="position">1</property>
                           </packing>
@@ -531,338 +644,16 @@
                       </object>
                     </child>
                   </object>
-                </child>
-                <child type="tab">
-                  <object class="GtkLabel" id="label1">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">EEG</property>
-                  </object>
                   <packing>
-                    <property name="tab_fill">False</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkAlignment" id="alignment3">
-                    <property name="visible">True</property>
-                    <property name="top_padding">5</property>
-                    <property name="bottom_padding">5</property>
-                    <property name="left_padding">5</property>
-                    <property name="right_padding">5</property>
-                    <child>
-                      <object class="GtkHBox" id="hbox3">
-                        <property name="visible">True</property>
-                        <child>
-                          <object class="GtkVBox" id="vbox7">
-                            <property name="width_request">100</property>
-                            <property name="visible">True</property>
-                            <child>
-                              <object class="GtkFrame" id="frame9">
-                                <property name="visible">True</property>
-                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                <property name="label_xalign">0</property>
-                                <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
-                                <child>
-                                  <object class="GtkComboBox" id="offset_scale_combo">
-                                    <property name="visible">True</property>
-                                    <property name="model">scale_model</property>
-                                    <child>
-                                      <object class="GtkCellRendererText" id="offset_scale_renderer"/>
-                                      <attributes>
-                                        <attribute name="text">0</attribute>
-                                      </attributes>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child type="label">
-                                  <object class="GtkLabel" id="label14">
-                                    <property name="visible">True</property>
-                                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                    <property name="label" translatable="yes">Scale</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkFrame" id="frame10">
-                                <property name="visible">True</property>
-                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                <property name="label_xalign">0</property>
-                                <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
-                                <child>
-                                  <object class="GtkVBox" id="vbox10">
-                                    <property name="visible">True</property>
-                                    <child>
-                                      <object class="GtkDrawingArea" id="exg_offset_scope1">
-                                        <property name="visible">True</property>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="GtkDrawingArea" id="exg_offset_scope2">
-                                        <property name="visible">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child type="label">
-                                  <object class="GtkLabel" id="label17">
-                                    <property name="visible">True</property>
-                                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                    <property name="label" translatable="yes">Offsets EXG</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkVBox" id="vbox11">
-                            <property name="visible">True</property>
-                            <child>
-                              <object class="LabelizedPlot" id="eeg_offset_axes1">
-                                <property name="visible">True</property>
-                                <property name="left-padding">40</property>
-                                <child>
-                                  <object class="Bargraph" id="eeg_offset_bar1">
-                                    <property name="background">white</property>
-                                  </object>
-                                </child>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="LabelizedPlot" id="eeg_offset_axes2">
-                                <property name="visible">True</property>
-                                <property name="left-padding">40</property>
-                                <child>
-                                  <object class="Bargraph" id="eeg_offset_bar2">
-                                    <property name="background">white</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child type="tab">
-                  <object class="GtkLabel" id="label2">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Electrode offsets</property>
-                  </object>
-                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
                     <property name="position">1</property>
-                    <property name="tab_fill">False</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkAlignment" id="alignment4">
-                    <property name="visible">True</property>
-                    <property name="top_padding">5</property>
-                    <property name="bottom_padding">5</property>
-                    <property name="left_padding">5</property>
-                    <property name="right_padding">5</property>
-                    <child>
-                      <object class="GtkHBox" id="hbox4">
-                        <property name="visible">True</property>
-                        <child>
-                          <object class="GtkVBox" id="vbox5">
-                            <property name="width_request">100</property>
-                            <property name="visible">True</property>
-                            <child>
-                              <object class="GtkFrame" id="frame12">
-                                <property name="visible">True</property>
-                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                <property name="label_xalign">0</property>
-                                <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
-                                <child>
-                                  <object class="GtkComboBox" id="exg_scale_combo">
-                                    <property name="visible">True</property>
-                                    <property name="model">scale_model</property>
-                                    <child>
-                                      <object class="GtkCellRendererText" id="exg_scale_renderer"/>
-                                      <attributes>
-                                        <attribute name="text">0</attribute>
-                                      </attributes>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child type="label">
-                                  <object class="GtkLabel" id="label28">
-                                    <property name="visible">True</property>
-                                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                    <property name="label" translatable="yes">Scale</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkFrame" id="frame3">
-                                <property name="visible">True</property>
-                                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                <property name="label_xalign">0</property>
-                                <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
-                                <child>
-                                  <object class="GtkVBox" id="vbox6">
-                                    <property name="visible">True</property>
-                                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                    <child>
-                                      <object class="GtkCheckButton" id="exg_lowpass_check">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="label" translatable="yes">Low pass</property>
-                                        <property name="draw_indicator">True</property>
-                                      </object>
-                                    </child>
-                                    <child>
-                                      <object class="GtkSpinButton" id="exg_lowpass_spin">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="width_chars">7</property>
-                                        <property name="adjustment">adjustment3</property>
-                                        <property name="digits">3</property>
-                                        <property name="numeric">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkCheckButton" id="exg_highpass_check">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="label" translatable="yes">High pass</property>
-                                        <property name="draw_indicator">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="position">2</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkSpinButton" id="exg_highpass_spin">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                        <property name="width_chars">7</property>
-                                        <property name="adjustment">adjustment4</property>
-                                        <property name="digits">3</property>
-                                        <property name="numeric">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="position">3</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child type="label">
-                                  <object class="GtkLabel" id="label12">
-                                    <property name="visible">True</property>
-                                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                                    <property name="label" translatable="yes">Filtering</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkFrame" id="frame8">
-                                <property name="visible">True</property>
-                                <property name="label_xalign">0</property>
-                                <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
-                                <child>
-                                  <object class="GtkScrolledWindow" id="scrolledwindow2">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                                    <property name="shadow_type">GTK_SHADOW_IN</property>
-                                    <child>
-                                      <object class="GtkTreeView" id="exg_treeview">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="headers_visible">False</property>
-                                        <property name="headers_clickable">True</property>
-                                        <property name="level_indentation">3</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                </child>
-                                <child type="label">
-                                  <object class="GtkLabel" id="label13">
-                                    <property name="visible">True</property>
-                                    <property name="label" translatable="yes">Electrodes</property>
-                                    <property name="use_markup">True</property>
-                                  </object>
-                                </child>
-                              </object>
-                              <packing>
-                                <property name="position">2</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="LabelizedPlot" id="exg_axes">
-                            <property name="left-padding">60</property>
-                            <child>
-                              <object class="Scope" id="exg_scope">
-                                <property name="background">white</property>
-                              </object>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
-                <child type="tab">
-                  <object class="GtkLabel" id="label3">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Bipolar leads</property>
-                  </object>
-                  <packing>
-                    <property name="position">2</property>
-                    <property name="tab_fill">False</property>
                   </packing>
                 </child>
               </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
             </child>
             <child>
               <object class="GtkVBox" id="vbox2">
@@ -874,7 +665,7 @@
                     <property name="visible">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                     <property name="label_xalign">0</property>
-                    <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
+                    <property name="shadow_type">etched-out</property>
                     <child>
                       <object class="GtkVBox" id="vbox3">
                         <property name="visible">True</property>
@@ -946,15 +737,27 @@
                                 <property name="x_options">GTK_FILL</property>
                               </packing>
                             </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
                           </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
                         </child>
                         <child>
                           <object class="GtkButton" id="startacquisition_button">
+                            <property name="label" translatable="yes">Connect</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                            <property name="label" translatable="yes">Connect</property>
                           </object>
                           <packing>
                             <property name="position">1</property>
@@ -969,6 +772,9 @@
                                 <property name="xalign">0.10000000149011612</property>
                                 <property name="label" translatable="yes">Native rate :</property>
                               </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
                             </child>
                             <child>
                               <object class="GtkLabel" id="native_freq_label">
@@ -999,6 +805,7 @@
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">False</property>
+                    <property name="position">0</property>
                   </packing>
                 </child>
                 <child>
@@ -1006,7 +813,7 @@
                     <property name="visible">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                     <property name="label_xalign">0</property>
-                    <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
+                    <property name="shadow_type">etched-out</property>
                     <child>
                       <object class="GtkVBox" id="vbox12">
                         <property name="visible">True</property>
@@ -1020,11 +827,14 @@
                                 <property name="xalign">0.10000000149011612</property>
                                 <property name="label" translatable="yes">Decimation :</property>
                               </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
                             </child>
                             <child>
                               <object class="GtkComboBox" id="decimation_combo">
-                                <property name="sensitive">False</property>
                                 <property name="visible">True</property>
+                                <property name="sensitive">False</property>
                                 <property name="model">model4</property>
                                 <child>
                                   <object class="GtkCellRendererText" id="renderer4"/>
@@ -1038,6 +848,9 @@
                               </packing>
                             </child>
                           </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
                         </child>
                         <child>
                           <object class="GtkVBox" id="vbox15">
@@ -1048,6 +861,9 @@
                                 <property name="xalign">0.10000000149011612</property>
                                 <property name="label" translatable="yes">Displayed rate :</property>
                               </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
                             </child>
                             <child>
                               <object class="GtkLabel" id="displayed_freq_label">
@@ -1072,11 +888,14 @@
                                 <property name="xalign">0.10000000149011612</property>
                                 <property name="label" translatable="yes">Time window :</property>
                               </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
                             </child>
                             <child>
                               <object class="GtkComboBox" id="time_window_combo">
                                 <property name="visible">True</property>
-                                <property name="model">model5</property>
+                                <property name="model">timewnd_model</property>
                                 <child>
                                   <object class="GtkCellRendererText" id="renderer5"/>
                                   <attributes>
@@ -1114,7 +933,7 @@
                     <property name="visible">True</property>
                     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
                     <property name="label_xalign">0</property>
-                    <property name="shadow_type">GTK_SHADOW_ETCHED_OUT</property>
+                    <property name="shadow_type">etched-out</property>
                     <child>
                       <object class="GtkVBox" id="vbox17">
                         <property name="visible">True</property>
@@ -1135,7 +954,7 @@
                                 <property name="visible">True</property>
                                 <property name="xalign">0</property>
                                 <property name="label" translatable="yes">Recording</property>
-                                <property name="wrap_mode">PANGO_WRAP_WORD_CHAR</property>
+                                <property name="wrap_mode">word-char</property>
                               </object>
                               <packing>
                                 <property name="position">1</property>
@@ -1145,6 +964,7 @@
                           <packing>
                             <property name="expand">False</property>
                             <property name="fill">False</property>
+                            <property name="position">0</property>
                           </packing>
                         </child>
                         <child>
@@ -1155,8 +975,11 @@
                                 <property name="visible">True</property>
                                 <property name="xalign">0</property>
                                 <property name="label" translatable="yes">Time limit :</property>
-                                <property name="wrap_mode">PANGO_WRAP_WORD_CHAR</property>
+                                <property name="wrap_mode">word-char</property>
                               </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
                             </child>
                             <child>
                               <object class="GtkHBox" id="hbox6">
@@ -1170,6 +993,9 @@
                                     <property name="text" translatable="yes">-1</property>
                                     <property name="xalign">0.5</property>
                                   </object>
+                                  <packing>
+                                    <property name="position">0</property>
+                                  </packing>
                                 </child>
                                 <child>
                                   <object class="GtkLabel" id="label26">
@@ -1196,10 +1022,10 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="start_recording_button">
+                            <property name="label" translatable="yes">Setup</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="label" translatable="yes">Setup</property>
                           </object>
                           <packing>
                             <property name="position">2</property>
@@ -1207,10 +1033,10 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="pause_recording_button">
+                            <property name="label" translatable="yes">Record</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="label" translatable="yes">Record</property>
                           </object>
                           <packing>
                             <property name="position">3</property>
@@ -1225,6 +1051,9 @@
                                 <property name="xalign">0.10000000149011612</property>
                                 <property name="label" translatable="yes">Length recorded :</property>
                               </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
                             </child>
                             <child>
                               <object class="GtkLabel" id="file_length_label">

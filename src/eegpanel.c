@@ -15,30 +15,126 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <glib/gprintf.h>
 #include <memory.h>
 #include <stdlib.h>
 #include "eegpanel.h"
+#include "eegpanel_gui.h"
 #include "eegpanel_shared.h"
+#include "signaltab.h"
 
 
-gpointer loop_thread(gpointer user_data);
-char** add_default_labels(char** labels, unsigned int requested_num_labels, const char* prefix);
-void set_bipole_labels(EEGPanel* pan);
-void init_filter_params(EEGPanel* pan);
-void get_default_channel_labels_str(char*** labels, const char** src, unsigned int numch);
-void set_default_values_str(EEGPanel* pan, const struct PanelSettings* settings);
-void set_default_values(EEGPanel* pan, const char* filename);
-gint run_model_dialog(EEGPanel* pan, GtkDialog* dialog);
-void get_initial_values(EEGPanel* pan);
 
 struct notification_param {
 	enum notification event;
 	EEGPanel* pan;
 };
-int process_notification(struct notification_param* notprm);
+
+///////////////////////////////////////////////////
+//
+//	Internal functions
+//
+///////////////////////////////////////////////////
+static
+gpointer loop_thread(gpointer user_data)
+{
+	(void)user_data;
+
+	gdk_threads_enter();
+	gtk_main();
+	gdk_threads_leave();
+	return 0;
+}
+
+
+static
+int process_notification(struct notification_param* prm)
+{
+	if (prm->event == DISCONNECTED)
+		updategui_toggle_connection(prm->pan, 0);
+	else if (prm->event == CONNECTED)
+		updategui_toggle_connection(prm->pan, 1);
+	else if (prm->event == REC_OPENED)
+		updategui_toggle_rec_openclose(prm->pan, 0);
+	else if (prm->event == REC_CLOSED)
+		updategui_toggle_rec_openclose(prm->pan, 1);
+	else if (prm->event == REC_ON)
+		updategui_toggle_recording(prm->pan, 1);
+	else if (prm->event == REC_PAUSED)
+		updategui_toggle_recording(prm->pan, 0);
+	else
+		return -1;
+	
+	return 0;
+}
+
+
+static
+void set_trigg_wndlength(EEGPanel* pan)
+{
+	unsigned int num_samples;
+	uint32_t *triggers;
+	float len = pan->display_length;
+
+	num_samples = pan->fs * len;
+	g_free(pan->triggers);
+	pan->triggers = g_malloc0(num_samples * sizeof(*triggers));
+	binary_scope_set_data(pan->gui.tri_scope, pan->triggers, 
+	                      num_samples, pan->nlines_tri);
+	
+	pan->last_drawn_sample = pan->current_sample = 0;
+	pan->num_samples = num_samples;
+
+	update_triggers_gui(pan);
+}
+
+
+#define CMS_IN_RANGE	0x100000
+#define LOW_BATTERY	0x400000
+static
+void process_tri(EEGPanel* pan, unsigned int ns, const uint32_t* tri)
+{
+	unsigned int i;
+	uint32_t *dst;
+	
+	dst = pan->triggers + pan->current_sample;
+
+	pan->flags.cms_in_range = 1;
+	pan->flags.low_battery = 0;
+
+	// Copy data and set the states of the system
+	for (i=0; i<ns; i++) {
+		dst[i] = tri[i];
+		if ((CMS_IN_RANGE & tri[i]) == 0)
+			pan->flags.cms_in_range = 0;
+		if (LOW_BATTERY & tri[i])
+			pan->flags.low_battery = 1;
+	}
+
+	// Update current pointer
+	pan->current_sample = (pan->current_sample + ns) % pan->num_samples;
+}
+
+
+LOCAL_FN
+int set_data_length(EEGPanel* pan, float len)
+{
+	unsigned int i;
+	pan->display_length = len;
+
+	for (i=0; i<pan->ntab; i++)
+		signatab_set_wndlength(pan->tabs[i], len);
+
+	set_trigg_wndlength(pan);
+	
+	return 1;
+}
 
 ///////////////////////////////////////////////////
 //
@@ -52,15 +148,14 @@ void init_eegpanel_lib(int *argc, char ***argv)
 	gtk_init(argc, argv);
 }
 
-EEGPanel* eegpanel_create(const struct PanelSettings* settings, const struct PanelCb* cb)
+
+EEGPanel* eegpanel_create(const char* uifilename, const struct PanelCb* cb,
+                     unsigned int ntab, const struct panel_tabconf* tabconf)
 {
 	EEGPanel* pan = NULL;
-	guint success = 0;
-	const char* uifilename = NULL;
-
 
 	// Allocate memory for the structures
-	pan = calloc(1,sizeof(*pan));
+	pan = g_malloc0(sizeof(*pan));
 	if (!pan)
 		return NULL;
 	pan->data_mutex = g_mutex_new();
@@ -70,34 +165,25 @@ EEGPanel* eegpanel_create(const struct PanelSettings* settings, const struct Pan
 		memcpy(&(pan->cb), cb, sizeof(*cb));
 	if (pan->cb.user_data == NULL)
 		pan->cb.user_data = pan;
-
+	
 	// Needed initializations
 	pan->display_length = 1.0f;
-	pan->decimation_factor = 1;
-	init_filter_params(pan);
-
-	// Initialize the content of the widgets
-	if (settings) {
-		uifilename = settings->uifilename;
-		set_default_values_str(pan, settings);
-	}
 
 	// Create the panel widgets according to the ui definition files
-	if (!create_panel_gui(pan, uifilename)) {
+	if (!create_panel_gui(pan, uifilename, ntab, tabconf)) {
 		eegpanel_destroy(pan);
 		return NULL;
 	}
-		
+
 	get_initial_values(pan);
-	eegpanel_define_input(pan, 0, 0, 16, 2048);
+	set_data_length(pan, 1.0f);
 
 	return pan;
 }
 
+
 void eegpanel_show(EEGPanel* pan, int state)
 {
-	int lock_res = 0;
-
 	//if (pan->main_loop_thread != g_thread_self()) 
 	
 	//////////////////////////////////////////////////////////////
@@ -112,9 +198,7 @@ void eegpanel_show(EEGPanel* pan, int state)
 	else
 		gtk_widget_hide_all(GTK_WIDGET(pan->gui.window));
 	gdk_threads_leave();
-
 }
-
 
 
 void eegpanel_run(EEGPanel* pan, int nonblocking)
@@ -141,62 +225,13 @@ void eegpanel_destroy(EEGPanel* pan)
 
 	// If called from another thread than the one of the main loop
 	// wait for the termination of the main loop
-	if ((pan->main_loop_thread) && (pan->main_loop_thread != g_thread_self()))
+	if ((pan->main_loop_thread)
+	  && (pan->main_loop_thread != g_thread_self()))
 		g_thread_join(pan->main_loop_thread);
 
 	g_mutex_free(pan->data_mutex);
-	g_strfreev(pan->eeg_labels);
-	g_strfreev(pan->exg_labels);
-	g_strfreev(pan->bipole_labels);
-
-	
-	destroy_dataproc(pan);
-	clean_selec(&(pan->eegsel));
-	clean_selec(&(pan->exgsel));
-	
-	free(pan);
-}
-
-
-int eegpanel_define_input(EEGPanel* pan, unsigned int neeg,
-				unsigned int nexg, unsigned int ntri,
-				unsigned int fs)
-{
-	char tempstr[32];
-	int nsamples;
-	ChannelSelection chann_selec;
-	
-	pan->nmax_eeg = neeg;
-	pan->nmax_exg = nexg;
-	pan->nlines_tri = ntri;
-	pan->fs = fs;
-	nsamples = (pan->display_length * fs)/pan->decimation_factor;
-	 
-
-	// Add default channel labels if not available
-	pan->eeg_labels = add_default_labels(pan->eeg_labels, neeg, "EEG");
-	pan->exg_labels = add_default_labels(pan->exg_labels, nexg, "EXG");
-	set_bipole_labels(pan);
-
-	// Update widgets
-	update_input_gui(pan);
-	
-	// Reset all data buffer;
-	chann_selec.num_chann = 0;
-	chann_selec.selection = NULL;
-	chann_selec.labels = NULL;
-	memcpy(&(pan->eegsel), &chann_selec, sizeof(chann_selec));
-	memcpy(&(pan->exgsel), &chann_selec, sizeof(chann_selec));
-
-	return set_data_input(pan, nsamples);
-}
-
-
-void eegpanel_add_samples(EEGPanel* pan, const float* eeg, const float* exg, const uint32_t* triggers, unsigned int num_samples)
-{
-	g_mutex_lock(pan->data_mutex);
-	add_samples(pan, eeg, exg, triggers, num_samples);
-	g_mutex_unlock(pan->data_mutex);
+	//destroy_dataproc(pan);
+	g_free(pan);
 }
 
 
@@ -210,6 +245,7 @@ void eegpanel_popup_message(EEGPanel* pan, const char* message)
 	run_func_in_guithread(pan, (BCProc)popup_message_dialog, &dlgprm);
 }
 
+
 char* eegpanel_open_filename_dialog(EEGPanel* pan, const char* filefilters)
 {
 	struct DialogParam dlgprm = {
@@ -222,6 +258,7 @@ char* eegpanel_open_filename_dialog(EEGPanel* pan, const char* filefilters)
 	return dlgprm.str_out;
 }
 
+
 int eegpanel_notify(EEGPanel* pan, enum notification event)
 {
 	struct notification_param prm = {
@@ -231,276 +268,60 @@ int eegpanel_notify(EEGPanel* pan, enum notification event)
 
 	return run_func_in_guithread(pan, (BCProc)process_notification, &prm);
 }
-///////////////////////////////////////////////////
-//
-//	Internal functions
-//
-///////////////////////////////////////////////////
-gpointer loop_thread(gpointer user_data)
-{
-	(void)user_data;
 
-	gdk_threads_enter();
-	gtk_main();
-	gdk_threads_leave();
+
+int eegpanel_define_tab_input(EEGPanel* pan, int tabid,
+                              unsigned int nch, float fs, 
+			      const char** labels)
+{
+	const char** newlabels = NULL;
+
+	if (tabid < 0 || tabid > (int)pan->ntab)
+		return 0;
+
+	if (fs <= 0.0f)
+		fs = pan->fs;
+	
+	newlabels = g_malloc0((nch+1)*sizeof(*labels));
+	memcpy(newlabels, labels, nch*sizeof(*labels));
+
+	signaltab_define_input(pan->tabs[tabid], fs, nch, newlabels);
+
+	g_free(newlabels);
+
+	return 1;
+}
+
+
+void eegpanel_add_samples(EEGPanel* pan, int tabid,
+                         unsigned int ns, const float* data)
+{
+	signaltab_add_samples(pan->tabs[tabid], ns, data);
+}
+
+
+int eegpanel_define_triggers(EEGPanel* pan, unsigned int nline, float fs)
+{
+	pan->nlines_tri = nline;
+	pan->fs = fs;
+	 
+	set_trigg_wndlength(pan);
 	return 0;
 }
 
 
-
-void clean_selec(ChannelSelection* selection)
+void eegpanel_add_triggers(EEGPanel* pan, unsigned int ns,
+                          const uint32_t* trigg)
 {
-	if (!selection)
-		return;
+	unsigned int ns_w = 0;
+	unsigned int pointer = pan->current_sample;
 
-	free(selection->selection);
-	free(selection->labels);
-	selection->selection = NULL;
-	selection->labels = NULL;
-}
-
-void copy_selec(ChannelSelection* dst, ChannelSelection* src)
-{
-	clean_selec(dst);
-	
-	dst->num_chann = src->num_chann;
-
-	dst->selection = malloc(src->num_chann*sizeof(*(src->selection)));
-	memcpy(dst->selection, src->selection, (src->num_chann)*sizeof(*(src->selection)));
-
-	if (src->labels) {
-		dst->labels = malloc((src->num_chann+1)*sizeof(*(src->labels)));
-		memcpy(dst->labels, src->labels, (src->num_chann+1)*sizeof(*(src->labels)));
+	// if we need to wrap, first add the tail
+	if (ns+pointer > pan->num_samples) {
+		ns_w = pan->num_samples - pointer;
+		process_tri(pan, ns_w, trigg);
+		trigg += ns_w;
+		ns -= ns_w;
 	}
+	process_tri(pan, ns, trigg);
 }
-
-char** add_default_labels(char** labels, unsigned int requested_num_labels, const char* prefix)
-{
-	guint prev_length, alloc_length, i;
-
-	if(labels)
-		prev_length = g_strv_length(labels);
-	else
-		prev_length = 0;
-
-	if(prev_length < requested_num_labels) {
-		/* Calculate the size of the prefix to know the size that should be allocated to the strings */
-		alloc_length = 0;
-		while (prefix[alloc_length])
-			alloc_length++;
-
-		alloc_length += 5;
-
-		/* Append the new labels to the previous ones */
-		labels = g_realloc(labels, (requested_num_labels+1)*sizeof(gchar*));
-		for(i=prev_length; i<requested_num_labels; i++) {
-			labels[i] = g_malloc(alloc_length);
-			g_sprintf( labels[i], "%s%u", prefix, i+1 );
-		}
-		labels[requested_num_labels] = NULL;
-	}
-
-	return labels;
-}
-
-void set_bipole_labels(EEGPanel* pan)
-{
-	unsigned int i, j;
-	char** bip_labels = NULL;
-	unsigned int num_labels = pan->nmax_exg;
-
-	g_strfreev(pan->bipole_labels);
-	bip_labels = g_malloc0((num_labels+1)*sizeof(char*));
-
-	for (i=0; i<num_labels;i++) {
-		j = (i+1)%num_labels;
-		bip_labels[i] = g_strconcat(pan->exg_labels[i],
-					    "-",
-					    pan->exg_labels[j],
-					    NULL);
-	}
-
-	pan->bipole_labels = bip_labels;
-}
-
-
-void set_all_filters(EEGPanel* pan, FilterParam* options)
-{
-	unsigned int dec_state = (pan->decimation_factor != 1) ? 1 : 0;
-
-	if (options==NULL)
-		options = pan->filter_param;
-
-	options[EEG_DECIMATION_FILTER].state = dec_state;
-	options[EXG_DECIMATION_FILTER].state = dec_state;
-	options[EEG_LOWPASS_FILTER].numch = pan->neeg;
-	options[EXG_LOWPASS_FILTER].numch = pan->nexg;
-	options[EEG_HIGHPASS_FILTER].numch = pan->neeg;
-	options[EXG_HIGHPASS_FILTER].numch = pan->nexg;
-	options[EEG_DECIMATION_FILTER].numch = pan->neeg;
-	options[EXG_DECIMATION_FILTER].numch = pan->nexg;
-	options[EEG_OFFSET_FILTER].numch = pan->neeg;
-	options[EXG_OFFSET_FILTER].numch = pan->nexg;
-
-	// Set the filters
-	update_filter(pan, EEG_LOWPASS_FILTER);
-	update_filter(pan, EEG_HIGHPASS_FILTER);
-	update_filter(pan, EXG_LOWPASS_FILTER);
-	update_filter(pan, EXG_HIGHPASS_FILTER);
-
-	update_filter(pan, EEG_DECIMATION_FILTER);
-	update_filter(pan, EXG_DECIMATION_FILTER);
-
-	update_filter(pan, EEG_OFFSET_FILTER);
-	update_filter(pan, EXG_OFFSET_FILTER);
-}
-
-
-void init_filter_params(EEGPanel* pan)
-{
-	FilterParam* options = pan->filter_param;
-	float fs = pan->fs;
-	int dec_state = (pan->decimation_factor!=1) ? 1 : 0;
-	float dec_fc = 0.4*fs/pan->decimation_factor;
-	
-	
-	memset(options, 0, sizeof(options));
-
-	options[EEG_OFFSET_FILTER].state = 1;
-	options[EEG_OFFSET_FILTER].freq = 1.0;
-	options[EEG_OFFSET_FILTER].highpass = 0;
-	options[EXG_OFFSET_FILTER].state = 1;
-	options[EXG_OFFSET_FILTER].freq = 1.0;
-	options[EXG_OFFSET_FILTER].highpass = 0;
-	options[EEG_DECIMATION_FILTER].freq = dec_fc;
-	options[EEG_DECIMATION_FILTER].state = dec_state;
-	options[EEG_DECIMATION_FILTER].highpass = 0;
-	options[EXG_DECIMATION_FILTER].freq = dec_fc;
-	options[EXG_DECIMATION_FILTER].state = dec_state;
-	options[EXG_DECIMATION_FILTER].highpass = 0;
-	options[EEG_LOWPASS_FILTER].state = 0;
-	options[EEG_LOWPASS_FILTER].freq = 0.1;
-	options[EEG_LOWPASS_FILTER].highpass = 0;
-	options[EEG_HIGHPASS_FILTER].state = 0;
-	options[EEG_HIGHPASS_FILTER].freq = 0.4*fs;
-	options[EEG_HIGHPASS_FILTER].highpass = 1;
-	options[EXG_LOWPASS_FILTER].state = 0;
-	options[EXG_LOWPASS_FILTER].freq = 0.1;
-	options[EXG_LOWPASS_FILTER].highpass = 0;
-	options[EXG_HIGHPASS_FILTER].state = 0;
-	options[EXG_HIGHPASS_FILTER].freq = 0.4*fs;
-	options[EXG_HIGHPASS_FILTER].highpass = 1;
-}
-
-
-void get_default_channel_labels(GKeyFile* key_file, char*** labels, const char* group_name, const char* prefix)
-{
-	char** keys;
-	unsigned int max_index=0, i=0, index;
-
-	// Get the max index
-	keys = g_key_file_get_keys(key_file, group_name, NULL, NULL);
-
-	if (!keys)
-		return;
-
-	while (keys[i]) {
-		if ((sscanf(keys[i],"channel%u",&index) == 1) && (index>max_index))
-			max_index = index;
-		i++;
-	}
-
-	*labels = add_default_labels(*labels, max_index, prefix);
-
-	// Get all the names
-	i = 0;
-	while (keys[i]) {
-		if (sscanf(keys[i],"channel%u",&index) == 1) {
-			index--;	// starting index is 1
-			g_free((*labels)[index]);
-			(*labels)[index] = g_key_file_get_string(key_file, group_name, keys[i], NULL);
-		}
-		i++;
-	}
-	g_strfreev(keys);
-}
-
-
-void get_default_channel_labels_str(char*** labels, const char** src, unsigned int numch)
-{
-	int i;
-	if (!src || !numch)
-		return;
-
-	g_strfreev(*labels);
-	*labels = g_malloc0((numch+1)*sizeof(char*));
-	
-	for (i=0; i<numch; i++) {
-		(*labels)[i] = g_malloc0(strlen(src[i])+1);
-		strcpy((*labels)[i], src[i]);
-	}
-}
-
-void set_default_values_str(EEGPanel* pan, const struct PanelSettings* settings)
-{
-	int i;
-
-	if (!settings)
-		return;
-
-	for (i=0; i<NUMMAX_FLT; i++) {
-		pan->filter_param[i].state = settings->filt[i].state;
-		pan->filter_param[i].freq = settings->filt[i].freq;
-	}
-
-	get_default_channel_labels_str(&(pan->eeg_labels),settings->eeglabels, settings->num_eeg);
-	get_default_channel_labels_str(&(pan->exg_labels),settings->sensorlabels, settings->num_sensor);
-}
-
-void set_default_values(EEGPanel* pan, const char* filename)
-{
-	GKeyFile* key_file;
-
-	key_file = g_key_file_new();
-	if (!g_key_file_load_from_file(key_file, filename, G_KEY_FILE_NONE, NULL)) {
-		g_key_file_free(key_file);
-		return;
-	}
-
-	// Set filter default parameters
-	pan->filter_param[EEG_LOWPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EEGLowpassState", NULL);
-	pan->filter_param[EEG_LOWPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EEGLowpassFreq", NULL);
-	pan->filter_param[EEG_HIGHPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EEGHighpassState", NULL);
-	pan->filter_param[EEG_HIGHPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EEGHighpassFreq", NULL);
-	pan->filter_param[EXG_LOWPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EXGLowpassState", NULL);
-	pan->filter_param[EXG_LOWPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EXGLowpassFreq", NULL);
-	pan->filter_param[EXG_HIGHPASS_FILTER].state = g_key_file_get_boolean(key_file, "filtering", "EXGHighpassState", NULL);
-	pan->filter_param[EXG_HIGHPASS_FILTER].freq = g_key_file_get_double(key_file, "filtering", "EXGHighpassFreq", NULL);
-
-	// Get Channels name
-	get_default_channel_labels(key_file, &(pan->eeg_labels), "eeg_channels", "EEG");
-	get_default_channel_labels(key_file, &(pan->exg_labels), "exg_channels", "EXG");
-
-	g_key_file_free(key_file);
-}
-
-int process_notification(struct notification_param* prm)
-{
-	if (prm->event == DISCONNECTED)
-		updategui_toggle_connection(prm->pan, 0);
-	else if (prm->event == CONNECTED)
-		updategui_toggle_connection(prm->pan, 1);
-	else if (prm->event == REC_OPENED)
-		updategui_toggle_rec_openclose(prm->pan, 0);
-	else if (prm->event == REC_CLOSED)
-		updategui_toggle_rec_openclose(prm->pan, 1);
-	else if (prm->event == REC_ON)
-		updategui_toggle_recording(prm->pan, 1);
-	else if (prm->event == REC_PAUSED)
-		updategui_toggle_recording(prm->pan, 0);
-	else
-		return -1;
-	
-	return 0;
-}
-

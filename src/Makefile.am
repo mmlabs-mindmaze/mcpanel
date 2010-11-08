@@ -12,13 +12,15 @@ include_HEADERS = eegpanel.h
 #libeegpanel_la_CPPFLAGS = $(GTK_CFLAGS)
 libeegpanel_la_SOURCES = eegpanel.c		\
                          eegpanel_shared.h	\
-			 eegpanel_dataproc.h	\
-			 eegpanel_dataproc.c	\
 			 eegpanel_sighandler.h	\
 			 eegpanel_sighandler.c	\
 			 eegpanel_gui.h		\
 			 eegpanel_gui.c		\
 			 eegpanel.h		\
+			 signaltab.h		\
+			 signaltab.c		\
+			 scopetab.c		\
+			 bartab.c		\
 			 bargraph.c		\
 			 bargraph.h		\
 			 binary-scope.c		\
