@@ -137,6 +137,9 @@ scope_configure_event_callback (Scope *self,
                                 GdkEventConfigure *event,
                                 gpointer data)
 {
+	(void)event;
+	(void)data;
+
 	scope_calculate_drawparameters (self);
 	return TRUE;
 }
@@ -147,7 +150,9 @@ scope_expose_event_callback (Scope *self,
                              GdkEventExpose *event,
                              gpointer data)
 {
-	unsigned int first, last, xmin, xmax, num_points;
+	(void)data;
+	unsigned int first, last, num_points;
+	int xmin, xmax;
 	GdkPoint* points = self->points;
 	
 	num_points = self->num_points;
@@ -184,7 +189,7 @@ scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
 	gint xmin, xmax;
 	data_t scale = self->scale;
 	const data_t* data = self->data;
-	int i;
+	unsigned int i;
 	const GdkColor *grid_color, *colors;
 	GdkWindow* window = GTK_WIDGET(self)->window;
 	GdkGC* plotgc = PLOT_AREA(self)->plotgc;
@@ -197,8 +202,8 @@ scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
 	num_channels = self->num_channels;	
 
 	// Find the position of the first sample
-	i = points[first].x;
-	while ((first>0) && (i == points[first].x))
+	xmin = points[first].x;
+	while ((first>0) && (xmin == points[first].x))
 		first--;
 
 	xmin = points[first].x;
@@ -259,7 +264,7 @@ static void
 scope_calculate_drawparameters(Scope* self)
 {
 	guint height, width;
-	unsigned int i, num_ch, num_points;
+	unsigned int num_ch, i, num_points;
 	gint* offsets = PLOT_AREA(self)->yticks;
 	gint* xticks = PLOT_AREA(self)->xticks;
 
@@ -309,7 +314,7 @@ scope_update_data(Scope* self, guint pointer)
 	last = pointer;
 	self->current_pointer = pointer;
 
-	if (points == NULL)
+	if (self->num_points == 0)
 		return;
 
 	if (GTK_WIDGET_DRAWABLE(self)) {

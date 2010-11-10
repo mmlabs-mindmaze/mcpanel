@@ -39,6 +39,8 @@ static void
 labelized_plot_get_property (GObject *object, guint property_id,
                               GValue *value, GParamSpec *pspec)
 {
+	(void)value;
+
 	switch (property_id) {
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -146,8 +148,6 @@ labelized_plot_class_init (LabelizedPlotClass *klass)
 static void
 labelized_plot_init (LabelizedPlot* self)
 {
-	PangoContext* p_context;
-
 	self->xtick_labels = NULL;
 	self->ytick_labels = NULL;
 
@@ -175,6 +175,9 @@ labelized_plot_expose_event_callback (LabelizedPlot *self,
 		                              GdkEventExpose *event,
         		                      gpointer data)
 {
+	(void)event;
+	(void)data;
+
 	PangoLayout* layout;
 	PangoContext* context;
 	PangoFontDescription* desc;

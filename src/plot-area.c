@@ -40,6 +40,8 @@ static void
 plot_area_get_property (GObject *object, guint property_id,
                               GValue *value, GParamSpec *pspec)
 {
+	(void)value;
+
 	switch (property_id) {
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -141,7 +143,7 @@ plot_area_class_init (PlotAreaClass *klass)
 static void
 plot_area_init (PlotArea *self)
 {
-	int i;
+	unsigned int i;
 	self->nColors = 1;
 	self->colors = g_malloc(self->nColors*sizeof(GdkColor));
 	self->num_xticks = self->num_yticks = 0;
@@ -165,7 +167,7 @@ plot_area_init (PlotArea *self)
 static void
 plot_area_realize_callback(PlotArea* self)
 {
-	int i;
+	unsigned int i;
 	GdkColormap* colormap = gtk_widget_get_colormap(GTK_WIDGET(self));
 
 	/* Allocate et intialize the graphical context used for the plot */
