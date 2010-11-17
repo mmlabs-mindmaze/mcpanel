@@ -35,15 +35,8 @@ do
   cname=`echo $base | tr "[:upper:]" "[:lower:]" | tr -c "[:alnum:]" "_"`
   cname=str_$cname
 
-  echo "const char $cname[] = " >> $outname
-  # Convert line by line
-  for line in `cat $file`
-  do
-    line=`echo $line | sed -e 's/\"/\\\"/g'`
- 
-    echo "\"$line  \\\\n \"" >> $outname
-  done
-
+  echo "static const char $cname[] = " >> $outname
+  cat $file | sed -e 's/\"/\\\"/g' -e 's/^/\"/' -e 's/$/\\n\"/' >> $outname
   echo ";" >> $outname
 
 #  gdk-pixbuf-csource --raw --struct --name=$cname $file >> $outname
