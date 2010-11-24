@@ -275,9 +275,9 @@ bargraph_calculate_drawparameters(Bargraph* self)
 		xticks[i] = (gint)((gfloat)(width * (2*i+1)) / (gfloat)(2*self->num_channels));
 	
 
-	// Calculate value ticks
+	// Calculate value ticks (positive y points to bottom in the window basis) 
 	for (i=0; i<self->num_ticks; i++)
-		yticks[i] = self->offset + (gint)(self->tick_values[i]*self->scale);
+		yticks[i] = self->offset - (gint)(self->tick_values[i]*self->scale);
 
 /*	guint height, width;
 	unsigned int i, num_ch, num_points;
