@@ -75,7 +75,7 @@ struct scopetab {
 	int reset_filter[2];
 	enum reftype ref;
 	unsigned int refelec;
-	float *tmpbuff, *data;
+	float *tmpbuff, *tmpbuff2, *data;
 	float wndlen;
 	unsigned int nselch, nslen, chunkns, curr;
 	unsigned int* selch;
@@ -96,19 +96,20 @@ struct scopetab {
 static
 void init_buffers(struct scopetab* sctab)
 {
-	unsigned int ns, nsel = sctab->nselch;
+	unsigned int ns, nch = sctab->tab.nch;
 	unsigned int chunkns = sctab->chunkns;
-	unsigned int nch = sctab->tab.nch;
 	g_free(sctab->tmpbuff);
+	g_free(sctab->tmpbuff2);
 	g_free(sctab->data);
 
 	sctab->nslen = ns = sctab->wndlen * sctab->tab.fs;
 
 	sctab->data = g_malloc0(ns*nch*sizeof(*(sctab->data)));
 	sctab->tmpbuff = g_malloc(chunkns*nch*sizeof(*(sctab->tmpbuff)));
+	sctab->tmpbuff2 = g_malloc(chunkns*nch*sizeof(*(sctab->tmpbuff2)));
 
 	sctab->curr = 0;
-	scope_set_data(sctab->scope, sctab->data, ns, nsel);
+	scope_set_data(sctab->scope, sctab->data, ns, sctab->nselch);
 }
 
 static
@@ -117,7 +118,7 @@ void init_filter(struct scopetab* sctab, int hp)
 	double fc = sctab->cutoff[hp] / (double)sctab->tab.fs;
 	rtf_destroy_filter(sctab->filt[hp]);
 	if (sctab->filt_on[hp])
-		sctab->filt[hp] = rtf_create_butterworth(sctab->nselch, 
+		sctab->filt[hp] = rtf_create_butterworth(sctab->tab.nch, 
 			                                 RTF_FLOAT, fc, 2,
 		                                         hp);
 	else
@@ -127,8 +128,9 @@ void init_filter(struct scopetab* sctab, int hp)
 
 
 static
-void reference_car(float* data, unsigned int nch, const float* fullset,
-                      unsigned int nch_full, unsigned int ns)
+void reference_car(float* restrict data, unsigned int nch,
+                   const float* restrict fullset,
+                   unsigned int nch_full, unsigned int ns)
 {
 	unsigned int i, j;
 	float sum;
@@ -148,8 +150,8 @@ void reference_car(float* data, unsigned int nch, const float* fullset,
 
 
 static
-void reference_elec(float* data, unsigned int nch,
-                     const float* fullset, unsigned int nch_full,
+void reference_elec(float* restrict data, unsigned int nch,
+                     const float* restrict fullset, unsigned int nch_full,
 		     unsigned int ns, unsigned int elec_ref)
 {
 	unsigned int i, j;
@@ -163,8 +165,9 @@ void reference_elec(float* data, unsigned int nch,
 
 
 static
-void reference_bip(float* data, unsigned int nch, const float *fullset,
-                   unsigned int nch_f, unsigned int ns, unsigned int *sel)
+void reference_bip(float* restrict data, unsigned int nch,
+                   const float* restrict fullset, unsigned int nch_f,
+		   unsigned int ns, unsigned int *sel)
 {
 	unsigned int i, j;
 
@@ -174,7 +177,6 @@ void reference_bip(float* data, unsigned int nch, const float *fullset,
 			data[i*nch+j] -= fullset[i*nch_f+((sel[j]+1)%nch_f)];
 	}
 }
-
 
 #define SWAP_POINTERS(pointer1, pointer2)	do {	\
 	void* temp = pointer2;				\
@@ -187,19 +189,18 @@ static
 void process_chunk(struct scopetab* sctab, unsigned int ns, const float* in)
 {
 	unsigned int i, j;
-	float* data, *curdata, *tmpbuf = sctab->tmpbuff;
-	unsigned int *sel = sctab->selch;
+	float* restrict data;
+	 //No worry later processing do not overwrite in
+	float* restrict infilt = (float*) in;
+	float* restrict tmpbuf = sctab->tmpbuff;
+	float* restrict tmpbuf2 = sctab->tmpbuff2;
+	unsigned int* restrict sel = sctab->selch;
 	unsigned int nch = sctab->nselch;
 	unsigned int nmax_ch = sctab->tab.nch;
 
-	curdata = data = sctab->data + nch * sctab->curr;
+	data = sctab->data + nch * sctab->curr;
 
-	// Copy data of the selected channels
-	for (i=0; i<ns; i++) 
-		for (j=0; j<nch; j++) 
-			data[i*nch+j] = in[i*nmax_ch + sel[j]];
-
-	// Apply filter
+	// Apply filters
 	for (i=0; i<2; i++) {
 		if (sctab->filt[i] != NULL) {
 			if (sctab->reset_filter[i]) {
@@ -207,23 +208,28 @@ void process_chunk(struct scopetab* sctab, unsigned int ns, const float* in)
 				sctab->reset_filter[i] = 0;
 			}
 				
-			rtf_filter(sctab->filt[i], data, tmpbuf, ns);
-			SWAP_POINTERS(tmpbuf, data);
+			rtf_filter(sctab->filt[i], infilt, tmpbuf, ns);
+			if (in == infilt)
+				infilt = tmpbuf2;
+			SWAP_POINTERS(infilt, tmpbuf);
 		}
 	}
 
+	// Copy data of the selected channels
+	for (i=0; i<ns; i++) 
+		for (j=0; j<nch; j++) 
+			data[i*nch+j] = infilt[i*nmax_ch + sel[j]];
+
 	// Do referencing
 	if (sctab->ref == REF_CAR)
-		reference_car(data, nch, in, nmax_ch, ns);
+		reference_car(data, nch, infilt, nmax_ch, ns);
 	else if (sctab->ref == REF_ELEC)
-		reference_elec(data, nch, in, nmax_ch, ns, sctab->refelec);
+		reference_elec(data, nch, infilt, nmax_ch, ns, sctab->refelec);
 	else if (sctab->ref == REF_BIPOLE)
-		reference_bip(data, nch, in, nmax_ch, ns, sel);
+		reference_bip(data, nch, infilt, nmax_ch, ns, sel);
 		
 
 	// copy data to the destination buffer
-	if (data != curdata)
-		memcpy(curdata, data, ns*nch*sizeof(*data));
 	sctab->curr = (sctab->curr + ns) % sctab->nslen;
 }
 
@@ -288,7 +294,6 @@ void scopetab_reftype_changed_cb(GtkComboBox* combo, gpointer data)
 	// Update sigprocessing params
 	g_mutex_lock(sctab->tab.datlock);
 	sctab->ref = ref;
-	sctab->reset_filter[0] = sctab->reset_filter[1] = 1;
 	g_mutex_unlock(sctab->tab.datlock);
 
 	if (neednewlabel)
@@ -324,11 +329,8 @@ void scopetab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
 		g_free(sctab->selch);
 		sctab->selch = g_malloc(num*sizeof(*sctab->selch));
 		sctab->nselch = num;
-		init_buffers(sctab);
-		init_filter(sctab, 0);
-		init_filter(sctab, 1);
+		scope_set_data(sctab->scope, sctab->data, sctab->nslen,num);
 	}
-	sctab->reset_filter[0] = sctab->reset_filter[1] = 1;
 
 	// Copy the selection
 	elem = list = gtk_tree_selection_get_selected_rows(selec, NULL);
@@ -569,6 +571,7 @@ void scopetab_destroy(struct signaltab* tab)
 	rtf_destroy_filter(sctab->filt[1]);
 	g_free(sctab->data);
 	g_free(sctab->tmpbuff);
+	g_free(sctab->tmpbuff2);
 
 	g_free(sctab);
 }
@@ -659,8 +662,8 @@ struct signaltab* create_tab_scope(const char* uidef,
 		goto error;
 	}
 	sctab->filt_on[0] = sctab->filt_on[1] = 0;
-	sctab->cutoff[0] = 1.0;
-	sctab->cutoff[1] = 100.0;
+	sctab->cutoff[0] = 100.0;
+	sctab->cutoff[1] = 1.0;
 	sctab->tab.scale = 1;
 
 	
