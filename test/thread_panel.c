@@ -42,6 +42,19 @@ const char* exg_lab[NEXG] = {
 	"EXG1","EXG2", "EXG3", "EXG4", "EXG5", "EXG6", "EXG7", "EXG8"
 };
 
+#define BAR_NSCALES 2
+const char* bar_sclabels[BAR_NSCALES] = {"25 mV", "50 mV"};
+const float bar_scales[BAR_NSCALES] = {25.0e3, 50.0e3};
+
+struct panel_tabconf tabconf[] = {
+	[0] = {.type = TABTYPE_SCOPE, .name = "EEG"},
+	[1] = {.type = TABTYPE_BARGRAPH, .name = "EEG offsets",
+	       .nscales = BAR_NSCALES, .sclabels = bar_sclabels,
+	       .scales = bar_scales},
+	[2] = {.type = TABTYPE_SCOPE, .name = "Sensors"},
+};
+#define NTAB	(sizeof(tabconf)/sizeof(tabconf[0]))
+
 void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 {
 	int i, j;
@@ -201,15 +214,10 @@ int main(int argc, char* argv[])
 		.stop_recording = StopRecording,
 		.toggle_recording = ToggleRecording
 	};
-	struct panel_tabconf tabconf[3] = {
-		[0] = {.type = TABTYPE_SCOPE, .name = "EEG"},
-		[1] = {.type = TABTYPE_BARGRAPH, .name = "EEG offsets"},
-		[2] = {.type = TABTYPE_SCOPE, .name = "Sensors"},
-	};
 	
 	init_eegpanel_lib(&argc, &argv);
 
-	panel = eegpanel_create(NULL, &cb, 3, tabconf);
+	panel = eegpanel_create(NULL, &cb, NTAB, tabconf);
 	if (!panel) {
 		fprintf(stderr,"error at the creation of the panel\n");
 		return 1;

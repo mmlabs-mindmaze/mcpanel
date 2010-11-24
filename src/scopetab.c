@@ -260,6 +260,7 @@ void update_selected_label(struct scopetab* sctab)
 	}
 }
 
+
 static
 void scopetab_reftype_changed_cb(GtkComboBox* combo, gpointer data)
 {
@@ -473,6 +474,7 @@ int find_widgets(struct scopetab* sctab, GtkBuilder* builder)
 
 	sctab->scope = SCOPE(sctab->widgets[TAB_SCOPE]);
 	sctab->tab.widget = GTK_WIDGET(sctab->widgets[TAB_ROOT]);
+	sctab->tab.scale_combo = GTK_COMBO_BOX(sctab->widgets[SCALE_COMBO]);
 	return 0;
 }
 
@@ -634,7 +636,8 @@ void scopetab_set_wndlen(struct signaltab* tab, float len)
 
 
 LOCAL_FN 
-struct signaltab* create_tab_scope(const char* uidef)
+struct signaltab* create_tab_scope(const char* uidef,
+		    int nscales, const char** sclabels, const float* scales)
 {
 	struct scopetab* sctab = NULL;
 	GtkBuilder* builder;
@@ -658,6 +661,7 @@ struct signaltab* create_tab_scope(const char* uidef)
 	
 	if (find_widgets(sctab, builder))
 		goto error;
+	initialize_signaltab(&(sctab->tab), nscales, sclabels, scales);
 	initialize_widgets(sctab);
 	connect_widgets_signals(sctab);
 
@@ -669,7 +673,6 @@ struct signaltab* create_tab_scope(const char* uidef)
 	sctab->tab.process_data = scopetab_process_data;
 	sctab->tab.update_plot = scopetab_update_plot;
 	sctab->tab.set_wndlen = scopetab_set_wndlen;
-	initialize_signaltab(&(sctab->tab));
 	return &(sctab->tab);
 
 error:

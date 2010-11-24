@@ -59,6 +59,9 @@ enum tabtype {
 struct panel_tabconf {
 	enum tabtype type;
 	const char* name;
+	int nscales;
+	const char** sclabels;
+	const float* scales;
 };
 
 void init_eegpanel_lib(int *argc, char ***argv);

@@ -232,6 +232,7 @@ int find_widgets(struct bartab* brtab, GtkBuilder* builder)
 	brtab->bar1 = BARGRAPH(brtab->widgets[TAB_BAR1]);
 	brtab->bar2 = BARGRAPH(brtab->widgets[TAB_BAR2]);
 	brtab->tab.widget = GTK_WIDGET(brtab->widgets[TAB_ROOT]);
+	brtab->tab.scale_combo = GTK_COMBO_BOX(brtab->widgets[SCALE_COMBO]);
 	return 0;
 }
 
@@ -354,7 +355,8 @@ void bartab_update_plot(struct signaltab* tab)
 
 
 LOCAL_FN 
-struct signaltab* create_tab_bargraph(const char* uidef)
+struct signaltab* create_tab_bargraph(const char* uidef,
+		    int nscales, const char** sclabels, const float* scales)
 {
 	struct bartab* brtab = NULL;
 	GtkBuilder* builder;
@@ -376,6 +378,7 @@ struct signaltab* create_tab_bargraph(const char* uidef)
 	// Initialize the struture with the builded widget
 	if (find_widgets(brtab, builder))
 		goto error;
+	initialize_signaltab(&(brtab->tab), nscales, sclabels, scales);
 	initialize_widgets(brtab);
 	connect_widgets_signals(brtab);
 
@@ -389,7 +392,6 @@ struct signaltab* create_tab_bargraph(const char* uidef)
 	brtab->tab.process_data = bartab_process_data;
 	brtab->tab.update_plot = bartab_update_plot;
 	brtab->tab.set_wndlen = NULL;
-	initialize_signaltab(&(brtab->tab));
 	return &(brtab->tab);
 
 error:

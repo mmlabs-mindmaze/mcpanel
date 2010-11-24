@@ -357,7 +357,9 @@ int add_signal_tabs(EEGPanel* pan, const char* uidef, unsigned int ntab,
 	pan->tabs = g_malloc0(ntab*sizeof(*(pan->tabs)));
 	for (i=0; i<ntab; i++) {
 		pan->tabs[i] = create_signaltab(uidef, tabconf[i].type,
-		                                -1, NULL, NULL);
+		                                tabconf[i].nscales,
+						tabconf[i].sclabels,
+						tabconf[i].scales);
 		if (pan->tabs[i] == NULL)
 			return 0;
 

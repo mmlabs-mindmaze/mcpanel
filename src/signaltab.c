@@ -7,9 +7,34 @@
 #include "eegpanel.h"
 #include "signaltab.h"
 
-LOCAL_FN 
-int initialize_signaltab(struct signaltab* tab)
+static
+void signaltab_fill_scale_combo(struct signaltab* tab, int nscales,
+                                const char** sclabels, const float* scales)
 {
+	int i;
+	GtkListStore* list;
+	GtkTreeIter iter;
+	
+	if (tab->scale_combo == NULL
+	    || nscales <= 0 || sclabels == NULL || scales == NULL) 
+		return;
+
+	list = GTK_LIST_STORE(gtk_combo_box_get_model(tab->scale_combo));
+	gtk_list_store_clear(list);
+
+	for (i=0; i<nscales; i++) {
+		gtk_list_store_append(list, &iter);
+		gtk_list_store_set(list, &iter, 0, sclabels[i],
+		                                1, (double)scales[i], -1);
+	}
+}
+
+
+LOCAL_FN 
+int initialize_signaltab(struct signaltab* tab, int nscales,
+                         const char** sclabels, const float* scales)
+{
+        signaltab_fill_scale_combo(tab, nscales, sclabels, scales);
 	tab->datlock = g_mutex_new();
 	return 0;
 }
@@ -74,13 +99,13 @@ void signaltab_add_samples(struct signaltab* tab, unsigned int ns,
 
 LOCAL_FN 
 struct signaltab* create_signaltab(const char* uidef, int type,
-		    int nscales, const char* sclabels, const float* scales)
+		    int nscales, const char** sclabels, const float* scales)
 {
 	struct signaltab* tab;
 	if (type == TABTYPE_SCOPE)
-		tab = create_tab_scope(uidef);
+		tab = create_tab_scope(uidef, nscales, sclabels, scales);
 	else if(type == TABTYPE_BARGRAPH)
-		tab = create_tab_bargraph(uidef);
+		tab = create_tab_bargraph(uidef, nscales, sclabels, scales);
 	else
 		tab = NULL;
 
