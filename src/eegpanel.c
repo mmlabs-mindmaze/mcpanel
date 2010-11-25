@@ -325,3 +325,25 @@ void eegpanel_add_triggers(EEGPanel* pan, unsigned int ns,
 	}
 	process_tri(pan, ns, trigg);
 }
+
+
+unsigned int eegpanel_register_callback(EEGPanel* pan, int timeout,
+                                int (*func)(void*), void* data)
+{
+	(void)pan;
+	unsigned int id;
+
+	if (timeout <= 0)
+		id = g_idle_add(func, data);
+	else
+		id = g_timeout_add(timeout, func, data);
+	return id;
+}
+
+
+int eegpanel_unregister_callback(EEGPanel* pan, unsigned int id)
+{
+	(void)pan;
+	return g_source_remove(id);
+}
+
