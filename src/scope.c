@@ -182,11 +182,11 @@ scope_expose_event_callback (Scope *self,
 static void
 scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
 {
-	unsigned int iChannel, iSample, iColor, width, height, num_channels, nColors;
+	unsigned int iChannel, iSample, iColor, num_channels, nColors;
 	GdkPoint* points = self->points;
 	const gint* offsets = PLOT_AREA(self)->yticks;
 	const gint* xticks = PLOT_AREA(self)->xticks;
-	gint xmin, xmax;
+	gint xmin, xmax, value, width, height;
 	data_t scale = self->scale;
 	const data_t* data = self->data;
 	unsigned int i;
@@ -237,9 +237,16 @@ scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
 	for (iChannel=0; iChannel<num_channels; iChannel++) {
 		// Convert data_t values into y coordinate
 		// (positive y points to bottom in the window basis) 
-		for (iSample=first; iSample<=last; iSample++)
-			points[iSample].y = offsets[iChannel] - 
+		for (iSample=first; iSample<=last; iSample++) {
+			value = offsets[iChannel] - 
 				(gint)(scale*data[iSample*num_channels+iChannel]);
+			if (value < 0)
+				value = 0;
+			if (value > height)
+				value = height;
+				
+			points[iSample].y = value;
+		}
 
 		// Draw calculated lines
 		iColor = iChannel % nColors;
