@@ -577,8 +577,11 @@
       </object>
     </child>
   </object>
+
+
   <object class="GtkWindow" id="topwindow">
     <signal name="destroy" handler="gtk_main_quit"/>
+    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_KEY_PRESS_MASK</property>
     <child>
       <object class="GtkAlignment" id="alignment1">
         <property name="visible">True</property>

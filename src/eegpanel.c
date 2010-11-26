@@ -347,3 +347,8 @@ int eegpanel_unregister_callback(EEGPanel* pan, unsigned int id)
 	return g_source_remove(id);
 }
 
+void eegpanel_connect_signal(EEGPanel* pan, const char* signal, int (*callback)(void*), void* data)
+{
+	g_signal_connect_after(pan->gui.widgets[TOP_WINDOW],
+	                       signal, G_CALLBACK(callback), data);
+}

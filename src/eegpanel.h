@@ -83,5 +83,6 @@ void eegpanel_add_triggers(EEGPanel* pan, unsigned int ns,
                           const uint32_t* trigg);
 unsigned int eegpanel_register_callback(EEGPanel* pan, int timeout, int (*func)(void*), void* data);
 int eegpanel_unregister_callback(EEGPanel* pan, unsigned int id);
+void eegpanel_connect_signal(EEGPanel* pan, const char* signal, int (*callback)(void*), void* data);
 
 #endif /*_EEGPANEL_H_*/
