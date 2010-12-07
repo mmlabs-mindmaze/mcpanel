@@ -8,13 +8,14 @@
 #include <pthread.h>
 #include <time.h>
 #include <gtk/gtk.h>
+#include <math.h>
 
 #define EEGSET	AB
 #define NEEG	64
 #define EXGSET	STD
 #define NEXG	8
 #define NSAMPLES	32
-#define SAMPLING_RATE	2048
+#define SAMPLING_RATE	512
 
 volatile int run_eeg = 0;
 volatile int recording = 0;
@@ -64,7 +65,7 @@ void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 
 	for (i=0; i<nsamples; i++) {
 		for (j=0; j<NEEG; j++)
-			eeg[i*NEEG+j] = i;
+			eeg[i*NEEG+j] = cos(2.8*6.28*(j+1)*isample/(double)SAMPLING_RATE);
 		for (j=0; j<NEXG; j++)
 			exg[i*NEXG+j] = j*i;
 		tri[i] = triggers;

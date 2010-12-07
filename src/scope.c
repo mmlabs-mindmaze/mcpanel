@@ -323,7 +323,7 @@ void scope_update_data(Scope* self, guint pointer)
 	//window = GTK_WIDGET(self)->window;
 	points  = self->points;
 
-	first = self->current_pointer;
+	first = self->current_pointer ? self->current_pointer -1 : 0;
 	last = pointer;
 	self->current_pointer = pointer;
 
