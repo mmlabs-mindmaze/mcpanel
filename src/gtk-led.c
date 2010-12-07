@@ -18,13 +18,19 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
 #include <gtk/gtk.h>
 #include "gtk-led.h"
 
 #include <gdk-pixbuf/gdk-pixdata.h>
 #include "led-images.h"
 
-const GdkPixdata const* led_image_data[NUM_COLORS_LED] = {&pix_led_gray, &pix_led_red, &pix_led_green, &pix_led_blue};
+static const GdkPixdata const* led_image_data[NUM_COLORS_LED] = {
+	[GRAY_LED] = &pix_led_gray,
+	[RED_LED] = &pix_led_red,
+	[GREEN_LED] = &pix_led_green,
+	[BLUE_LED] = &pix_led_blue
+};
 
 enum {
 	DUMMY_PROP,
@@ -33,8 +39,10 @@ enum {
 	COLOR_OFF_PROP
 };
 
-void gtk_led_expose_event_callback(GtkLed* self, GdkEventExpose* event, gpointer data);
+static void gtk_led_expose_event_callback(GtkLed* self, GdkEventExpose* event, gpointer data);
 
+
+LOCAL_FN
 GType led_color_get_type(void)
 {
 	static GType type = 0;
@@ -58,8 +66,8 @@ GType led_color_get_type(void)
 
 G_DEFINE_TYPE (GtkLed, gtk_led, GTK_TYPE_WIDGET)
 
-static void
-gtk_led_set_property (GObject *object, guint property_id,
+static
+void gtk_led_set_property (GObject *object, guint property_id,
                               const GValue *value, GParamSpec *pspec)
 {
 	GtkLed* self = GTK_LED(object);
@@ -86,9 +94,10 @@ gtk_led_set_property (GObject *object, guint property_id,
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
 
-static void
-gtk_led_size_request (GtkWidget * widget,
-                      GtkRequisition * requisition)
+
+static
+void gtk_led_size_request (GtkWidget * widget,
+                          GtkRequisition * requisition)
 {
 	//GtkLedClass* klass = gtk_type_class(GTK_TYPE_LED);
 	g_return_if_fail (widget != NULL);
@@ -101,9 +110,9 @@ gtk_led_size_request (GtkWidget * widget,
 }
 
 
-static void
-gtk_led_size_allocate (GtkWidget * widget,
-                       GtkAllocation * allocation)
+static
+void gtk_led_size_allocate(GtkWidget * widget,
+                           GtkAllocation * allocation)
 {
 	g_return_if_fail (widget != NULL);
 	g_return_if_fail (GTK_IS_LED (widget));
@@ -121,8 +130,8 @@ gtk_led_size_allocate (GtkWidget * widget,
 }
 
 
-static void
-gtk_led_realize (GtkWidget * widget)
+static
+void gtk_led_realize(GtkWidget * widget)
 {
 	GdkWindowAttr attributes;
 	guint attributes_mask;
@@ -154,7 +163,8 @@ gtk_led_realize (GtkWidget * widget)
 }
 
 
-static void gtk_led_class_init (GtkLedClass *klass)
+static
+void gtk_led_class_init(GtkLedClass *klass)
 {
 	int i;
 	GdkPixbuf* pixbuf;
@@ -215,7 +225,9 @@ static void gtk_led_class_init (GtkLedClass *klass)
 	g_object_unref(G_OBJECT(klass->off_pixbuf));
 }*/
 
-static void gtk_led_init(GtkLed *self)
+
+static
+void gtk_led_init(GtkLed *self)
 {
 	self->state = FALSE;
 	self->color_off = GRAY_LED;
@@ -226,11 +238,15 @@ static void gtk_led_init(GtkLed *self)
 				G_CALLBACK(gtk_led_expose_event_callback), NULL);
 }
 
+
+LOCAL_FN
 GtkLed* gtk_led_new (void)
 {
 	return g_object_new (GTK_TYPE_LED, NULL);
 }
 
+
+LOCAL_FN
 void gtk_led_set_state(GtkLed* self, gboolean state)
 {
 	if (self->state != state) {
@@ -239,6 +255,8 @@ void gtk_led_set_state(GtkLed* self, gboolean state)
 	}
 }
 
+
+static
 void gtk_led_expose_event_callback(GtkLed* self, GdkEventExpose* event, gpointer data)
 {
 	GdkPixbuf* pixbuf;

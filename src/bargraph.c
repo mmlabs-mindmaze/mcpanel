@@ -18,6 +18,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
 #include <gtk/gtk.h>
 #include <memory.h>
 #include "bargraph.h"
@@ -52,8 +53,8 @@ bargraph_get_property (GObject *object, guint property_id,
 }
 */
 
-static void
-bargraph_set_property (GObject *object, guint property_id,
+static
+void bargraph_set_property (GObject *object, guint property_id,
                               const GValue *value, GParamSpec *pspec)
 {
 	Bargraph* self = BARGRAPH(object);
@@ -78,8 +79,8 @@ bargraph_set_property (GObject *object, guint property_id,
 	}
 }
 
-static void
-bargraph_finalize (GObject *object)
+static
+void bargraph_finalize (GObject *object)
 {
 	Bargraph* self = BARGRAPH(object);
 	
@@ -92,8 +93,8 @@ bargraph_finalize (GObject *object)
 }
 
 
-static void
-bargraph_class_init (BargraphClass *klass)
+static
+void bargraph_class_init (BargraphClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
@@ -161,16 +162,18 @@ bargraph_init (Bargraph *self)
 				G_CALLBACK(bargraph_expose_event_callback), NULL);
 }
 
-Bargraph*
-bargraph_new (void)
+
+LOCAL_FN
+Bargraph* bargraph_new (void)
 {
 	return g_object_new(TYPE_BARGRAPH, NULL);
 }
 
-static gboolean
-bargraph_configure_event_callback (Bargraph *self,
-                                GdkEventConfigure *event,
-                                gpointer data)
+
+static
+gboolean bargraph_configure_event_callback(Bargraph *self,
+                                           GdkEventConfigure *event,
+                                           gpointer data)
 {
 	(void)data;
 	(void)event;
@@ -179,10 +182,10 @@ bargraph_configure_event_callback (Bargraph *self,
 }
 
 
-static gboolean
-bargraph_expose_event_callback (Bargraph *self,
-                             GdkEventExpose *event,
-                             gpointer data)
+static
+gboolean bargraph_expose_event_callback(Bargraph *self,
+                                        GdkEventExpose *event,
+                                        gpointer data)
 {
 	(void)data;
 	(void)event;
@@ -193,9 +196,8 @@ bargraph_expose_event_callback (Bargraph *self,
 }
 
 
-
-static void
-bargraph_draw_samples(const Bargraph* self)
+static
+void bargraph_draw_samples(const Bargraph* self)
 {
 	guint i, iChannel, iColor, width, height, nColors, num_ticks;
 	gint ivalue, jvalue, halfwidth, Yorg, rectH;
@@ -258,8 +260,8 @@ bargraph_draw_samples(const Bargraph* self)
 }
 
 
-static void
-bargraph_calculate_drawparameters(Bargraph* self)
+static
+void bargraph_calculate_drawparameters(Bargraph* self)
 {
 	guint height, width, i;
 	gint *xticks, *yticks;
@@ -301,8 +303,8 @@ bargraph_calculate_drawparameters(Bargraph* self)
 }
 
 
-void
-bargraph_update_data(Bargraph* self, guint pointer)
+LOCAL_FN
+void bargraph_update_data(Bargraph* self, guint pointer)
 {
 	GdkRectangle rect;
 	//GdkWindow* window;
@@ -336,6 +338,8 @@ bargraph_update_data(Bargraph* self, guint pointer)
 	}
 }
 
+
+LOCAL_FN
 void bargraph_set_data(Bargraph* self, data_t* data, guint num_ch)
 {
 	self->data = data;
@@ -351,7 +355,7 @@ void bargraph_set_data(Bargraph* self, data_t* data, guint num_ch)
 }
 
 
-
+LOCAL_FN
 void bargraph_set_ticks(Bargraph* self, guint num_ticks, data_t* tick_values)
 {
 	if (num_ticks != self->num_ticks) {

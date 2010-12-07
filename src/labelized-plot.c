@@ -18,6 +18,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
 #include <gtk/gtk.h>
 #include "labelized-plot.h"
 #include "plot-area.h"
@@ -87,6 +88,7 @@ labelized_plot_set_property (GObject *object, guint property_id,
 	if (GTK_WIDGET_DRAWABLE(self))
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
+
 
 static void
 labelized_plot_finalize (GObject *object)
@@ -163,8 +165,8 @@ labelized_plot_init (LabelizedPlot* self)
 }
 
 
-LabelizedPlot*
-labelized_plot_new (void)
+LOCAL_FN
+LabelizedPlot* labelized_plot_new (void)
 {
 	return g_object_new(TYPE_LABELIZED_PLOT, NULL);
 }
@@ -173,8 +175,8 @@ labelized_plot_new (void)
 /* Specific methods */
 
 
-static gboolean
-labelized_plot_expose_event_callback (LabelizedPlot *self,
+static
+gboolean labelized_plot_expose_event_callback(LabelizedPlot *self,
 		                              GdkEventExpose *event,
         		                      gpointer data)
 {

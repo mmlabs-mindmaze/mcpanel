@@ -15,6 +15,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#if HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <gtk/gtk.h>
 #include <memory.h>
 #include "scope.h"
@@ -121,21 +125,23 @@ scope_init (Scope *self)
 
 	// Connect the handled signal
 	g_signal_connect_after(G_OBJECT(self), "configure_event",  
-				G_CALLBACK(scope_configure_event_callback), NULL);
+	                  G_CALLBACK(scope_configure_event_callback), NULL);
 	g_signal_connect(G_OBJECT(self), "expose_event",  
-				G_CALLBACK(scope_expose_event_callback), NULL);
+	                 G_CALLBACK(scope_expose_event_callback), NULL);
 }
 
-Scope*
-scope_new (void)
+
+LOCAL_FN
+Scope* scope_new (void)
 {
 	return g_object_new(TYPE_SCOPE, NULL);
 }
 
-static gboolean
-scope_configure_event_callback (Scope *self,
-                                GdkEventConfigure *event,
-                                gpointer data)
+
+static
+gboolean scope_configure_event_callback (Scope *self,
+         	                         GdkEventConfigure *event,
+                                         gpointer data)
 {
 	(void)event;
 	(void)data;
@@ -267,8 +273,8 @@ scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
 }
 
 
-static void
-scope_calculate_drawparameters(Scope* self)
+static
+void scope_calculate_drawparameters(Scope* self)
 {
 	guint height, width;
 	unsigned int num_ch, i, num_points;
@@ -298,8 +304,8 @@ scope_calculate_drawparameters(Scope* self)
 }
 
 
-void
-scope_update_data(Scope* self, guint pointer)
+LOCAL_FN
+void scope_update_data(Scope* self, guint pointer)
 {
 	int first, last;
 	GdkRectangle rect;
@@ -343,6 +349,8 @@ scope_update_data(Scope* self, guint pointer)
 	}
 }
 
+
+LOCAL_FN
 void scope_set_data(Scope* self, data_t* data, guint num_points, guint num_ch)
 {
 	int has_changed = 0;
@@ -372,6 +380,8 @@ void scope_set_data(Scope* self, data_t* data, guint num_points, guint num_ch)
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
 
+
+LOCAL_FN
 void scope_set_ticks(Scope* self, guint num_ticks, guint* ticks)
 {
 	if (num_ticks != self->num_ticks) {

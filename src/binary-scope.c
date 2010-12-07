@@ -18,6 +18,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
 #include <gtk/gtk.h>
 #include "binary-scope.h"
 #include <memory.h>
@@ -54,8 +55,8 @@ binary_scope_set_property (GObject *object, guint property_id,
 }
 */
 
-static void
-binary_scope_finalize (GObject *object)
+static
+void binary_scope_finalize (GObject *object)
 {
 	BinaryScope* self = BINARY_SCOPE(object);
 	
@@ -70,8 +71,8 @@ binary_scope_finalize (GObject *object)
 }
 
 
-static void
-binary_scope_class_init (BinaryScopeClass *klass)
+static
+void binary_scope_class_init (BinaryScopeClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
@@ -80,8 +81,9 @@ binary_scope_class_init (BinaryScopeClass *klass)
 	object_class->finalize = binary_scope_finalize;
 }
 
-static void
-binary_scope_init (BinaryScope *self)
+
+static
+void binary_scope_init (BinaryScope *self)
 {
 	// Initialize members
 	self->num_channels = 0;
@@ -101,16 +103,18 @@ binary_scope_init (BinaryScope *self)
 				G_CALLBACK(binary_scope_expose_event_callback), NULL);
 }
 
-BinaryScope*
-binary_scope_new (void)
+
+LOCAL_FN
+BinaryScope* binary_scope_new (void)
 {
 	return g_object_new(TYPE_BINARY_SCOPE, NULL);
 }
 
-static gboolean
-binary_scope_configure_event_callback (BinaryScope *self,
-                                GdkEventConfigure *event,
-                                gpointer data)
+
+static
+gboolean binary_scope_configure_event_callback(BinaryScope *self,
+                                               GdkEventConfigure *event,
+                                               gpointer data)
 {
 	(void)event;
 	(void)data;
@@ -120,10 +124,10 @@ binary_scope_configure_event_callback (BinaryScope *self,
 }
 
 
-static gboolean
-binary_scope_expose_event_callback (BinaryScope *self,
-                             GdkEventExpose *event,
-                             gpointer data)
+static
+gboolean binary_scope_expose_event_callback(BinaryScope *self,
+                                            GdkEventExpose *event,
+                                            gpointer data)
 {
 	unsigned int first, last, num_points;
 	int xmin, xmax;
@@ -154,8 +158,9 @@ binary_scope_expose_event_callback (BinaryScope *self,
 
 
 
-static void
-binary_scope_draw_samples(const BinaryScope* self, unsigned int first, unsigned int last)
+static
+void binary_scope_draw_samples(const BinaryScope* self, unsigned int first,
+                                                        unsigned int last)
 {
 	unsigned int i, iChannel, iSample, iColor;
 	gint xmin, xmax;
@@ -226,8 +231,8 @@ binary_scope_draw_samples(const BinaryScope* self, unsigned int first, unsigned 
 }
 
 
-static void
-binary_scope_calculate_drawparameters(const BinaryScope* self)
+static
+void binary_scope_calculate_drawparameters(const BinaryScope* self)
 {
 	guint height, width;
 	unsigned int i, num_ch, num_points;
@@ -253,8 +258,8 @@ binary_scope_calculate_drawparameters(const BinaryScope* self)
 }
 
 
-void
-binary_scope_update_data(BinaryScope* self, guint pointer)
+LOCAL_FN
+void binary_scope_update_data(BinaryScope* self, guint pointer)
 {
 	int first, last;
 	GdkRectangle rect;
@@ -298,6 +303,8 @@ binary_scope_update_data(BinaryScope* self, guint pointer)
 	}
 }
 
+
+LOCAL_FN
 void binary_scope_set_data(BinaryScope* self, guint32* data, guint num_points, guint num_ch)
 {
 	int has_changed = 0;
@@ -331,6 +338,7 @@ void binary_scope_set_data(BinaryScope* self, guint32* data, guint num_points, g
 }
 
 
+LOCAL_FN
 void binary_scope_set_ticks(BinaryScope* self, guint num_ticks, guint* ticks)
 {
 	if (num_ticks != self->num_ticks) {

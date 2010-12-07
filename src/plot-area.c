@@ -18,6 +18,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <memory.h>
@@ -32,15 +33,15 @@ enum {
 
 static void 	plot_area_realize_callback(PlotArea* self);
 static void 	plot_area_unrealize_callback(PlotArea* self);
-void plot_area_set_color(PlotArea* self, const gchar* colorstr, GdkColor* color);
-void plot_area_set_channel_colors(PlotArea* self, const gchar* colorstr);
+static void plot_area_set_color(PlotArea* self, const gchar* colorstr, GdkColor* color);
+static void plot_area_set_channel_colors(PlotArea* self, const gchar* colorstr);
 
 
 G_DEFINE_TYPE (PlotArea, plot_area, GTK_TYPE_DRAWING_AREA)
 
 
-static void
-plot_area_get_property (GObject *object, guint property_id,
+static
+void plot_area_get_property(GObject *object, guint property_id,
                               GValue *value, GParamSpec *pspec)
 {
 	(void)value;
@@ -51,8 +52,9 @@ plot_area_get_property (GObject *object, guint property_id,
 	}
 }
 
-static void
-plot_area_set_property (GObject *object, guint property_id,
+
+static
+void plot_area_set_property (GObject *object, guint property_id,
                               const GValue *value, GParamSpec *pspec)
 {
 	GdkColor color;
@@ -78,8 +80,8 @@ plot_area_set_property (GObject *object, guint property_id,
 }
 
 
-static void
-plot_area_finalize (GObject *object)
+static
+void plot_area_finalize (GObject *object)
 {
 	PlotArea* self = PLOT_AREA(object);
 
@@ -93,8 +95,8 @@ plot_area_finalize (GObject *object)
 }
 
 
-static void
-plot_area_class_init (PlotAreaClass *klass)
+static
+void plot_area_class_init (PlotAreaClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
@@ -145,8 +147,9 @@ plot_area_class_init (PlotAreaClass *klass)
 */
 }
 
-static void
-plot_area_init (PlotArea *self)
+
+static
+void plot_area_init (PlotArea *self)
 {
 	unsigned int i;
 	self->nColors = 1;
@@ -169,8 +172,8 @@ plot_area_init (PlotArea *self)
 }
 
 
-static void
-plot_area_realize_callback(PlotArea* self)
+static
+void plot_area_realize_callback(PlotArea* self)
 {
 	unsigned int i;
 	GdkColormap* colormap = gtk_widget_get_colormap(GTK_WIDGET(self));
@@ -186,8 +189,8 @@ plot_area_realize_callback(PlotArea* self)
 }
 
 
-static void
-plot_area_unrealize_callback(PlotArea* self)
+static
+void plot_area_unrealize_callback(PlotArea* self)
 {
 	GdkColormap* colormap = gtk_widget_get_colormap(GTK_WIDGET(self));
 
@@ -198,13 +201,14 @@ plot_area_unrealize_callback(PlotArea* self)
 }
 
 
-PlotArea*
-plot_area_new (void)
+LOCAL_FN
+PlotArea* plot_area_new (void)
 {
 	return g_object_new (TYPE_PLOT_AREA, NULL);
 }
 
 
+static
 void plot_area_set_color(PlotArea* self, const gchar* colorstr, GdkColor* color)
 {
 	GdkColormap* colormap = NULL;
@@ -220,6 +224,7 @@ void plot_area_set_color(PlotArea* self, const gchar* colorstr, GdkColor* color)
 }
 
 
+static
 void plot_area_set_channel_colors(PlotArea* self, const gchar* colorstr)
 {
 	GdkColormap* colormap = NULL;
@@ -250,6 +255,7 @@ void plot_area_set_channel_colors(PlotArea* self, const gchar* colorstr)
 }
 
 
+LOCAL_FN
 void plot_area_set_ticks(PlotArea* self, guint num_xticks, guint num_yticks)
 {
 	if (num_xticks != self->num_xticks) {
