@@ -39,9 +39,20 @@ AC_DEF_API_EXPORT_ATTRS
 
 PKG_CHECK_MODULES(GTK2, gtk+-2.0)
 PKG_CHECK_MODULES(GTHREAD2, gthread-2.0)
-#AM_PATH_GTK_2_0(2.12.0,,AC_MSG_ERROR(GTK+ libraries 2.12 or more recent should be installed),[gthread])
 
 AC_SEARCH_LIBS([rtf_create_filter], [rtfilter], [], AC_MSG_ERROR([The rtfilter library must be installed.]))
+
+AC_ARG_ENABLE([debug],
+	AC_HELP_STRING([--enable-debug@<:@=ARG@:>@],[Enable debugging @<:@DEFAULT=no@:>@]),
+	[case "${enableval}" in
+		yes) debug=true ;;
+		no) debug=false ;;
+		*) AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
+	esac], [debug=false])
+
+if test "x$debug" = "xfalse"; then
+	AC_DEFINE([G_DISABLE_CAST_CHECKS], [], [Define to disable the glib checks])
+fi
 
 # Replacement checks
 AC_SEARCH_LIBS([clock_gettime], [rt posix4])

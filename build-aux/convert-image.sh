@@ -28,7 +28,7 @@ do
   cname=pix_$base
   echo $file
 
-  gdk-pixbuf-csource --raw --struct --name=$cname $file >> $outname
+  gdk-pixbuf-csource --raw --rle --struct --name=$cname $file >> $outname
 done
 
 # write footer of the file
