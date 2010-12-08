@@ -5,6 +5,7 @@
 #include <gtk/gtk.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <rtf_common.h>
 #include "bargraph.h"
 #include "signaltab.h"
 
@@ -13,6 +14,8 @@ enum bartab_widgets {
 	TAB_ROOT,
 	TAB_BAR1,
 	TAB_BAR2,
+	LP_CHECK,
+	LP_SPIN,
 	AXES1,
 	AXES2,
 	SCALE_COMBO,
@@ -34,12 +37,15 @@ const struct widget_name_entry bartab_widgets_table[] = {
 	[AXES1] = {"bartab_axes1", "LabelizedPlot"},
 	[AXES2] = {"bartab_axes2", "LabelizedPlot"},
 	[SCALE_COMBO] = {"bartab_scale_combo", "GtkComboBox"},
+	[LP_CHECK] = {"bartab_lp_check", "GtkCheckButton"},
+	[LP_SPIN] = {"bartab_lp_spin", "GtkSpinButton"},
 	[ELEC_TREEVIEW] = {"bartab_treeview", "GtkTreeView"}
 };
 
 static
 char* object_list[] = {
 	"bartab_template",
+	"lowpass_adjustment",
 	"channel_model",
 	"scale_model",
 	NULL
@@ -48,14 +54,22 @@ char* object_list[] = {
 
 struct bartab {
 	struct signaltab tab;
-	float *data;
+	float *data, *tmpdata;
 	unsigned int nselch, nch1;
+	unsigned int chunkns;
 	unsigned int* selch;
 	char** labels;
+
+	hfilter filt;
+	gdouble cutoff;
+	gboolean filt_on;
+	int reset_filter;
 
 	Bargraph *bar1, *bar2;
 	GObject* widgets[NUM_BARTAB_WIDGETS];
 };
+
+#define CHUNKLEN	0.1 // in seconds
 
 #define get_bartab(p) \
 	((struct bartab*)(((char*)(p))-offsetof(struct bartab, tab)))
@@ -69,12 +83,30 @@ static void bartab_yticks(struct bartab*, float, const char*);
 static
 void init_buffers(struct bartab* brtab)
 {
-	unsigned int nsel = brtab->nselch;
+	unsigned int nch = brtab->tab.nch;
+	unsigned int chunkns = brtab->chunkns;
 	unsigned int nch1 = brtab->nch1;
 	g_free(brtab->data);
-	brtab->data = g_malloc0(nsel*sizeof(*(brtab->data)));
+	g_free(brtab->tmpdata);
+	brtab->data = g_malloc0(nch*sizeof(*(brtab->data)));
+	brtab->tmpdata = g_malloc(chunkns*nch*sizeof(*(brtab->data)));
 	bargraph_set_data(brtab->bar1, brtab->data, nch1);
-	bargraph_set_data(brtab->bar2, brtab->data+nch1, nsel-nch1);
+	bargraph_set_data(brtab->bar2, brtab->data+nch1, brtab->nselch-nch1);
+}
+
+
+static
+void init_filter(struct bartab* brtab)
+{
+	double fc = brtab->cutoff / (double)brtab->tab.fs;
+	rtf_destroy_filter(brtab->filt);
+	if (brtab->filt_on)
+		brtab->filt = rtf_create_butterworth(brtab->tab.nch,
+			                                 RTF_FLOAT, fc, 2,
+		                                         0);
+	else
+		brtab->filt = NULL;
+	brtab->reset_filter = 1;
 }
 
 
@@ -108,7 +140,7 @@ static
 void bartab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
 {
 	GList *list, *elem;
-	unsigned int i, j;
+	unsigned int i, j, nch1, nsel;
 	struct bartab* brtab = user_data;
 	unsigned int num = gtk_tree_selection_count_selected_rows(selec);
 	
@@ -118,9 +150,10 @@ void bartab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
 	if (num != brtab->nselch) {
 		g_free(brtab->selch);
 		brtab->selch = g_malloc(num*sizeof(*brtab->selch));
-		brtab->nselch = num;
-		brtab->nch1 = num/2;
-		init_buffers(brtab);
+		nsel = brtab->nselch = num;
+		nch1 = brtab->nch1 = num/2;
+		bargraph_set_data(brtab->bar1, brtab->data, nch1);
+		bargraph_set_data(brtab->bar2, brtab->data+nch1, nsel-nch1);
 	}
 
 
@@ -172,6 +205,28 @@ void bartab_scale_changed_cb(GtkComboBox *combo, gpointer user_data)
 }
 
 
+static
+void bartab_filter_button_cb(GtkButton* button, gpointer user_data)
+{
+	int s;
+	double freq;
+	struct bartab* brtab = user_data;
+
+	if (GTK_IS_SPIN_BUTTON(button)) {
+		freq = gtk_spin_button_get_value(GTK_SPIN_BUTTON(button));
+		brtab->cutoff = freq;
+	} else if (GTK_IS_TOGGLE_BUTTON(button)) {
+		s = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
+		brtab->filt_on = s;
+	}
+
+	// TODO lock mutex here
+	g_mutex_lock(brtab->tab.datlock);
+	init_filter(brtab);
+	g_mutex_unlock(brtab->tab.datlock);
+}
+
+
 /**************************************************************************
  *                                                                        *
  *                      Internal helper functions                         *
@@ -181,6 +236,9 @@ static
 void initialize_widgets(struct bartab* brtab)
 {
 	GObject** widg = brtab->widgets;
+
+	g_object_set(widg[LP_CHECK], "active", brtab->filt_on, NULL);
+	g_object_set(widg[LP_SPIN], "value", brtab->cutoff, NULL);
 
 	// Initialize scale combo
 	gtk_combo_box_set_active(GTK_COMBO_BOX(widg[SCALE_COMBO]), 0);
@@ -202,6 +260,11 @@ void connect_widgets_signals(struct bartab* brtab)
 	                       G_CALLBACK(bartab_selch_cb), brtab);
 	g_signal_connect(widgets[SCALE_COMBO], "changed",
 	                 G_CALLBACK(bartab_scale_changed_cb), brtab);
+
+	g_signal_connect_after(widgets[LP_CHECK], "toggled",
+	                      G_CALLBACK(bartab_filter_button_cb), brtab);
+	g_signal_connect_after(widgets[LP_SPIN], "value-changed",
+	                      G_CALLBACK(bartab_filter_button_cb), brtab);
 }
 
 
@@ -313,6 +376,7 @@ void bartab_destroy(struct signaltab* tab)
 
 	g_strfreev(brtab->labels);
 	g_free(brtab->data);
+	g_free(brtab->tmpdata);
 	g_free(brtab);
 }
 
@@ -329,7 +393,9 @@ void bartab_define_input(struct signaltab* tab, const char** labels)
 	fill_treeview(GTK_TREE_VIEW(brtab->widgets[ELEC_TREEVIEW]), labels);
 	g_mutex_lock(brtab->tab.datlock);
 
+	brtab->chunkns = (CHUNKLEN * brtab->tab.fs) + 1;
 	init_buffers(brtab);
+	init_filter(brtab);
 }
 
 
@@ -338,10 +404,21 @@ void bartab_process_data(struct signaltab* tab, unsigned int ns,
                            const float* in)
 {
 	struct bartab* brtab = get_bartab(tab);
+	float* tmp = brtab->tmpdata;
 	unsigned int j;
 	unsigned int *sel = brtab->selch;
 	unsigned int nch = brtab->nselch;
 	unsigned int nmax_ch = brtab->tab.nch;
+
+	// Apply filters
+	if (brtab->filt != NULL) {
+		if (brtab->reset_filter) {
+			rtf_init_filter(brtab->filt, in);
+			brtab->reset_filter = 0;
+		}
+		rtf_filter(brtab->filt, in, tmp, ns);
+		in = tmp;
+	}
 
 	// Copy data of the selected channels
 	for (j=0; j<nch; j++) 
@@ -379,6 +456,8 @@ struct signaltab* create_tab_bargraph(const char* uidef,
 		goto error;
 	}
 	brtab->tab.scale = 1;
+	brtab->filt_on = 1;
+	brtab->cutoff = 1.0;
 
 	// Initialize the struture with the builded widget
 	if (find_widgets(brtab, builder))
