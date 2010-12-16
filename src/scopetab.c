@@ -204,7 +204,7 @@ void process_chunk(struct scopetab* sctab, unsigned int ns, const float* in)
 	for (i=0; i<2; i++) {
 		if (sctab->filt[i] != NULL) {
 			if (sctab->reset_filter[i]) {
-				rtf_init_filter(sctab->filt[i], data);
+				rtf_init_filter(sctab->filt[i], infilt);
 				sctab->reset_filter[i] = 0;
 			}
 				
@@ -359,7 +359,7 @@ void scopetab_filter_button_cb(GtkButton* button, gpointer user_data)
 		hp = (button == (void*)sctab->widgets[HP_SPIN]) ? 1 : 0;
 		freq = gtk_spin_button_get_value(GTK_SPIN_BUTTON(button));
 		sctab->cutoff[hp] = freq;
-	} else if (GTK_IS_TOGGLE_BUTTON(button)) {
+	} else {
 		hp = (button == (void*)sctab->widgets[HP_CHECK]) ? 1 : 0;
 		s = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
 		sctab->filt_on[hp] = s;
@@ -662,6 +662,7 @@ struct signaltab* create_tab_scope(const char* uidef,
 		goto error;
 	}
 	sctab->filt_on[0] = sctab->filt_on[1] = 0;
+	sctab->filt[0] = sctab->filt[1] = NULL;
 	sctab->cutoff[0] = 100.0;
 	sctab->cutoff[1] = 1.0;
 	sctab->tab.scale = 1;
