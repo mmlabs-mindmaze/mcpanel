@@ -41,7 +41,7 @@ int initialize_signaltab(struct signaltab* tab, int nscales,
 
 
 LOCAL_FN 
-void destroy_signaltab(struct signaltab* tab)
+void signaltab_destroy(struct signaltab* tab)
 {
 	g_mutex_free(tab->datlock);
 	tab->destroy(tab);

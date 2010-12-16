@@ -372,6 +372,14 @@ int add_signal_tabs(EEGPanel* pan, const char* uidef, unsigned int ntab,
 	return 1;
 }
 
+static
+void destroy_signal_tabs(EEGPanel* pan)
+{
+	unsigned int i;
+	for (i=0; i<pan->ntab; i++) 
+		signaltab_destroy(pan->tabs[i]);
+	g_free(pan->tabs);
+}
 
 LOCAL_FN
 int create_panel_gui(EEGPanel* pan, const char* uifile, unsigned int ntab,
@@ -436,6 +444,7 @@ void destroy_panel_gui(EEGPanel* pan)
 	g_mutex_unlock(pan->gui.syncmtx);
 
 	g_mutex_free(pan->gui.syncmtx);
+	destroy_signal_tabs(pan);
 }
 
 
