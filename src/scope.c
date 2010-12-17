@@ -19,6 +19,7 @@
 # include <config.h>
 #endif
 
+#include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <memory.h>
 #include "scope.h"
@@ -304,49 +305,52 @@ void scope_calculate_drawparameters(Scope* self)
 }
 
 
+
 LOCAL_FN
 void scope_update_data(Scope* self, guint pointer)
 {
 	int first, last;
-	GdkRectangle rect;
+	GdkRectangle rect[2];
+	int combine = 0;
 	//GdkWindow* window;
 	GdkPoint* points;
+	GdkRegion* region;
 
-	if (!self)
+	if (!self || !self->num_points)
 		return;
 
-	if (pointer < self->current_pointer) {
-		scope_update_data(self, self->num_points-1);
-		self->current_pointer = 0;
-	}
 
 	//window = GTK_WIDGET(self)->window;
-	points  = self->points;
 
 	first = self->current_pointer ? self->current_pointer -1 : 0;
 	last = pointer;
-	self->current_pointer = pointer;
-
-	if (self->num_points == 0)
-		return;
 
 	if (GTK_WIDGET_DRAWABLE(self)) {
+		points  = self->points;
+
 		// Set the region that should be redrawn 
-		rect.y = 0;
-		rect.height = GTK_WIDGET(self)->allocation.height;
-		rect.x = points[first].x-1;
-		rect.width = points[last].x - rect.x+1;
+		first = self->current_pointer ? self->current_pointer -1 : 0;
+		last = pointer;
+		if (pointer < self->current_pointer) {
+			rect[1].x = points[first].x-1;
+			rect[1].width = points[self->num_points-1].x - rect[1].x+1;
+			first = 0;
+			combine++;
+		}
+		rect[0].y = rect[1].y = 0;
+		rect[0].height = rect[1].height = GTK_WIDGET(self)->allocation.height;
+		rect[0].x = points[first].x-1;
+		rect[0].width = points[last].x - rect[0].x+1;
 
 		// Repaint
-		gtk_widget_queue_draw_area(GTK_WIDGET(self),
-						rect.x,
-						rect.y,
-						rect.width,
-						rect.height);
-		//gdk_window_begin_paint_rect(window, &rect);
-		//scope_draw_samples(self, first, last);
-		//gdk_window_end_paint(window);
+		region = gdk_region_rectangle(&rect[0]);
+		if (combine)
+			gdk_region_union_with_rect(region, &rect[1]);
+		gdk_window_invalidate_region(gtk_widget_get_window(GTK_WIDGET(self)),
+					     region, FALSE);
+		gdk_region_destroy(region);
 	}
+	self->current_pointer = pointer;
 }
 
 
