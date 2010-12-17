@@ -159,27 +159,32 @@ scope_expose_event_callback (Scope *self,
 {
 	(void)data;
 	unsigned int first, last, num_points;
-	int xmin, xmax;
+	int xmin, xmax, i, nrect;
 	GdkPoint* points = self->points;
+	GdkRectangle* rect;
 	
 	num_points = self->num_points;
-	xmin = event->area.x;
-	xmax = event->area.x + event->area.width;
-
 	if (num_points == 0)
 		return TRUE;
 
-	/* Determine which samples should redrawn */
-	first=0;
-	while ((first<num_points-1) && (points[first+1].x < xmin))
-		first++;
+	gdk_region_get_rectangles(event->region, &rect, &nrect);
 
-	last=num_points-1;
-	while ((last>0) && (points[last-1].x > xmax))
-		last--;
-
-	/* Redraw the region */
-	scope_draw_samples(self, first, last);
+	for (i=0; i<nrect; i++) {
+		/* Determine which samples should redrawn */
+		xmin = rect[i].x;
+		xmax = rect[i].x + rect[i].width;
+		first=0;
+		while ((first<num_points-1) && (points[first+1].x < xmin))
+			first++;
+        
+		last=num_points-1;
+		while ((last>0) && (points[last-1].x > xmax))
+			last--;
+	
+		/* Redraw the region */
+		scope_draw_samples(self, first, last);
+	}
+	g_free(rect);
 
 	return TRUE;
 }
