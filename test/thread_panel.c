@@ -15,8 +15,8 @@
 #define NEEG	64
 #define EXGSET	STD
 #define NEXG	8
-#define NSAMPLES	32
-#define SAMPLING_RATE	256
+#define SAMPLING_RATE	2048
+#define NSAMPLES	((unsigned int)(SAMPLING_RATE*0.03))
 
 GThread* thread_id;
 volatile int run_eeg = 0;
