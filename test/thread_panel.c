@@ -16,7 +16,7 @@
 #define EXGSET	STD
 #define NEXG	8
 #define NSAMPLES	32
-#define SAMPLING_RATE	2048
+#define SAMPLING_RATE	256
 
 GThread* thread_id;
 volatile int run_eeg = 0;
@@ -67,9 +67,9 @@ void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 		for (j=0; j<NEXG; j++)
 			exg[i*NEXG+j] = j*i;
 		tri[i] = triggers;
-		if ((isample/2048) % 2)
+		if ((isample/SAMPLING_RATE) % 2)
 			tri[i] |= 0x100000;
-		if (!((isample/2048) % 3))
+		if (!((isample/SAMPLING_RATE) % 3))
 			tri[i] |= 0x400000;
 		isample++;
 	}

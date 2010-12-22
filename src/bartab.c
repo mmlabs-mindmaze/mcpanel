@@ -416,6 +416,11 @@ void bartab_process_data(struct signaltab* tab, unsigned int ns,
 			rtf_init_filter(brtab->filt, in);
 			brtab->reset_filter = 0;
 		}
+		while (ns > brtab->chunkns) {
+			rtf_filter(brtab->filt, in, tmp, brtab->chunkns);
+			ns -= brtab->chunkns;
+			in += nch * brtab->chunkns;
+		}
 		rtf_filter(brtab->filt, in, tmp, ns);
 		in = tmp;
 	}
