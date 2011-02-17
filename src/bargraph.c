@@ -88,6 +88,7 @@ void bargraph_finalize (GObject *object)
 	
 	// Free allocated structures
 	g_free(self->tick_values);
+	g_free(self->grid_data);
 	
 	// Call parent finalize function
 	if (G_OBJECT_CLASS (bargraph_parent_class)->finalize)
@@ -212,25 +213,18 @@ gboolean bargraph_expose_event_callback(Bargraph *self,
 static
 void bargraph_draw_samples(const Bargraph* self, cairo_t* cr)
 {
-	guint i, ich, width, height, ncols, num_ticks;
+	guint ich, ncols;
 	int halfwidth;
-	const double* ticks_pos = PLOT_AREA(self)->yticks;
 	const double* chann_pos = PLOT_AREA(self)->xticks;
 	const GdkColor* colors = PLOT_AREA(self)->colors;
+	const unsigned int width = GTK_WIDGET(self)->allocation.width;
 	const data_t* values = self->data + self->current_pointer*self->num_channels;
 	data_t val;
 	ncols = PLOT_AREA(self)->nColors;
-	num_ticks = PLOT_AREA(self)->num_yticks;
-
-	width = GTK_WIDGET(self)->allocation.width;
-	height = GTK_WIDGET(self)->allocation.height;
 
 	// draw grid
 	gdk_cairo_set_source_color(cr, &(PLOT_AREA(self)->grid_color));
-	for (i=0; i<num_ticks; i++) {
-		cairo_move_to(cr, 0.5, ticks_pos[i] + 0.5);
-		cairo_line_to(cr, width-0.5, ticks_pos[i] + 0.5);
-	}
+	cairo_append_path(cr, &self->grid_path);
 	cairo_stroke(cr);
 	
 	// Draw the channels data
@@ -277,27 +271,19 @@ void bargraph_calculate_drawparameters(Bargraph* self)
 	for (i=0; i<self->num_channels; i++)
 		xticks[i] = (gint)((gfloat)(width * (2*i+1)) / (gfloat)(2*self->num_channels));
 	
-
-	// Calculate value ticks (positive y points to bottom in the window basis) 
-	for (i=0; i<self->num_ticks; i++)
-		yticks[i] = self->offset - (gint)(self->tick_values[i]*self->scale);
-
-/*	guint height, width;
-	unsigned int i, num_ch, num_points;
-
-	num_ch = self->num_channels;
-	num_points = self->num_points;
-
-	width = GTK_WIDGET(self)->allocation.width;
-	height = GTK_WIDGET(self)->allocation.height;
-	
-	// Calculate y offsets
-	for (i=0; i<num_ch; i++)
-		self->offsets[i] = (gint)((float)(height*(2*i+1)) / (float)(2*num_ch));
-
-	// Calculate x coordinates
-	for (i=0; i<num_points; i++)
-		self->points[i].x = (gint)( ((float)(i*width))/(float)(num_points-1) );*/
+	// Calculate ticks values and path data
+	// (positive y points to bottom in the window basis) 
+	for (i=0; i<self->num_ticks; i++) {
+		yticks[i] = self->offset - self->tick_values[i]*self->scale;
+		self->grid_data[4*i].header.length = 2;
+		self->grid_data[4*i].header.type = CAIRO_PATH_MOVE_TO;
+		self->grid_data[4*i+1].point.x = 0.5;
+		self->grid_data[4*i+1].point.y = yticks[i] + 0.5;
+		self->grid_data[4*i+2].header.length = 2;
+		self->grid_data[4*i+2].header.type = CAIRO_PATH_LINE_TO;
+		self->grid_data[4*i+3].point.x = width - 0.5;
+		self->grid_data[4*i+3].point.y = yticks[i] + 0.5;
+	}
 }
 
 
@@ -334,15 +320,19 @@ void bargraph_set_data(Bargraph* self, data_t* data, guint num_ch)
 
 
 LOCAL_FN
-void bargraph_set_ticks(Bargraph* self, guint num_ticks, data_t* tick_values)
+void bargraph_set_ticks(Bargraph* self, guint nticks, data_t* tvalues)
 {
-	if (num_ticks != self->num_ticks) {
-		g_free(self->tick_values);
-		self->tick_values = g_malloc(num_ticks*sizeof(*(self->tick_values)));
-		self->num_ticks = num_ticks;
-		plot_area_set_ticks(PLOT_AREA(self), self->num_channels, self->num_ticks);
+	if (nticks != self->num_ticks) {
+		g_free(self->grid_data);
+		self->grid_data = g_malloc(4*nticks*sizeof(*(self->grid_data)));
+		self->tick_values = g_malloc(nticks*sizeof(*(tvalues)));
+		self->num_ticks = nticks;
+		plot_area_set_ticks(PLOT_AREA(self), 
+		                    self->num_channels, self->num_ticks);
+		self->grid_path.data = self->grid_data;
+		self->grid_path.num_data = 4*nticks;
 	}
 
-	memcpy(self->tick_values, tick_values, num_ticks*sizeof(*(self->tick_values)));	
+	memcpy(self->tick_values, tvalues, nticks*sizeof(*(tvalues)));
 	bargraph_calculate_drawparameters(self);
 }
