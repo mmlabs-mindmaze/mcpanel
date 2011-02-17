@@ -1,5 +1,6 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+	Copyright (C) 2008-2009,2011 Nicolas Bourdaud
+	<nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -31,7 +32,7 @@ enum {
 };
 
 static void bargraph_calculate_drawparameters(Bargraph* self);
-static void bargraph_draw_samples(const Bargraph* self);
+static void bargraph_draw_samples(const Bargraph* self, cairo_t* cr);
 static gboolean bargraph_expose_event_callback(Bargraph *self, GdkEventExpose *event, gpointer data);
 static gboolean bargraph_configure_event_callback(Bargraph *self, GdkEventConfigure *event, gpointer data);
 
@@ -190,74 +191,70 @@ gboolean bargraph_expose_event_callback(Bargraph *self,
 {
 	(void)data;
 	(void)event;
+
+	cairo_t* cr;
+
+	cr = gdk_cairo_create(gtk_widget_get_window(GTK_WIDGET(self)));
+
+	// Set up plot style
+	cairo_set_line_width(cr, 1.0);
+	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
+
 	/* Redraw the region */
-	bargraph_draw_samples(self);
+	bargraph_draw_samples(self, cr);
+	
+	cairo_destroy(cr);
 
 	return TRUE;
 }
 
 
 static
-void bargraph_draw_samples(const Bargraph* self)
+void bargraph_draw_samples(const Bargraph* self, cairo_t* cr)
 {
-	guint i, iChannel, iColor, width, height, nColors, num_ticks;
-	gint ivalue, jvalue, halfwidth, Yorg, rectH;
-	GdkGC* plotgc = PLOT_AREA(self)->plotgc;
-	GdkWindow* window = GTK_WIDGET(self)->window;
+	guint i, ich, width, height, ncols, num_ticks;
+	int halfwidth;
 	const double* ticks_pos = PLOT_AREA(self)->yticks;
 	const double* chann_pos = PLOT_AREA(self)->xticks;
-	const GdkColor* grid_color = &(PLOT_AREA(self)->grid_color);
 	const GdkColor* colors = PLOT_AREA(self)->colors;
-	const data_t* values = self->data + (self->current_pointer*self->num_channels);
+	const data_t* values = self->data + self->current_pointer*self->num_channels;
 	data_t val;
-	nColors = PLOT_AREA(self)->nColors;
+	ncols = PLOT_AREA(self)->nColors;
 	num_ticks = PLOT_AREA(self)->num_yticks;
-
 
 	width = GTK_WIDGET(self)->allocation.width;
 	height = GTK_WIDGET(self)->allocation.height;
-	
-	// draw grid
-	gdk_gc_set_foreground(plotgc, grid_color);
-	for (i=0; i<num_ticks; i++) {
-		gdk_draw_line(window,
-				plotgc,
-				0,
-				ticks_pos[i],
-				width,
-				ticks_pos[i]);
-	}
 
+	// draw grid
+	gdk_cairo_set_source_color(cr, &(PLOT_AREA(self)->grid_color));
+	for (i=0; i<num_ticks; i++) {
+		cairo_move_to(cr, 0.5, ticks_pos[i] + 0.5);
+		cairo_line_to(cr, width-0.5, ticks_pos[i] + 0.5);
+	}
+	cairo_stroke(cr);
 	
 	// Draw the channels data
 	if (self->num_channels) {
-		halfwidth = (gint)(0.5f* self->bar_ratio * (gfloat)width / (gfloat)self->num_channels);
-		for (iChannel=0; iChannel<self->num_channels; iChannel++) {
+		halfwidth = 0.5f*self->bar_ratio*width / (float)self->num_channels;
+		for (ich=0; ich<self->num_channels; ich++) {
+			gdk_cairo_set_source_color(cr, colors + ich%ncols);
 
 			// val to the limits
-			val = values[iChannel];
+			val = values[ich];
 			if (val > self->max)
 				val = self->max;
 			if (val < self->min)
 				val = self->min;
 				
-			// (positive y points to bottom in the window basis) 
-			jvalue = self->offset - (values[iChannel] * self->scale);
-			ivalue = chann_pos[iChannel];
-			Yorg = MIN(jvalue, self->offset);
-			rectH = MAX(jvalue, self->offset) - Yorg;
-			iColor = iChannel % nColors;
-			gdk_gc_set_foreground(plotgc, colors + iColor);
-			gdk_draw_rectangle(window,
-						plotgc,
-						TRUE,
-						ivalue - halfwidth,
-						Yorg,
-						2*halfwidth,
-						rectH);
+			// positive y points to bottom in the window basis 
+			cairo_rectangle(cr,
+			                chann_pos[ich] - halfwidth,
+			                self->offset,
+					2*halfwidth,
+					val*self->scale);
+			cairo_fill(cr);
 		}
 	}
-
 }
 
 
@@ -307,11 +304,6 @@ void bargraph_calculate_drawparameters(Bargraph* self)
 LOCAL_FN
 void bargraph_update_data(Bargraph* self, guint pointer)
 {
-	GdkRectangle rect;
-	//GdkWindow* window;
-//	window = GTK_WIDGET(self)->window;
-
-
 	if (!self)
 		return;
 
@@ -320,23 +312,8 @@ void bargraph_update_data(Bargraph* self, guint pointer)
 	if (self->data == NULL)
 		return;
 
-	if (GTK_WIDGET_DRAWABLE(self)) {
-		// Set the region that should be redrawn 
-		rect.y = 0;
-		rect.height = GTK_WIDGET(self)->allocation.height;
-		rect.x = 0;
-		rect.width = GTK_WIDGET(self)->allocation.width;
-
-		// Repaint
-		gtk_widget_queue_draw_area(GTK_WIDGET(self),
-						rect.x,
-						rect.y,
-						rect.width,
-						rect.height);
-		//gdk_window_begin_paint_rect(window, &rect);
-		//bargraph_draw_samples(self);
-		//gdk_window_end_paint(window);
-	}
+	if (GTK_WIDGET_DRAWABLE(self)) 
+		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
 
 
