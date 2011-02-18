@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+    Copyright (C) 2008-2009,2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -24,7 +24,8 @@
 #include <memory.h>
 
 static void binary_scope_calculate_drawparameters(const BinaryScope* self);
-static void binary_scope_draw_samples(const BinaryScope* self, unsigned int first, unsigned int last);
+static void binary_scope_draw_samples(const BinaryScope* self, cairo_t* cr,
+                                     unsigned int first, unsigned int last);
 static gboolean binary_scope_expose_event_callback(BinaryScope *self, GdkEventExpose *event, gpointer data);
 static gboolean binary_scope_configure_event_callback(BinaryScope *self, GdkEventConfigure *event, gpointer data);
 
@@ -130,10 +131,11 @@ gboolean binary_scope_expose_event_callback(BinaryScope *self,
                                             GdkEventExpose *event,
                                             gpointer data)
 {
+	(void)data;
+	cairo_t* cr;
 	unsigned int first, last, num_points;
 	int xmin, xmax;
 	gint* xcoords = self->xcoords;
-	(void)data;
 	
 	num_points = self->num_points;
 	xmin = event->area.x;
@@ -141,6 +143,10 @@ gboolean binary_scope_expose_event_callback(BinaryScope *self,
 
 	if (num_points == 0)
 		return TRUE;
+
+	cr = gdk_cairo_create(gtk_widget_get_window(GTK_WIDGET(self)));
+	cairo_set_line_width(cr, 1.0);
+	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
 
 	/* Determine which samples should redrawn */
 	first=0;
@@ -152,7 +158,9 @@ gboolean binary_scope_expose_event_callback(BinaryScope *self,
 		last--;
 
 	/* Redraw the region */
-	binary_scope_draw_samples(self, first, last);
+	binary_scope_draw_samples(self, cr, first, last);
+
+	cairo_destroy(cr);
 
 	return TRUE;
 }
@@ -160,18 +168,13 @@ gboolean binary_scope_expose_event_callback(BinaryScope *self,
 
 
 static
-void binary_scope_draw_samples(const BinaryScope* self, unsigned int first,
-                                                        unsigned int last)
+void binary_scope_draw_samples(const BinaryScope* self, cairo_t* cr,
+                               unsigned int first, unsigned int last)
 {
-	unsigned int i, iChannel, iSample, iColor;
+	unsigned int i, iChannel, iSample;
 	gint xmin, xmax;
 	guint32 channelMask;
 	int bScanning;
-	GdkGC* plotgc = PLOT_AREA(self)->plotgc;
-	GdkGC* stategc = GTK_WIDGET(self)->style->fg_gc[GTK_WIDGET_STATE (self)];
-	GdkWindow* window = GTK_WIDGET(self)->window;
-
-	const GdkColor* grid_color = &(PLOT_AREA(self)->grid_color);
 	const GdkColor* colors = PLOT_AREA(self)->colors;
 	const gint* offsets = self->offsets; 
 	const guint32* values = self->data; 
@@ -184,24 +187,19 @@ void binary_scope_draw_samples(const BinaryScope* self, unsigned int first,
 	xmax = xcoords[last];
 	
 	// draw grid
-	gdk_gc_set_foreground(plotgc, grid_color);
+	gdk_cairo_set_source_color(cr, &(PLOT_AREA(self)->grid_color));
 	for (i=0; i<self->num_ticks; i++) {
-		if ((xticks[i]>=xmin) && (xticks[i]<=xmax))
-			gdk_draw_line(window,
-					plotgc,
-					xticks[i],
-					0,
-					xticks[i],
-					height);
+		if ((xticks[i]>=xmin) && (xticks[i]<=xmax)) {
+			cairo_move_to(cr, xticks[i] + 0.5, 0.5);
+			cairo_line_to(cr, xticks[i] + 0.5, height - 0.5);
+		}
 	}
-
+	cairo_stroke(cr);
 
 	// Draw the channels data
 	for (iChannel=0; iChannel<self->num_channels; iChannel++) {
+		gdk_cairo_set_source_color(cr, colors + iChannel%nColors);
 		channelMask = 0x00000001 << iChannel;
-		iColor = iChannel % nColors;
-		gdk_gc_set_foreground(plotgc, colors+iColor);
-
 		bScanning = (values[first] & channelMask) ? 1 : 0;
 		iSample = first;
 		for (i=first; i<=last; i++) {
@@ -211,24 +209,20 @@ void binary_scope_draw_samples(const BinaryScope* self, unsigned int first,
 			}
 			if ((!(values[i] & channelMask) || (i==last)) && bScanning) {
 				bScanning = FALSE;
-				gdk_draw_rectangle (window,
-		    		            	plotgc,
-						TRUE,
-						xcoords[iSample],
-						offsets[iChannel],
-						xcoords[i]-xcoords[iSample],
-						offsets[iChannel+1]-offsets[iChannel]);
+				cairo_rectangle(cr, 
+				     xcoords[iSample], offsets[iChannel],
+				     xcoords[i]-xcoords[iSample],
+				     offsets[iChannel+1]-offsets[iChannel]);
 			}
 		}
+		cairo_fill(cr);
 	}
 
 	// Draw the scanline
-	gdk_draw_line(window,
-	               stategc,
-	               xcoords[self->current_pointer],
-	               0,
-	               xcoords[self->current_pointer],
-	               height - 1);
+	cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+	cairo_move_to(cr, xcoords[self->current_pointer]+0.5, 0.5);
+	cairo_line_to(cr, xcoords[self->current_pointer]+0.5, height - 0.5);
+	cairo_stroke(cr);
 }
 
 
