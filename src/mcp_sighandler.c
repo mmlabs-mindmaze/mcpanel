@@ -22,8 +22,6 @@
 #include "mcp_shared.h"
 #include "mcp_gui.h"
 #include "mcp_sighandler.h"
-#include <gtk/gtktogglebutton.h>
-#include <gtk/gtkspinbutton.h>
 #include <stdlib.h>
 #include <string.h>
 

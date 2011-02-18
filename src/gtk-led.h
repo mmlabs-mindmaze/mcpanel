@@ -21,7 +21,7 @@
 #define _GTK_LED
 
 #include <glib-object.h>
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
 
 G_BEGIN_DECLS
 
