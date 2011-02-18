@@ -1,5 +1,6 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+    Copyright (C) 2008-2009,2011 Nicolas Bourdaud
+    <nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -21,7 +22,7 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include <gtk/gtkalignment.h>
+#include <gtk/gtk.h>
 
 
 G_BEGIN_DECLS

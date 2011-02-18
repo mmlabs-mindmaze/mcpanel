@@ -1,5 +1,6 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+    Copyright (C) 2008-2009,2011 Nicolas Bourdaud
+    <nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -185,6 +186,7 @@ gboolean labelized_plot_expose_event_callback(LabelizedPlot *self,
 	(void)event;
 	(void)data;
 
+	cairo_t* cr;
 	PangoLayout* layout;
 	PangoContext* context;
 	PangoFontDescription* desc;
@@ -192,23 +194,22 @@ gboolean labelized_plot_expose_event_callback(LabelizedPlot *self,
 	gint width, height;
 	gchar** labels;
 	const double* offsets;
-	GdkGC* gc = GTK_WIDGET(self)->style->fg_gc[GTK_WIDGET_STATE(self)];
 	GdkWindow* window = GTK_WIDGET(self)->window;
 	GtkAllocation child_alloc;
 
 	PlotArea* child = PLOT_AREA(gtk_bin_get_child(GTK_BIN(self)));
 	if (child == NULL)
 		return TRUE;
-
 	child_alloc = GTK_WIDGET(child)->allocation;
-//	context = gtk_widget_get_pango_context(GTK_WIDGET(self));
-//	layout = pango_layout_new(context);
-	layout = gtk_widget_create_pango_layout(GTK_WIDGET(self), NULL);
-	context = gtk_widget_get_pango_context(GTK_WIDGET(self));
+
+	cr = gdk_cairo_create(window);
+	cairo_set_line_width(cr, 1.0);
+	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
+	context = pango_cairo_create_context(cr);
 	desc = pango_font_description_copy_static(pango_context_get_font_description(context));
+	layout = pango_layout_new(context);
 	pango_font_description_set_size(desc, 6*PANGO_SCALE);
 	pango_layout_set_font_description(layout, desc);
-
 
 	// Draw vertical axis
 	offsets = child->yticks;
@@ -220,13 +221,16 @@ gboolean labelized_plot_expose_event_callback(LabelizedPlot *self,
 		jvalue = child_alloc.y + offsets[i] ;
 
 		// Draw tick
-		gdk_draw_line(window, gc, ivalue-5, jvalue, ivalue, jvalue);
+		cairo_move_to(cr, 0.5 + ivalue-5, 0.5 + jvalue);
+		cairo_line_to(cr, 0.5 + ivalue, 0.5 + jvalue);
+		cairo_stroke(cr);
 
 		// Draw label of the channel
 		if (i<num_labels) {
 			pango_layout_set_text(layout, labels[i], -1);
 			pango_layout_get_pixel_size(layout, &width, &height);
-			gdk_draw_layout(window, gc, ivalue-8-width, jvalue-height/2, layout);
+			cairo_move_to(cr, 0.5 + ivalue-8-width, 0.5 + jvalue-height/2);
+			pango_cairo_show_layout(cr, layout);
 		}
 	}
 
@@ -240,18 +244,22 @@ gboolean labelized_plot_expose_event_callback(LabelizedPlot *self,
 		ivalue = child_alloc.x + offsets[i];
 
 		// Draw tick
-		gdk_draw_line(window, gc, ivalue, jvalue, ivalue, jvalue+5);
+		cairo_move_to(cr, 0.5 + ivalue, 0.5 + jvalue);
+		cairo_line_to(cr, 0.5 + ivalue, 0.5 + jvalue+5);
+		cairo_stroke(cr);
 
 		/* Draw label of the channel */
 		if (i<num_labels) {
 			pango_layout_set_text (layout, labels[i] , -1);
 			pango_layout_get_pixel_size(layout, &width, &height);
-			gdk_draw_layout(window, gc, ivalue-width/2, jvalue+8, layout);
+			cairo_move_to(cr, 0.5 + ivalue-width/2, 0.5 + jvalue+8);
+			pango_cairo_show_layout(cr, layout);
 		}
 	}
 
 	g_object_unref(layout);
 	pango_font_description_free(desc);
+	cairo_destroy(cr);
 
 	gtk_paint_shadow (GTK_WIDGET(self)->style,
 					  window,
@@ -264,6 +272,7 @@ gboolean labelized_plot_expose_event_callback(LabelizedPlot *self,
 					  child_alloc.y-1,
 					  child_alloc.width+2,
 					  child_alloc.height+2);
+	
 
 	return TRUE;
 }
