@@ -1,6 +1,5 @@
 /*
-    Copyright (C) 2008-2009,2011 Nicolas Bourdaud
-    <nicolas.bourdaud@epfl.ch>
+    Copyright (C) 2008-2009,2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -88,7 +87,7 @@ labelized_plot_set_property (GObject *object, guint property_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
 
-	if (GTK_WIDGET_DRAWABLE(self))
+	if (gtk_widget_is_drawable(GTK_WIDGET(self)))
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
 
@@ -263,7 +262,7 @@ gboolean labelized_plot_expose_event_callback(LabelizedPlot *self,
 
 	gtk_paint_shadow (GTK_WIDGET(self)->style,
 					  window,
-					  GTK_WIDGET_STATE(self),
+					  gtk_widget_get_state(GTK_WIDGET(self)),
 					  GTK_SHADOW_ETCHED_IN,
 					  NULL,
 					  GTK_WIDGET(self),

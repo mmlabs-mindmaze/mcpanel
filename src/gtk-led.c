@@ -92,7 +92,7 @@ void gtk_led_set_property (GObject *object, guint property_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
 
-	if (GTK_WIDGET_DRAWABLE(self))
+	if (gtk_widget_is_drawable(GTK_WIDGET(self)))
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
 
@@ -123,7 +123,7 @@ void gtk_led_size_allocate(GtkWidget * widget,
 
 	widget->allocation = *allocation;
 
-	if (GTK_WIDGET_REALIZED (widget)) {
+	if (gtk_widget_get_realized(GTK_WIDGET(widget))) {
 		gdk_window_move_resize (
 				widget->window,
 				allocation->x, allocation->y,
@@ -271,7 +271,7 @@ void gtk_led_expose_event_callback(GtkLed* self, GdkEventExpose* event, gpointer
 	GtkIconSet* iconset;
 	cairo_t* cr;
 	GtkWidget* widget = GTK_WIDGET(self);
-	GtkLedClass* klass = gtk_type_class(GTK_TYPE_LED);
+	GtkLedClass* klass = g_type_class_peek(GTK_TYPE_LED);
 	(void)data;
 	(void)event;
 
@@ -280,7 +280,7 @@ void gtk_led_expose_event_callback(GtkLed* self, GdkEventExpose* event, gpointer
 	pixbuf = gtk_icon_set_render_icon(iconset,
 					widget->style,
 					GTK_TEXT_DIR_NONE,
-					GTK_WIDGET_STATE(widget),
+					gtk_widget_get_state(GTK_WIDGET(self)),
 					self->size,
 					widget,
 					NULL);

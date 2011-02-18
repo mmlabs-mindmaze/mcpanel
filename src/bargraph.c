@@ -298,7 +298,7 @@ void bargraph_update_data(Bargraph* self, guint pointer)
 	if (self->data == NULL)
 		return;
 
-	if (GTK_WIDGET_DRAWABLE(self)) 
+	if (gtk_widget_is_drawable(GTK_WIDGET(self))) 
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
 
@@ -314,7 +314,7 @@ void bargraph_set_data(Bargraph* self, data_t* data, guint num_ch)
 		bargraph_calculate_drawparameters(self);
 	}
 	
-	if (GTK_WIDGET_DRAWABLE(self))
+	if (gtk_widget_is_drawable(GTK_WIDGET(self)))
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
 
