@@ -50,9 +50,11 @@ typedef struct {
 	gint* ticks;
 	data_t scale;
 	data_t phys_scale;
-	guint current_pointer;
+	guint current_pointer, last_draw_pointer;
 	guint num_points;
-	GdkPoint* points;
+	int *xpos;
+	cairo_surface_t* surface;
+	cairo_path_data_t* path;
 	const data_t* data;
 } Scope;
 

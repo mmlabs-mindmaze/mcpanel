@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+	Copyright (C) 2008-2010 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -30,7 +30,6 @@ enum {
 };
 
 static void scope_calculate_drawparameters(Scope* self);
-static void scope_draw_samples(const Scope* self, unsigned int first, unsigned int last);
 static gboolean scope_expose_event_callback(Scope *self, GdkEventExpose *event, gpointer data);
 static gboolean scope_configure_event_callback(Scope *self, GdkEventConfigure *event, gpointer data);
 
@@ -61,16 +60,13 @@ scope_set_property (GObject *object, guint property_id,
 	switch (property_id) {
 	case SCALE_PROP:
 		self->phys_scale = (data_t)g_value_get_double(value);
+		scope_calculate_drawparameters(self);
 		break;
 
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
 
-	if (GTK_WIDGET_DRAWABLE(self)) {
-		scope_calculate_drawparameters(self);
-		gtk_widget_queue_draw(GTK_WIDGET(self));
-	}
 }
 
 static void
@@ -80,7 +76,10 @@ scope_finalize (GObject *object)
 	
 	// Free allocted structures
 	g_free(self->ticks);
-	g_free(self->points);
+	g_free(self->xpos);
+	g_free(self->path);
+	if (self->surface != NULL)
+		cairo_surface_destroy(self->surface);
 	
 	// Call parent finalize function
 	if (G_OBJECT_CLASS (scope_parent_class)->finalize)
@@ -121,7 +120,9 @@ scope_init (Scope *self)
 	self->current_pointer = 0; 
 	self->data = NULL;
 	self->ticks = NULL;
-	self->points = NULL;
+	self->xpos = NULL;
+	self->path = NULL;
+	self->surface = NULL;
 
 	plot_area_set_ticks(PLOT_AREA(self), self->num_ticks, self->num_channels);
 
@@ -140,143 +141,192 @@ Scope* scope_new (void)
 }
 
 
-static
-gboolean scope_configure_event_callback (Scope *self,
-         	                         GdkEventConfigure *event,
-                                         gpointer data)
+static 
+void scope_draw_samples(const Scope* restrict self, cairo_t* cr,
+                   int first, int last)
 {
-	(void)event;
-	(void)data;
-
-	scope_calculate_drawparameters (self);
-	return TRUE;
-}
-
-
-static gboolean
-scope_expose_event_callback (Scope *self,
-                             GdkEventExpose *event,
-                             gpointer data)
-{
-	(void)data;
-	unsigned int first, last, num_points;
-	int xmin, xmax, i, nrect;
-	GdkPoint* points = self->points;
-	GdkRectangle* rect;
-	
-	num_points = self->num_points;
-	if (num_points == 0)
-		return TRUE;
-
-	gdk_region_get_rectangles(event->region, &rect, &nrect);
-
-	for (i=0; i<nrect; i++) {
-		/* Determine which samples should redrawn */
-		xmin = rect[i].x;
-		xmax = rect[i].x + rect[i].width;
-		first=0;
-		while ((first<num_points-1) && (points[first+1].x < xmin))
-			first++;
-        
-		last=num_points-1;
-		while ((last>0) && (points[last-1].x > xmax))
-			last--;
-	
-		/* Redraw the region */
-		scope_draw_samples(self, first, last);
-	}
-	g_free(rect);
-
-	return TRUE;
-}
-
-
-
-static void
-scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
-{
-	unsigned int iChannel, iSample, iColor, num_channels, nColors;
-	GdkPoint* points = self->points;
-	const double* offsets = PLOT_AREA(self)->yticks;
-	const double* xticks = PLOT_AREA(self)->xticks;
-	gint xmin, xmax, value, width, height;
+	int ich, is, nch, nColors, value, width, height;
+	const double* restrict offsets = PLOT_AREA(self)->yticks;
 	data_t scale = self->scale;
-	const data_t* data = self->data;
-	unsigned int i;
-	const GdkColor *grid_color, *colors;
-	GdkWindow* window = GTK_WIDGET(self)->window;
-	GdkGC* plotgc = PLOT_AREA(self)->plotgc;
+	const data_t* restrict data = self->data;
+	const GdkColor * restrict colors = PLOT_AREA(self)->colors;
+	cairo_path_t cpath;
 
 	nColors = PLOT_AREA(self)->nColors;
-	colors = PLOT_AREA(self)->colors;
-	grid_color = &(PLOT_AREA(self)->grid_color);
 	width = GTK_WIDGET(self)->allocation.width;
 	height = GTK_WIDGET(self)->allocation.height;
-	num_channels = self->num_channels;	
+	nch = self->num_channels;	
 
-	// Find the position of the first sample
-	xmin = points[first].x;
-	while ((first>0) && (xmin == points[first].x))
-		first--;
-
-	xmin = points[first].x;
-	xmax = points[last].x;
-
-	// draw grid
-	gdk_gc_set_foreground ( plotgc, grid_color );
-	for (i=0; i<num_channels; i++) {
-		gdk_draw_line(window,
-				plotgc,
-				xmin,
-				offsets[i],
-				xmax,
-				offsets[i]);
-	}
-	for (i=0; i<self->num_ticks; i++) {
-		if ((xticks[i]>=xmin) && (xticks[i]<=xmax))
-			gdk_draw_line(window,
-					plotgc,
-					xticks[i],
-					0,
-					xticks[i],
-					height);
-	}
-
-	if (data == NULL)
-		return;
-
+	cpath.data = self->path +2*first;
+	cpath.num_data = 2*(last - first + 1);
+	cpath.status = CAIRO_STATUS_SUCCESS;
+	self->path[2*first].header.type = CAIRO_PATH_MOVE_TO;
 
 	// Draw the channels data
-	for (iChannel=0; iChannel<num_channels; iChannel++) {
+	for (ich=0; ich<nch; ich++) {
 		// Convert data_t values into y coordinate
-		// (positive y points to bottom in the window basis) 
-		for (iSample=first; iSample<=last; iSample++) {
-			value = offsets[iChannel] - 
-				(gint)(scale*data[iSample*num_channels+iChannel]);
+		// (positive y xpos to bottom in the window basis) 
+		for (is=first; is<=last; is++) {
+			value = offsets[ich] - (scale*data[is*nch+ich]);
 			if (value < 0)
 				value = 0;
 			if (value > height)
 				value = height;
 				
-			points[iSample].y = value;
+			self->path[2*is+1].point.y = value;
 		}
 
 		// Draw calculated lines
-		iColor = iChannel % nColors;
-		gdk_gc_set_foreground ( plotgc,	colors + iColor );
-		gdk_draw_lines (window,
-		                plotgc,
-				points + first,
-				last - first + 1);
+		cairo_append_path(cr, &cpath);
+		gdk_cairo_set_source_color(cr, colors + (ich%nColors));
+		cairo_stroke(cr);
+	}
+	self->path[2*first].header.type = CAIRO_PATH_LINE_TO;
+}
+
+
+static
+void scope_draw_grid(Scope* restrict self, cairo_t* cr,
+                     const GdkRectangle* restrict rect)
+{
+	unsigned int i;
+	double xmin, xmax, ymin, ymax;
+	const double* restrict offsets = PLOT_AREA(self)->yticks;
+	const double* restrict xticks = PLOT_AREA(self)->xticks;
+
+	xmin = rect->x + 0.5;
+	xmax = (rect->x + rect->width) - 0.5;
+	gdk_cairo_set_source_color(cr, &(PLOT_AREA(self)->grid_color));
+	for (i=0; i<self->num_channels; i++) {
+		cairo_move_to(cr, xmin, offsets[i]+0.5);
+		cairo_line_to(cr, xmax, offsets[i]+0.5);
 	}
 
+	ymin = rect->y + 0.5;
+	ymax = (rect->y + rect->height) - 0.5;
+	for (i=0; i<self->num_ticks; i++) {
+		if ((xticks[i]>=xmin) && (xticks[i]<=xmax)) {
+			cairo_move_to(cr, xticks[i]+0.5, ymin);
+			cairo_line_to(cr, xticks[i]+0.5, ymax);
+		}
+	}
+	cairo_stroke(cr);
+}
+
+
+static
+void scope_rectangle_draw(Scope* restrict self, cairo_t* cr,
+                          int first, int last,
+			  const GdkRectangle* restrict rect)
+{
+	int cp = self->current_pointer;
+	cairo_save(cr);
+
+	// Set up the clip region
+	gdk_cairo_rectangle(cr, rect);
+	cairo_clip(cr);
+
+	// Redraw background
+	cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+	cairo_paint(cr);
+
+	// draw grid
+	scope_draw_grid(self, cr, rect);
+
+	// Draw signals
+	if (first != last)
+		scope_draw_samples(self, cr, first, last);
+
 	// Draw the scanline
-	gdk_draw_line(window,
-			GTK_WIDGET(self)->style->fg_gc[GTK_WIDGET_STATE(self)],
-			points[self->current_pointer].x,
-			0,
-			points[self->current_pointer].x,
-			height - 1);
+	if (self->num_points) {
+		cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
+		cairo_move_to(cr, self->xpos[cp]+0.5, 0);
+		cairo_line_to(cr, self->xpos[cp]+0.5, rect[0].height);
+		cairo_stroke(cr);
+	}
+	
+	cairo_restore(cr);
+}
+
+
+static 
+int scope_get_update_extent(Scope* restrict self, int full,
+                            int first[2], int last[2], GdkRectangle rect[2])
+{
+	int nrect = 1;
+	int ref, *xpos = self->xpos;
+
+	rect[0].y = rect[1].y = 0;
+	rect[0].height = GTK_WIDGET(self)->allocation.height;
+	rect[1].height = rect[0].height;
+
+	if (!full) {
+		first[0] = self->last_draw_pointer;
+		last[0] = self->current_pointer;
+		
+		// redraw a little bit before to smooth the transition
+		ref = xpos[first[0]];
+		while (first[0] > 0 && xpos[first[0]] == ref)
+			first[0]--;
+
+		if (first[0] > last[0]) {
+			nrect++;
+			first[1] = first[0];
+			first[0] = 0;
+			last[1] = self->num_points - 1;
+			rect[1].x = xpos[first[1]];
+			rect[1].width = GTK_WIDGET(self)->allocation.width
+			                - xpos[first[1]];
+		}
+		rect[0].x = xpos[first[0]];
+		rect[0].width = xpos[last[0]] - xpos[first[0]] + 1;
+
+	} else {
+		first[0] = 0;
+		last[0] = self->num_points ? self->num_points-1 : 0;
+		rect[0].x = 0;
+		rect[0].width = GTK_WIDGET(self)->allocation.width;
+	}
+
+	return nrect;
+}
+
+
+static
+void scope_update_draw(Scope* restrict self, int full)
+{
+	GdkRectangle rect[2];
+	GdkRegion* reg;
+	int r, nrect;
+	int first[2], last[2];
+	cairo_t* cr;
+
+	if (!full && self->last_draw_pointer == self->current_pointer)
+		return;
+
+	nrect = scope_get_update_extent(self, full, first, last, rect);
+	reg = gdk_region_new();
+	
+	// Prepare cairo context to draw on the offscreen surface
+	cr = cairo_create(self->surface);
+	cairo_set_line_width (cr, 1.0);
+	cairo_set_line_cap (cr, CAIRO_LINE_CAP_BUTT);
+	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
+	
+	// Redraw by part
+	for (r=0; r<nrect; r++) {
+		scope_rectangle_draw(self, cr, first[r], last[r], rect + r);
+		gdk_region_union_with_rect(reg, rect + r);
+	}
+
+	// The offscreen is now updated
+	cairo_destroy(cr);
+	
+	// Request a redraw of the updated region
+	gdk_window_invalidate_region(GTK_WIDGET(self)->window, reg, FALSE);
+	gdk_region_destroy(reg);
+
+	self->last_draw_pointer = self->current_pointer;
 }
 
 
@@ -302,77 +352,102 @@ void scope_calculate_drawparameters(Scope* self)
 		offsets[i] = ((double)(height*(2*i+1)) / (2*num_ch));
 
 	/* Calculate x coordinates*/
-	for (i=0; i<num_points; i++)
-		self->points[i].x = (gint)( ((float)(i*width))/(float)(num_points-1) );
+	for (i=0; i<num_points; i++) {
+		self->xpos[i] = (gint)( ((float)(i*width))/(float)(num_points-1) );
+		self->path[2*i+1].point.x = self->xpos[i];
+	}
 
 	// Set the ticks position
 	for (i=0; i<self->num_ticks; i++)
-		xticks[i] = (num_points > self->ticks[i]) ? self->points[self->ticks[i]].x : -1;
+		xticks[i] = (num_points > self->ticks[i]) ?
+		                  self->xpos[self->ticks[i]] : -1;
 }
+
+static
+gboolean scope_configure_event_callback (Scope *self,
+         	                         GdkEventConfigure *event,
+                                         gpointer data)
+{
+	(void)event;
+	(void)data;
+	GtkWidget* widg = GTK_WIDGET(self);
+
+	if (self->surface != NULL)
+		cairo_surface_destroy(self->surface);
+	
+	// Create a offscreen surface similar to the window
+	/*cairo_t* cr = gdk_cairo_create(widg->window);
+	cairo_surface_t* surf = cairo_get_target(cr);
+	self->surface = cairo_surface_create_similar(surf,
+	                                           CAIRO_CONTENT_COLOR,
+						   widg->allocation.width,
+						   widg->allocation.height);
+	cairo_destroy(cr);*/
+	self->surface = gdk_window_create_similar_surface(widg->window,
+	                                           CAIRO_CONTENT_COLOR,
+						   widg->allocation.width,
+						   widg->allocation.height);
+	
+
+	scope_calculate_drawparameters (self);
+	scope_update_draw(self, 1);
+
+	return TRUE;
+}
+
+
+static gboolean
+scope_expose_event_callback (Scope *self,
+                             GdkEventExpose *event,
+                             gpointer data)
+{
+	(void)data;
+	cairo_t* cr;
+
+	cairo_surface_flush(self->surface);
+	
+	cr = gdk_cairo_create(GTK_WIDGET(self)->window);
+	cairo_set_source_surface(cr, self->surface, 0.0, 0.0);
+	gdk_cairo_region(cr, event->region);
+	cairo_fill(cr);
+	cairo_destroy(cr);
+
+	return TRUE;
+}
+
 
 
 
 LOCAL_FN
 void scope_update_data(Scope* self, guint pointer)
 {
-	int first, last;
-	GdkRectangle rect[2];
-	int combine = 0;
-	//GdkWindow* window;
-	GdkPoint* points;
-	GdkRegion* region;
-
 	if (!self || !self->num_points)
 		return;
 
-
-	//window = GTK_WIDGET(self)->window;
-
-	first = self->current_pointer ? self->current_pointer -1 : 0;
-	last = pointer;
-
-	if (GTK_WIDGET_DRAWABLE(self)) {
-		points  = self->points;
-
-		// Set the region that should be redrawn 
-		first = self->current_pointer ? self->current_pointer -1 : 0;
-		last = pointer;
-		if (pointer < self->current_pointer) {
-			rect[1].x = points[first].x-1;
-			rect[1].width = points[self->num_points-1].x - rect[1].x+1;
-			first = 0;
-			combine++;
-		}
-		rect[0].y = rect[1].y = 0;
-		rect[0].height = rect[1].height = GTK_WIDGET(self)->allocation.height;
-		rect[0].x = points[first].x-1;
-		rect[0].width = points[last].x - rect[0].x+1;
-
-		// Repaint
-		region = gdk_region_rectangle(&rect[0]);
-		if (combine)
-			gdk_region_union_with_rect(region, &rect[1]);
-		gdk_window_invalidate_region(gtk_widget_get_window(GTK_WIDGET(self)),
-					     region, FALSE);
-		gdk_region_destroy(region);
-	}
 	self->current_pointer = pointer;
+	if (GTK_WIDGET_DRAWABLE(self)) 
+		scope_update_draw(self, 0);
 }
 
 
 LOCAL_FN
 void scope_set_data(Scope* self, data_t* data, guint num_points, guint num_ch)
 {
-	int has_changed = 0;
+	int i, has_changed = 0;
 	if (self==NULL)
 		return;
 
 	self->data = data;
-	self->current_pointer = 0;
+	self->current_pointer = self->last_draw_pointer = 0;
 
 	if (num_points != self->num_points) {
-		g_free(self->points);
-		self->points = g_malloc0(num_points*sizeof(GdkPoint));
+		g_free(self->xpos);
+		self->xpos = g_malloc(num_points*sizeof(*(self->xpos)));
+		self->path = g_malloc0(2*num_points*sizeof(*(self->path)));
+		for (i=0; i<num_points; i++) {
+			self->path[2*i].header.type = CAIRO_PATH_LINE_TO; 
+			self->path[2*i].header.length = 2; 
+		}
 		self->num_points = num_points;
 		has_changed = 1;
 	}
