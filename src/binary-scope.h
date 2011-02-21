@@ -47,10 +47,10 @@ typedef struct {
 	guint num_channels;
 	guint num_ticks;
 	guint* ticks;
-	gint* offsets;
+	double* offsets;
 	guint current_pointer;
 	guint num_points;
-	gint* xcoords;
+	double* xcoords;
 	const guint32* data;
 } BinaryScope;
 

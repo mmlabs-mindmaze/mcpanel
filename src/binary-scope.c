@@ -135,7 +135,7 @@ gboolean binary_scope_expose_event_callback(BinaryScope *self,
 	cairo_t* cr;
 	unsigned int first, last, num_points;
 	int xmin, xmax;
-	gint* xcoords = self->xcoords;
+	double* xcoords = self->xcoords;
 	
 	num_points = self->num_points;
 	xmin = event->area.x;
@@ -176,9 +176,9 @@ void binary_scope_draw_samples(const BinaryScope* self, cairo_t* cr,
 	guint32 channelMask;
 	int bScanning;
 	const GdkColor* colors = PLOT_AREA(self)->colors;
-	const gint* offsets = self->offsets; 
+	const double* offsets = self->offsets; 
 	const guint32* values = self->data; 
-	const gint* xcoords = self->xcoords;
+	const double* xcoords = self->xcoords;
 	const guint nColors = PLOT_AREA(self)->nColors;
 	const double* xticks = PLOT_AREA(self)->xticks;
 	const guint height = GTK_WIDGET(self)->allocation.height;
@@ -270,7 +270,7 @@ void binary_scope_update_data(BinaryScope* self, guint pointer)
 	}
 
 //	window = GTK_WIDGET(self)->window;
-	gint* xcoords  = self->xcoords;
+	double* xcoords  = self->xcoords;
 
 	first = self->current_pointer;
 	last = pointer;
@@ -300,7 +300,7 @@ void binary_scope_update_data(BinaryScope* self, guint pointer)
 
 
 LOCAL_FN
-void binary_scope_set_data(BinaryScope* self, guint32* data, guint num_points, guint num_ch)
+void binary_scope_set_data(BinaryScope* self, guint32* data, guint npoints, guint nch)
 {
 	int has_changed = 0;
 
@@ -311,17 +311,17 @@ void binary_scope_set_data(BinaryScope* self, guint32* data, guint num_points, g
 	self->current_pointer = 0;
 	
 	
-	if (num_points != self->num_points) {
+	if (npoints != self->num_points) {
 		g_free(self->xcoords);
-		self->xcoords = g_malloc0(num_points*sizeof(gint));
-		self->num_points = num_points;
+		self->xcoords = g_malloc0(npoints*sizeof(*(self->xcoords)));
+		self->num_points = npoints;
 		has_changed = 1;
 	}
 
-	if (num_ch != self->num_channels) {
+	if (nch != self->num_channels) {
 		g_free(self->offsets);
-		self->offsets = g_malloc((num_ch+1)*sizeof(gint));
-		self->num_channels = num_ch;
+		self->offsets = g_malloc((nch+1)*sizeof(*(self->offsets)));
+		self->num_channels = nch;
 		has_changed = 1;
 	}
 
@@ -343,6 +343,7 @@ void binary_scope_set_ticks(BinaryScope* self, guint num_ticks, guint* ticks)
 		plot_area_set_ticks(PLOT_AREA(self), self->num_ticks, self->num_channels);
 	}
 
-	memcpy(self->ticks, ticks, num_ticks*sizeof(*(self->ticks)));	
+	// Copy ticks values
+	memcpy(self->ticks, ticks, num_ticks*sizeof(*(self->ticks)));
 	binary_scope_calculate_drawparameters(self);
 }
