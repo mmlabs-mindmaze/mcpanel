@@ -376,17 +376,20 @@ gboolean scope_configure_event_callback (Scope *self,
 		cairo_surface_destroy(self->surface);
 	
 	// Create a offscreen surface similar to the window
-	/*cairo_t* cr = gdk_cairo_create(widg->window);
+#if HAVE_GDK_WINDOW_CREATE_SIMILAR_SURFACE
+	self->surface = gdk_window_create_similar_surface(widg->window,
+	                                           CAIRO_CONTENT_COLOR,
+						   widg->allocation.width,
+						   widg->allocation.height);
+#else
+	cairo_t* cr = gdk_cairo_create(widg->window);
 	cairo_surface_t* surf = cairo_get_target(cr);
 	self->surface = cairo_surface_create_similar(surf,
 	                                           CAIRO_CONTENT_COLOR,
 						   widg->allocation.width,
 						   widg->allocation.height);
-	cairo_destroy(cr);*/
-	self->surface = gdk_window_create_similar_surface(widg->window,
-	                                           CAIRO_CONTENT_COLOR,
-						   widg->allocation.width,
-						   widg->allocation.height);
+	cairo_destroy(cr);
+#endif
 	
 
 	scope_calculate_drawparameters (self);

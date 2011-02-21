@@ -51,6 +51,7 @@ AC_ARG_ENABLE([debug],
 if test "x$debug" = "xfalse"; then
 	AC_DEFINE([G_DISABLE_CAST_CHECKS], [], [Define to disable the glib checks])
 fi
+AC_CHECK_FUNCS(gdk_window_create_similar_surface)
 
 # Replacement checks
 AC_SEARCH_LIBS([clock_gettime], [rt posix4])
