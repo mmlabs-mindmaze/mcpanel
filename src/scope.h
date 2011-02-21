@@ -47,7 +47,7 @@ typedef struct {
 
 	guint num_channels;
 	guint num_ticks;
-	gint* ticks;
+	guint* ticks;
 	data_t scale;
 	data_t phys_scale;
 	guint current_pointer, last_draw_pointer;

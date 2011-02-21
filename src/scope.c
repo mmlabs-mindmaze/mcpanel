@@ -436,7 +436,7 @@ void scope_update_data(Scope* self, guint pointer)
 LOCAL_FN
 void scope_set_data(Scope* self, data_t* data, guint num_points, guint num_ch)
 {
-	int i, has_changed = 0;
+	unsigned int i, has_changed = 0;
 	if (self==NULL)
 		return;
 

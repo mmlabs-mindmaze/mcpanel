@@ -538,6 +538,8 @@ void scopetab_set_xticks(struct scopetab* sctab, float len)
 	if (len > 30)
 		inc = 10;
 	nticks = len / inc;
+	if (fs == 0)
+		nticks = 0;
 
 	// set the ticks and ticks labels
 	unsigned int ticks[nticks];
