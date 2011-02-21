@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2008-2010 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+    Copyright (C) 2008-2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -206,8 +206,8 @@ void scope_draw_grid(Scope* restrict self, cairo_t* cr,
 	ymax = (rect->y + rect->height) - 0.5;
 	for (i=0; i<self->num_ticks; i++) {
 		if ((xticks[i]>=xmin) && (xticks[i]<=xmax)) {
-			cairo_move_to(cr, xticks[i]+0.5, ymin);
-			cairo_line_to(cr, xticks[i]+0.5, ymax);
+			cairo_move_to(cr, xticks[i], ymin);
+			cairo_line_to(cr, xticks[i], ymax);
 		}
 	}
 	cairo_stroke(cr);
@@ -240,8 +240,8 @@ void scope_rectangle_draw(Scope* restrict self, cairo_t* cr,
 	// Draw the scanline
 	if (self->num_points) {
 		cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-		cairo_move_to(cr, self->xpos[cp]+0.5, 0);
-		cairo_line_to(cr, self->xpos[cp]+0.5, rect[0].height);
+		cairo_move_to(cr, self->xpos[cp], 0);
+		cairo_line_to(cr, self->xpos[cp], rect[0].height);
 		cairo_stroke(cr);
 	}
 	
@@ -254,7 +254,7 @@ int scope_get_update_extent(Scope* restrict self, int full,
                             int first[2], int last[2], GdkRectangle rect[2])
 {
 	int nrect = 1;
-	int ref, *xpos = self->xpos;
+	double ref, *xpos = self->xpos;
 
 	rect[0].y = rect[1].y = 0;
 	rect[0].height = GTK_WIDGET(self)->allocation.height;
@@ -353,7 +353,7 @@ void scope_calculate_drawparameters(Scope* self)
 
 	/* Calculate x coordinates*/
 	for (i=0; i<num_points; i++) {
-		self->xpos[i] = (gint)( ((float)(i*width))/(float)(num_points-1) );
+		self->xpos[i] = 0.5 + (int)( ((float)(i*width))/(num_points-1) );
 		self->path[2*i+1].point.x = self->xpos[i];
 	}
 

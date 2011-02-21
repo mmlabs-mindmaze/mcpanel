@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+    Copyright (C) 2008-2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -52,7 +52,7 @@ typedef struct {
 	data_t phys_scale;
 	guint current_pointer, last_draw_pointer;
 	guint num_points;
-	int *xpos;
+	double *xpos;
 	cairo_surface_t* surface;
 	cairo_path_data_t* path;
 	const data_t* data;
