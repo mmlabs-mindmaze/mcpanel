@@ -1,6 +1,6 @@
 /*
-	Copyright (C) 2008-2009,2011 Nicolas Bourdaud
-	<nicolas.bourdaud@epfl.ch>
+    Copyright (C) 2008-2009,2011 Nicolas Bourdaud
+    <nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -151,7 +151,7 @@ bargraph_init (Bargraph *self)
 	self->current_pointer = 0; 
 	self->data = NULL;
 	self->tick_values = NULL;
-	self->offset = 0;
+	self->offset = 0.0;
 	self->min = -1;
 	self->max = 1;
 	self->bar_ratio = 0.666f;
@@ -265,7 +265,7 @@ void bargraph_calculate_drawparameters(Bargraph* self)
 
 	// Calculate scaling parameters
 	self->scale = ((gfloat)height) / (self->max - self->min);
-	self->offset = height + (gint)(self->min * self->scale); 
+	self->offset = height + (int)(self->min * self->scale); 
 	
 	// Calculate x ticks
 	for (i=0; i<self->num_channels; i++)

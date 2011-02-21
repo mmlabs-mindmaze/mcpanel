@@ -1,6 +1,6 @@
 /*
-	Copyright (C) 2008-2009,2011 Nicolas Bourdaud
-	<nicolas.bourdaud@epfl.ch>
+    Copyright (C) 2008-2009,2011 Nicolas Bourdaud
+    <nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -50,7 +50,7 @@ typedef struct {
 	cairo_path_t grid_path;
 	cairo_path_data_t* grid_data;
 	data_t* tick_values;
-	gint offset;
+	double offset;
 	data_t scale;
 	data_t min;
 	data_t max;
