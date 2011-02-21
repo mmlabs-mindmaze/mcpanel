@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+    Copyright (C) 2008-2009,2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -269,32 +269,27 @@ void gtk_led_expose_event_callback(GtkLed* self, GdkEventExpose* event, gpointer
 {
 	GdkPixbuf* pixbuf;
 	GtkIconSet* iconset;
+	cairo_t* cr;
 	GtkWidget* widget = GTK_WIDGET(self);
 	GtkLedClass* klass = gtk_type_class(GTK_TYPE_LED);
 	(void)data;
 	(void)event;
 
+	// Load LED pixel buffer
 	iconset = klass->icon_sets[(self->state? self->color_on : self->color_off)];
 	pixbuf = gtk_icon_set_render_icon(iconset,
 					widget->style,
 					GTK_TEXT_DIR_NONE,
-					GTK_WIDGET_STATE(self),
+					GTK_WIDGET_STATE(widget),
 					self->size,
 					widget,
 					NULL);
 
-	gdk_draw_pixbuf(widget->window,
-			widget->style->fg_gc[GTK_WIDGET_STATE(self)], //NULL,
-			pixbuf,
-			0,
-			0,
-			0,
-			0,
-			-1,
-			-1,
-			GDK_RGB_DITHER_NONE,
-			0,
-			0);
+	// Paint LED
+	cr = gdk_cairo_create(gtk_widget_get_window(widget));
+	gdk_cairo_set_source_pixbuf(cr, pixbuf, 0.0, 0.0);
+	cairo_paint(cr);
+	cairo_destroy(cr);
 
 	g_object_unref(pixbuf);
 }
