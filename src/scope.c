@@ -194,8 +194,8 @@ void scope_draw_grid(Scope* restrict self, cairo_t* cr,
 	const double* restrict offsets = PLOT_AREA(self)->yticks;
 	const double* restrict xticks = PLOT_AREA(self)->xticks;
 
-	xmin = rect->x + 0.5;
-	xmax = (rect->x + rect->width) - 0.5;
+	xmin = rect->x;
+	xmax = (rect->x + rect->width) + 0.5;
 	gdk_cairo_set_source_color(cr, &(PLOT_AREA(self)->grid_color));
 	for (i=0; i<self->num_channels; i++) {
 		cairo_move_to(cr, xmin, offsets[i]+0.5);
@@ -240,7 +240,7 @@ void scope_rectangle_draw(Scope* restrict self, cairo_t* cr,
 	// Draw the scanline
 	if (self->num_points) {
 		cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
-		cairo_move_to(cr, self->xpos[cp], 0);
+		cairo_move_to(cr, self->xpos[cp], 0.0);
 		cairo_line_to(cr, self->xpos[cp], rect[0].height);
 		cairo_stroke(cr);
 	}
@@ -265,8 +265,8 @@ int scope_get_update_extent(Scope* restrict self, int full,
 		last[0] = self->current_pointer;
 		
 		// redraw a little bit before to smooth the transition
-		ref = xpos[first[0]];
-		while (first[0] > 0 && xpos[first[0]] == ref)
+		ref = xpos[first[0]] - 1.0;
+		while (first[0] > 0 && xpos[first[0]] >= ref)
 			first[0]--;
 
 		if (first[0] > last[0]) {
@@ -274,11 +274,11 @@ int scope_get_update_extent(Scope* restrict self, int full,
 			first[1] = first[0];
 			first[0] = 0;
 			last[1] = self->num_points - 1;
-			rect[1].x = xpos[first[1]];
+			rect[1].x = xpos[first[1]] - 0.5;
 			rect[1].width = GTK_WIDGET(self)->allocation.width
-			                - xpos[first[1]];
+			                - xpos[first[1]] + 0.5;
 		}
-		rect[0].x = xpos[first[0]];
+		rect[0].x = xpos[first[0]] - 0.5;
 		rect[0].width = xpos[last[0]] - xpos[first[0]] + 1;
 
 	} else {
@@ -310,7 +310,7 @@ void scope_update_draw(Scope* restrict self, int full)
 	// Prepare cairo context to draw on the offscreen surface
 	cr = cairo_create(self->surface);
 	cairo_set_line_width (cr, 1.0);
-	cairo_set_line_cap (cr, CAIRO_LINE_CAP_BUTT);
+	cairo_set_line_cap (cr, CAIRO_LINE_CAP_SQUARE);
 	cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
 	
 	// Redraw by part
@@ -353,7 +353,7 @@ void scope_calculate_drawparameters(Scope* self)
 
 	/* Calculate x coordinates*/
 	for (i=0; i<num_points; i++) {
-		self->xpos[i] = 0.5 + (int)( ((float)(i*width))/(num_points-1) );
+		self->xpos[i] = 0.5 + (int)( ((double)(i*width))/num_points );
 		self->path[2*i+1].point.x = self->xpos[i];
 	}
 
