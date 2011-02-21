@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+    Copyright (C) 2008-2009,2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
     This file is part of the mcpanel library
 
@@ -43,8 +43,8 @@ G_BEGIN_DECLS
 typedef struct {
 	GtkDrawingArea parent;
 
-	gint* xticks;
-	gint* yticks;
+	double* xticks;
+	double* yticks;
 	guint num_xticks;
 	guint num_yticks;
 	GdkColor* colors;

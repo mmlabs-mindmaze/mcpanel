@@ -177,7 +177,7 @@ void binary_scope_draw_samples(const BinaryScope* self, unsigned int first,
 	const guint32* values = self->data; 
 	const gint* xcoords = self->xcoords;
 	const guint nColors = PLOT_AREA(self)->nColors;
-	const gint* xticks = PLOT_AREA(self)->xticks;
+	const double* xticks = PLOT_AREA(self)->xticks;
 	const guint height = GTK_WIDGET(self)->allocation.height;
 
 	xmin = xcoords[first];
@@ -237,7 +237,7 @@ void binary_scope_calculate_drawparameters(const BinaryScope* self)
 {
 	guint height, width;
 	unsigned int i, num_ch, num_points;
-	gint* xticks = PLOT_AREA(self)->xticks;
+	double* xticks = PLOT_AREA(self)->xticks;
 
 	num_ch = self->num_channels;
 	num_points = self->num_points;

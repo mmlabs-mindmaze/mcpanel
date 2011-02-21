@@ -204,8 +204,8 @@ void bargraph_draw_samples(const Bargraph* self)
 	gint ivalue, jvalue, halfwidth, Yorg, rectH;
 	GdkGC* plotgc = PLOT_AREA(self)->plotgc;
 	GdkWindow* window = GTK_WIDGET(self)->window;
-	const gint* ticks_pos = PLOT_AREA(self)->yticks;
-	const gint* chann_pos = PLOT_AREA(self)->xticks;
+	const double* ticks_pos = PLOT_AREA(self)->yticks;
+	const double* chann_pos = PLOT_AREA(self)->xticks;
 	const GdkColor* grid_color = &(PLOT_AREA(self)->grid_color);
 	const GdkColor* colors = PLOT_AREA(self)->colors;
 	const data_t* values = self->data + (self->current_pointer*self->num_channels);
@@ -265,7 +265,7 @@ static
 void bargraph_calculate_drawparameters(Bargraph* self)
 {
 	guint height, width, i;
-	gint *xticks, *yticks;
+	double *xticks, *yticks;
 
 	width = GTK_WIDGET(self)->allocation.width;
 	height = GTK_WIDGET(self)->allocation.height;

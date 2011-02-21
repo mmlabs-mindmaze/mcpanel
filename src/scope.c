@@ -197,8 +197,8 @@ scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
 {
 	unsigned int iChannel, iSample, iColor, num_channels, nColors;
 	GdkPoint* points = self->points;
-	const gint* offsets = PLOT_AREA(self)->yticks;
-	const gint* xticks = PLOT_AREA(self)->xticks;
+	const double* offsets = PLOT_AREA(self)->yticks;
+	const double* xticks = PLOT_AREA(self)->xticks;
 	gint xmin, xmax, value, width, height;
 	data_t scale = self->scale;
 	const data_t* data = self->data;
@@ -285,8 +285,8 @@ void scope_calculate_drawparameters(Scope* self)
 {
 	guint height, width;
 	unsigned int num_ch, i, num_points;
-	gint* offsets = PLOT_AREA(self)->yticks;
-	gint* xticks = PLOT_AREA(self)->xticks;
+	double* offsets = PLOT_AREA(self)->yticks;
+	double* xticks = PLOT_AREA(self)->xticks;
 
 	num_ch = self->num_channels;
 	num_points = self->num_points;
@@ -299,7 +299,7 @@ void scope_calculate_drawparameters(Scope* self)
 
 	/* Calculate y offsets */
 	for (i=0; i<num_ch; i++)
-		offsets[i] = (gint)((float)(height*(2*i+1)) / (float)(2*num_ch));
+		offsets[i] = ((double)(height*(2*i+1)) / (2*num_ch));
 
 	/* Calculate x coordinates*/
 	for (i=0; i<num_points; i++)

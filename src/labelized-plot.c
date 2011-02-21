@@ -191,7 +191,7 @@ gboolean labelized_plot_expose_event_callback(LabelizedPlot *self,
 	guint num_ticks, num_labels, i, ivalue, jvalue;
 	gint width, height;
 	gchar** labels;
-	const gint* offsets;
+	const double* offsets;
 	GdkGC* gc = GTK_WIDGET(self)->style->fg_gc[GTK_WIDGET_STATE(self)];
 	GdkWindow* window = GTK_WIDGET(self)->window;
 	GtkAllocation child_alloc;
