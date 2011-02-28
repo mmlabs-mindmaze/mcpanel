@@ -163,8 +163,6 @@ void plot_area_init (PlotArea *self)
 	for (i=0; i<self->nColors; i++)
 		gdk_color_parse("blue1", self->colors + i);
 	
-	self->plotgc = NULL;
-	
 	/* Connect the handled signal*/
 	g_signal_connect_after (G_OBJECT (self), "realize",  
 	                        G_CALLBACK (plot_area_realize_callback), NULL);
@@ -178,10 +176,6 @@ void plot_area_realize_callback(PlotArea* self)
 {
 	unsigned int i;
 	GdkColormap* colormap = gtk_widget_get_colormap(GTK_WIDGET(self));
-
-	/* Allocate et intialize the graphical context used for the plot */
-	self->plotgc = gdk_gc_new(GTK_WIDGET(self)->window);
-	gdk_gc_copy(self->plotgc, GTK_WIDGET(self)->style->fg_gc[GTK_STATE_NORMAL]);
 
 	/* allocate plot color */
 	gdk_colormap_alloc_color( colormap, &(self->grid_color), FALSE, TRUE);
@@ -197,8 +191,6 @@ void plot_area_unrealize_callback(PlotArea* self)
 
 	gdk_colormap_free_colors( colormap, self->colors, self->nColors);
 	gdk_colormap_free_colors( colormap, &(self->grid_color), 1);
-
-	g_object_unref( G_OBJECT(self->plotgc) );
 }
 
 

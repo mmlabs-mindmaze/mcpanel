@@ -50,7 +50,6 @@ typedef struct {
 	GdkColor* colors;
 	guint nColors;
 	GdkColor grid_color;
-	GdkGC* plotgc;
 } PlotArea;
 
 typedef struct {
