@@ -145,12 +145,13 @@ static
 void scope_draw_samples(const Scope* restrict self, cairo_t* cr,
                    int first, int last)
 {
-	int ich, is, nch, nColors, value, width, height;
+	int ich, is, nch, nColors, width, height;
 	const double* restrict offsets = PLOT_AREA(self)->yticks;
 	data_t scale = self->scale;
 	const data_t* restrict data = self->data;
 	const GdkColor * restrict colors = PLOT_AREA(self)->colors;
 	cairo_path_t cpath;
+	double value;
 
 	nColors = PLOT_AREA(self)->nColors;
 	width = GTK_WIDGET(self)->allocation.width;
@@ -167,11 +168,11 @@ void scope_draw_samples(const Scope* restrict self, cairo_t* cr,
 		// Convert data_t values into y coordinate
 		// (positive y xpos to bottom in the window basis) 
 		for (is=first; is<=last; is++) {
-			value = offsets[ich] - (scale*data[is*nch+ich]);
-			if (value < 0)
-				value = 0;
-			if (value > height)
-				value = height;
+			value = (double)offsets[ich] - (scale*data[is*nch+ich]);
+			if (value < 0.5)
+				value = 0.5;
+			if (value > height-0.5)
+				value = height-0.5;
 				
 			self->path[2*is+1].point.y = value;
 		}
@@ -349,7 +350,7 @@ void scope_calculate_drawparameters(Scope* self)
 
 	/* Calculate y offsets */
 	for (i=0; i<num_ch; i++)
-		offsets[i] = ((double)(height*(2*i+1)) / (2*num_ch));
+		offsets[i] = 0.5 + (int)((double)(height*(2*i+1)) / (2*num_ch));
 
 	/* Calculate x coordinates*/
 	for (i=0; i<num_points; i++) {
