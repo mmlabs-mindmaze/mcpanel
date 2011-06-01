@@ -13,8 +13,8 @@ m4_define([lib_age],0)
 
 
 # Setup Automake
-AC_INIT(eegpanel,[lib_current.lib_revision],nicolas.bourdaud@epfl.ch)
-AC_CONFIG_SRCDIR([src/eegpanel.c])
+AC_INIT(mcpanel,[lib_current.lib_revision],nicolas.bourdaud@epfl.ch)
+AC_CONFIG_SRCDIR([src/mcpanel.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_LIBOBJ_DIR([lib])
 AC_CONFIG_MACRO_DIR([m4])

@@ -1,7 +1,7 @@
 /*
-	Copyright (C) 2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+	Copyright (C) 2009-2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
-    This file is part of the eegpanel library
+    This file is part of the mcpanel library
 
     The eegpan library is free software: you can redistribute it and/or
     modify it under the terms of the version 3 of the GNU General Public
@@ -15,11 +15,11 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef EEGPANEL_SIGHANDLER_H
-#define EEGPANEL_SIGHANDLER_H
+#ifndef MCPANEL_SIGHANDLER_H
+#define MCPANEL_SIGHANDLER_H
 
-void connect_panel_signals(EEGPanel* pan);
+void connect_panel_signals(mcpanel* pan);
 
-#endif //EEGPANEL_SIGHANDLER_H
+#endif //MCPANEL_SIGHANDLER_H
 
 

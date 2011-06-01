@@ -1,7 +1,7 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+	Copyright (C) 2008-2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
-    This file is part of the eegpanel library
+    This file is part of the mcpanel library
 
     The eegpan library is free software: you can redistribute it and/or
     modify it under the terms of the version 3 of the GNU General Public
@@ -15,10 +15,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef EEGPANEL_SHARED_H
-#define EEGPANEL_SHARED_H
+#ifndef MCPANEL_SHARED_H
+#define MCPANEL_SHARED_H
 
-#include "eegpanel_gui.h"
+#include "mcp_gui.h"
 #include "signaltab.h"
 
 typedef struct _Indicators {
@@ -27,7 +27,7 @@ typedef struct _Indicators {
 } Indicators;
 
 
-struct _EEGPanel {
+struct _mcpanel {
 
 	GThread* main_loop_thread;
 	GMutex* data_mutex;
@@ -64,6 +64,6 @@ struct _EEGPanel {
 	struct PanelGUI gui;
 };
 
-LOCAL_FN int set_data_length(EEGPanel* pan, float len);
+LOCAL_FN int set_data_length(mcpanel* pan, float len);
 
-#endif /*EEGPANEL_SHARED_H*/
+#endif /*MCPANEL_SHARED_H*/

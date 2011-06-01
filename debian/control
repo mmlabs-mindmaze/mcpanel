@@ -1,4 +1,4 @@
-Source: eegpanel
+Source: mcpanel
 Section: libs
 Priority: extra
 Maintainer: Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
@@ -7,29 +7,29 @@ Build-Depends: cdbs, debhelper (>= 7), autotools-dev, libc-dev | libc6-dev,
 Standards-Version: 3.8.3
 Homepage: http://cnbisrv02.epfl.ch
 
-Package: libeegpanel0
+Package: libmcpanel0
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Homepage: http://cnbisrv02.epfl.ch
-Description: Library to display EEG data in realtime
+Description: Library to display multichannel data in realtime
  This package provides a library written in C implementing a set of widgets
- designed to view in realtime EEG multichannels signals. Despite it has been
- initially design to view signals coming from a BIOSEMI Activetwo system, it
- is totally EEG system agnostic and any user of other system might find it
- useful.
+ designed to view in realtime multichannels signals. Despite it has been
+ initially design to view signals coming from a BIOSEMI Activetwo EEG
+ system, it is totally system agnostic and any user of other system might
+ find it useful.
 
-Package: libeegpanel0-dev
+Package: libmcpanel0-dev
 Section: libdevel
 Architecture: any
-Depends: libeegpanel0 (= ${binary:Version}), ${misc:Depends}
+Depends: libmcpanel0 (= ${binary:Version}), ${misc:Depends}
 Homepage: http://cnbisrv02.epfl.ch
-Description: Library to display EEG data in realtime (Developement files)
+Description: Library to display multichannel data in realtime (Developement files)
  This package provides a library written in C implementing a set of widgets
- designed to view in realtime EEG multichannels signals. Despite it has been
- initially design to view signals coming from a BIOSEMI Activetwo system, it
- is totally EEG system agnostic and any user of other system might find it
- useful.
+ designed to view in realtime multichannels signals. Despite it has been
+ initially design to view signals coming from a BIOSEMI Activetwo EEG
+ system, it is totally system agnostic and any user of other system might
+ find it useful.
  .
  This package contains the files needed to compile and link programs which
- use eegpanel
+ use mcpanel

@@ -6,7 +6,7 @@
 #include <rtf_common.h>
 #include <gtk/gtk.h>
 #include <stdlib.h>
-//#include "eegpanel_gui.h"
+//#include "mcp_gui.h"
 #include "scope.h"
 #include "signaltab.h"
 

@@ -1,7 +1,7 @@
 /*
-	Copyright (C) 2008-2010 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+	Copyright (C) 2008-2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
-    This file is part of the eegpanel library
+    This file is part of the mcpanel library
 
     The eegpan library is free software: you can redistribute it and/or
     modify it under the terms of the version 3 of the GNU General Public
@@ -23,10 +23,10 @@
 #include <glib.h>
 #include <glib/gstdio.h>
 
-#include "eegpanel.h"
-#include "eegpanel_shared.h"
-#include "eegpanel_sighandler.h"
-#include "eegpanel_gui.h"
+#include "mcpanel.h"
+#include "mcp_shared.h"
+#include "mcp_sighandler.h"
+#include "mcp_gui.h"
 #include "signaltab.h"
 
 #include "default-ui.h"
@@ -59,7 +59,7 @@ const LinkWidgetName widget_name_table[] = {
 static
 gboolean check_redraw_scopes_cb(gpointer user_data)
 {
-	EEGPanel* pan = user_data;
+	mcpanel* pan = user_data;
 	unsigned int curr, prev, i;
 	GObject** widg = pan->gui.widgets;
 
@@ -177,7 +177,7 @@ gboolean blocking_funcall_cb(gpointer data)
 
 
 LOCAL_FN
-int run_func_in_guithread(EEGPanel* pan, BCProc func, void* data)
+int run_func_in_guithread(mcpanel* pan, BCProc func, void* data)
 {
 	int retcode;
 	if (pan->main_loop_thread != g_thread_self()) {
@@ -219,7 +219,7 @@ int run_func_in_guithread(EEGPanel* pan, BCProc func, void* data)
  *                                                                       *
  *************************************************************************/
 LOCAL_FN
-void get_initial_values(EEGPanel* pan)
+void get_initial_values(mcpanel* pan)
 {
 	GtkTreeModel* model;
 	GtkTreeIter iter;
@@ -237,7 +237,7 @@ void get_initial_values(EEGPanel* pan)
 
 
 static
-int poll_widgets(EEGPanel* pan, GtkBuilder* builder)
+int poll_widgets(mcpanel* pan, GtkBuilder* builder)
 {
 	unsigned int i;
 	struct PanelGUI* gui = &(pan->gui);
@@ -273,7 +273,7 @@ int poll_widgets(EEGPanel* pan, GtkBuilder* builder)
 
 
 static
-int initialize_widgets(EEGPanel* pan)
+int initialize_widgets(mcpanel* pan)
 {
 	gtk_widget_set_sensitive(GTK_WIDGET(pan->gui.widgets[PAUSE_RECORDING_BUTTON]),FALSE);
 
@@ -285,7 +285,7 @@ int initialize_widgets(EEGPanel* pan)
 
 
 LOCAL_FN
-void update_triggers_gui(EEGPanel* pan)
+void update_triggers_gui(mcpanel* pan)
 {
 	char tempstr[32];
 	unsigned int i, value;
@@ -346,7 +346,7 @@ int RegisterCustomDefinition(void)
 
 
 static
-int add_signal_tabs(EEGPanel* pan, const char* uidef, unsigned int ntab,
+int add_signal_tabs(mcpanel* pan, const char* uidef, unsigned int ntab,
                      const struct panel_tabconf* tabconf)
 {
 	unsigned int i;
@@ -373,7 +373,7 @@ int add_signal_tabs(EEGPanel* pan, const char* uidef, unsigned int ntab,
 }
 
 static
-void destroy_signal_tabs(EEGPanel* pan)
+void destroy_signal_tabs(mcpanel* pan)
 {
 	unsigned int i;
 	for (i=0; i<pan->ntab; i++) 
@@ -382,7 +382,7 @@ void destroy_signal_tabs(EEGPanel* pan)
 }
 
 LOCAL_FN
-int create_panel_gui(EEGPanel* pan, const char* uifile, unsigned int ntab,
+int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
                      const struct panel_tabconf* tabconf)
 {
 	GtkBuilder* builder;
@@ -435,7 +435,7 @@ out:
 
 
 LOCAL_FN
-void destroy_panel_gui(EEGPanel* pan)
+void destroy_panel_gui(mcpanel* pan)
 {
 	g_mutex_lock(pan->gui.syncmtx);
 	if (!pan->gui.is_destroyed)
@@ -449,7 +449,7 @@ void destroy_panel_gui(EEGPanel* pan)
 
 
 LOCAL_FN
-void updategui_toggle_recording(EEGPanel* pan, int state)
+void updategui_toggle_recording(mcpanel* pan, int state)
 {
 	pan->recording = state;
 	gtk_led_set_state(GTK_LED(pan->gui.widgets[RECORDING_LED]), state);
@@ -458,7 +458,7 @@ void updategui_toggle_recording(EEGPanel* pan, int state)
 
 
 LOCAL_FN
-void updategui_toggle_connection(EEGPanel* pan, int state)
+void updategui_toggle_connection(mcpanel* pan, int state)
 {
 	pan->connected = state;
 	gtk_led_set_state(GTK_LED(pan->gui.widgets[CONNECT_LED]), state);
@@ -467,7 +467,7 @@ void updategui_toggle_connection(EEGPanel* pan, int state)
 
 
 LOCAL_FN
-void updategui_toggle_rec_openclose(EEGPanel* pan, int state)
+void updategui_toggle_rec_openclose(mcpanel* pan, int state)
 {
 	pan->fileopened = state;
 	gtk_button_set_label(GTK_BUTTON(pan->gui.widgets[START_RECORDING_BUTTON]), state ? "Stop" : "Setup");

@@ -1,9 +1,9 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+	Copyright (C) 2008-2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
-    This file is part of the eegpanel library
+    This file is part of the mcpanel library
 
-    The eegpanel library is free software: you can redistribute it and/or
+    The mcpanel library is free software: you can redistribute it and/or
     modify it under the terms of the version 3 of the GNU General Public
     License as published by the Free Software Foundation.
 
@@ -15,13 +15,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef _EEGPANEL_H_
-#define _EEGPANEL_H_
+#ifndef MCPANEL_H
+#define MCPANEL_H
 
 #include <stdint.h>
 
 
-typedef struct _EEGPanel EEGPanel;
+typedef struct _mcpanel mcpanel;
 
 typedef int (*SystemConnectionFunc)(int start, void* user_data);
 typedef int (*SetupRecordingFunc)(void* user_data);
@@ -64,25 +64,26 @@ struct panel_tabconf {
 	const float* scales;
 };
 
-void init_eegpanel_lib(int *argc, char ***argv);
-EEGPanel* eegpanel_create(const char* uifilename, const struct PanelCb* cb,
+void init_mcp_lib(int *argc, char ***argv);
+mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
                         unsigned int ntab, const struct panel_tabconf* tab);
-void eegpanel_destroy(EEGPanel* panel);
-void eegpanel_show(EEGPanel* panel, int state);
-void eegpanel_popup_message(EEGPanel* panel, const char* message);
-char* eegpanel_open_filename_dialog(EEGPanel* panel, const char* filefilters);
-void eegpanel_run(EEGPanel* panel, int nonblocking);
-int eegpanel_notify(EEGPanel* panel, enum notification event);
-int eegpanel_define_tab_input(EEGPanel* pan, int tabid,
+void mcp_destroy(mcpanel* panel);
+void mcp_show(mcpanel* panel, int state);
+void mcp_popup_message(mcpanel* panel, const char* message);
+char* mcp_open_filename_dialog(mcpanel* panel, const char* filefilters);
+void mcp_run(mcpanel* panel, int nonblocking);
+int mcp_notify(mcpanel* panel, enum notification event);
+int mcp_define_tab_input(mcpanel* pan, int tabid,
                               unsigned int nch, float fs, 
 			      const char** labels);
-void eegpanel_add_samples(EEGPanel* pan, int tabid,
+void mcp_add_samples(mcpanel* pan, int tabid,
                          unsigned int ns, const float* data);
-int eegpanel_define_triggers(EEGPanel* pan, unsigned int nline, float fs);
-void eegpanel_add_triggers(EEGPanel* pan, unsigned int ns,
-                          const uint32_t* trigg);
-unsigned int eegpanel_register_callback(EEGPanel* pan, int timeout, int (*func)(void*), void* data);
-int eegpanel_unregister_callback(EEGPanel* pan, unsigned int id);
-void eegpanel_connect_signal(EEGPanel* pan, const char* signal, int (*callback)(void*), void* data);
+int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs);
+void mcp_add_triggers(mcpanel* pan, unsigned int ns, const uint32_t* trigg);
+unsigned int mcp_register_callback(mcpanel* pan, int timeout,
+                                   int (*func)(void*), void* data);
+int mcp_unregister_callback(mcpanel* pan, unsigned int id);
+void mcp_connect_signal(mcpanel* pan, const char* signal,
+                        int (*callback)(void*), void* data);
 
-#endif /*_EEGPANEL_H_*/
+#endif /*MCPANEL_H*/

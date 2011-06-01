@@ -1,7 +1,7 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+	Copyright (C) 2008-2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
-    This file is part of the eegpanel library
+    This file is part of the mcpanel library
 
     The eegpan library is free software: you can redistribute it and/or
     modify it under the terms of the version 3 of the GNU General Public
@@ -18,10 +18,10 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "eegpanel.h"
-#include "eegpanel_shared.h"
-#include "eegpanel_gui.h"
-#include "eegpanel_sighandler.h"
+#include "mcpanel.h"
+#include "mcp_shared.h"
+#include "mcp_gui.h"
+#include "mcp_sighandler.h"
 #include <gtk/gtktogglebutton.h>
 #include <gtk/gtkspinbutton.h>
 #include <stdlib.h>
@@ -32,14 +32,14 @@
  *                         Signal handlers                               *
  *                                                                       *
  *************************************************************************/
-#define GET_PANEL_FROM(widget)  ((EEGPanel*)(g_object_get_data(G_OBJECT(gtk_widget_get_toplevel(GTK_WIDGET(widget))), "eeg_panel")))
+#define GET_PANEL_FROM(widget)  ((mcpanel*)(g_object_get_data(G_OBJECT(gtk_widget_get_toplevel(GTK_WIDGET(widget))), "eeg_panel")))
 
 static
 gboolean on_close_panel(GtkWidget *widget, GdkEvent *event, gpointer data)
 {
 	(void)event;
 	(void)widget;
-	EEGPanel* pan = data;
+	mcpanel* pan = data;
 	int retval = 1;
 
 	g_mutex_lock(pan->gui.syncmtx);
@@ -59,7 +59,7 @@ gboolean on_close_panel(GtkWidget *widget, GdkEvent *event, gpointer data)
 static
 gboolean startacquisition_cb(GtkButton* button, gpointer data)
 {
-	EEGPanel* pan = data;
+	mcpanel* pan = data;
 	int retval;
 	(void)button;
 
@@ -83,7 +83,7 @@ static
 gboolean pause_recording_cb(GtkButton* button, gpointer data)
 {
 	int retcode = 0;
-	EEGPanel* pan = data;
+	mcpanel* pan = data;
 	(void)button;
 
 	if (pan->cb.toggle_recording) {
@@ -104,7 +104,7 @@ gboolean pause_recording_cb(GtkButton* button, gpointer data)
 static
 gboolean start_recording_cb(GtkButton* button, gpointer data)
 {
-	EEGPanel* pan = data;
+	mcpanel* pan = data;
 	int retval;
 	(void)button;
 
@@ -144,7 +144,7 @@ void time_window_cb(GtkComboBox* combo, gpointer user_data)
 	GtkTreeIter iter;
 	GValue value;
 	float time_length;
-	EEGPanel* pan = user_data;
+	mcpanel* pan = user_data;
 
 	g_mutex_lock(pan->data_mutex);
 	
@@ -162,7 +162,7 @@ void time_window_cb(GtkComboBox* combo, gpointer user_data)
 
 
 LOCAL_FN
-void connect_panel_signals(EEGPanel* pan)
+void connect_panel_signals(mcpanel* pan)
 {
 	g_signal_connect(pan->gui.widgets[STARTACQUISITION_BUTTON],
 	                 "clicked", (GCallback)startacquisition_cb, pan);

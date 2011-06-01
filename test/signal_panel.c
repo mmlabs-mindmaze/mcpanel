@@ -3,7 +3,7 @@
 #endif
 
 #include <stdio.h>
-#include <eegpanel.h>
+#include <mcpanel.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
@@ -82,28 +82,28 @@ void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 #define UPDATE_DELAY	((NSAMPLES*1000)/SAMPLING_RATE)
 gboolean iteration_func(gpointer data)
 {
-	EEGPanel *panel = data;
+	mcpanel *panel = data;
 
 	if (!run_eeg)
 		return FALSE;
 
 	set_signals(geeg, gexg, gtri, NSAMPLES);
-	eegpanel_add_samples(panel, 0, NSAMPLES, geeg);
-	eegpanel_add_samples(panel, 1, NSAMPLES, geeg);
-	eegpanel_add_samples(panel, 2, NSAMPLES, gexg);
-	eegpanel_add_triggers(panel, NSAMPLES, gtri);
+	mcp_add_samples(panel, 0, NSAMPLES, geeg);
+	mcp_add_samples(panel, 1, NSAMPLES, geeg);
+	mcp_add_samples(panel, 2, NSAMPLES, gexg);
+	mcp_add_triggers(panel, NSAMPLES, gtri);
 	isample += NSAMPLES;
 
 	if (recording) {
 		recsamples += NSAMPLES;
 		if (recsamples > 201*NSAMPLES) {
 			recording = 0;
-			eegpanel_notify(panel, REC_PAUSED);
+			mcp_notify(panel, REC_PAUSED);
 		}
 	}
 
 	if ((isample<201*NSAMPLES)&&(isample >= 200*NSAMPLES)) {
-		eegpanel_popup_message(panel, "Hello!");
+		mcp_popup_message(panel, "Hello!");
 		isample = 201*NSAMPLES;
 	}
 	return TRUE;
@@ -111,11 +111,11 @@ gboolean iteration_func(gpointer data)
 
 int SetupRecording(void* user_data)
 {
-	EEGPanel* panel = user_data;
+	mcpanel* panel = user_data;
 	char* filename;
 	int retval = 0;
 
-	if ((filename = eegpanel_open_filename_dialog(panel, "BDF files|*.bdf||Any files|*"))) {
+	if ((filename = mcp_open_filename_dialog(panel, "BDF files|*.bdf||Any files|*"))) {
 		fprintf(stderr,"filename %s\n", filename);
 		free(filename);
 		retval = 1;
@@ -124,14 +124,14 @@ int SetupRecording(void* user_data)
 	return retval;
 }
 
-int Connect(EEGPanel* panel)
+int Connect(mcpanel* panel)
 {
 	run_eeg = 1;
 
-	eegpanel_define_triggers(panel, 16, SAMPLING_RATE);
-	eegpanel_define_tab_input(panel, 0, NEEG, SAMPLING_RATE, eeg_lab);
-	eegpanel_define_tab_input(panel, 1, NEEG, SAMPLING_RATE, eeg_lab);
-	eegpanel_define_tab_input(panel, 2, NEXG, SAMPLING_RATE, exg_lab);
+	mcp_define_triggers(panel, 16, SAMPLING_RATE);
+	mcp_define_tab_input(panel, 0, NEEG, SAMPLING_RATE, eeg_lab);
+	mcp_define_tab_input(panel, 1, NEEG, SAMPLING_RATE, eeg_lab);
+	mcp_define_tab_input(panel, 2, NEXG, SAMPLING_RATE, exg_lab);
 
 	geeg = calloc(NEEG*NSAMPLES, sizeof(*geeg));
 	gexg = calloc(NEXG*NSAMPLES, sizeof(*gexg));
@@ -141,7 +141,7 @@ int Connect(EEGPanel* panel)
 	return 0;
 }
 
-int Disconnect(EEGPanel* panel)
+int Disconnect(mcpanel* panel)
 {
 	run_eeg = 0;
 
@@ -156,7 +156,7 @@ int Disconnect(EEGPanel* panel)
 
 int SystemConnection(int start, void* user_data)
 {
-	EEGPanel* panel = user_data;
+	mcpanel* panel = user_data;
 	int retval;
 
 	if (start) 
@@ -184,10 +184,10 @@ int ToggleRecording(int start, void* user_data)
 
 int ClosePanel(void* user_data)
 {
-	EEGPanel* panel = user_data;
+	mcpanel* panel = user_data;
 	if (run_eeg) {
 		Disconnect(panel);
-		eegpanel_popup_message(panel, "Acquisition disconnected by close func");
+		mcp_popup_message(panel, "Acquisition disconnected by close func");
 	}
 	
 	return 1;
@@ -196,7 +196,7 @@ int ClosePanel(void* user_data)
 
 int main(int argc, char* argv[])
 {
-	EEGPanel* panel;
+	mcpanel* panel;
 	struct PanelCb cb = {
 		.user_data = NULL,
 		.close_panel = ClosePanel,
@@ -206,18 +206,18 @@ int main(int argc, char* argv[])
 		.toggle_recording = ToggleRecording
 	};
 	
-	init_eegpanel_lib(&argc, &argv);
+	init_mcp_lib(&argc, &argv);
 
-	panel = eegpanel_create(NULL, &cb, NTAB, tabconf);
+	panel = mcp_create(NULL, &cb, NTAB, tabconf);
 	if (!panel) {
 		fprintf(stderr,"error at the creation of the panel\n");
 		return 1;
 	}
 
-	eegpanel_show(panel, 1);
-	eegpanel_run(panel, 0);
+	mcp_show(panel, 1);
+	mcp_run(panel, 0);
 
-	eegpanel_destroy(panel);
+	mcp_destroy(panel);
 
 	return 0;
 }

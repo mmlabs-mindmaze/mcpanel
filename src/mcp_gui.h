@@ -1,7 +1,7 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+	Copyright (C) 2008-2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
-    This file is part of the eegpanel library
+    This file is part of the mcpanel library
 
     The eegpan library is free software: you can redistribute it and/or
     modify it under the terms of the version 3 of the GNU General Public
@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef EEGPANEL_GUI_H
-#define EEGPANEL_GUI_H
+#ifndef MCPANEL_GUI_H
+#define MCPANEL_GUI_H
 
 #include <gtk/gtk.h>
 #include "plot-area.h"
@@ -85,20 +85,20 @@ struct BlockingCallParam {
 	BCProc func;
 };
 
-LOCAL_FN int create_panel_gui(EEGPanel* pan, const char* uifile,
+LOCAL_FN int create_panel_gui(mcpanel* pan, const char* uifile,
                               unsigned int ntab,
                               const struct panel_tabconf* tabconf);
-LOCAL_FN void get_initial_values(EEGPanel* pan);
-LOCAL_FN void destroy_panel_gui(EEGPanel* pan);
-LOCAL_FN void update_triggers_gui(EEGPanel* pan);
+LOCAL_FN void get_initial_values(mcpanel* pan);
+LOCAL_FN void destroy_panel_gui(mcpanel* pan);
+LOCAL_FN void update_triggers_gui(mcpanel* pan);
 LOCAL_FN int popup_message_dialog(struct DialogParam* dlgparam);
 LOCAL_FN int open_filename_dialog(struct DialogParam* dlgparam);
-LOCAL_FN int run_func_in_guithread(EEGPanel* pan, BCProc func, void* data);
-LOCAL_FN void update_input_gui(EEGPanel* pan);
-LOCAL_FN void updategui_toggle_recording(EEGPanel* pan, int state);
-LOCAL_FN void updategui_toggle_connection(EEGPanel* pan, int state);
-LOCAL_FN void updategui_toggle_rec_openclose(EEGPanel* pan, int state);
+LOCAL_FN int run_func_in_guithread(mcpanel* pan, BCProc func, void* data);
+LOCAL_FN void update_input_gui(mcpanel* pan);
+LOCAL_FN void updategui_toggle_recording(mcpanel* pan, int state);
+LOCAL_FN void updategui_toggle_connection(mcpanel* pan, int state);
+LOCAL_FN void updategui_toggle_rec_openclose(mcpanel* pan, int state);
 
 
-#endif /* EEGPANEL_GUI_H */
+#endif /* MCPANEL_GUI_H */
 

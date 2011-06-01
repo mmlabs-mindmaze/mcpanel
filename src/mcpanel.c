@@ -1,7 +1,7 @@
 /*
-	Copyright (C) 2008-2009 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+	Copyright (C) 2008-2011 Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
 
-    This file is part of the eegpanel library
+    This file is part of the mcpanel library
 
     The eegpan library is free software: you can redistribute it and/or
     modify it under the terms of the version 3 of the GNU General Public
@@ -24,16 +24,16 @@
 #include <glib/gprintf.h>
 #include <memory.h>
 #include <stdlib.h>
-#include "eegpanel.h"
-#include "eegpanel_gui.h"
-#include "eegpanel_shared.h"
+#include "mcpanel.h"
+#include "mcp_gui.h"
+#include "mcp_shared.h"
 #include "signaltab.h"
 
 
 
 struct notification_param {
 	enum notification event;
-	EEGPanel* pan;
+	mcpanel* pan;
 };
 
 ///////////////////////////////////////////////////
@@ -76,7 +76,7 @@ int process_notification(struct notification_param* prm)
 
 
 static
-void set_trigg_wndlength(EEGPanel* pan)
+void set_trigg_wndlength(mcpanel* pan)
 {
 	unsigned int num_samples;
 	uint32_t *triggers;
@@ -98,7 +98,7 @@ void set_trigg_wndlength(EEGPanel* pan)
 #define CMS_IN_RANGE	0x100000
 #define LOW_BATTERY	0x400000
 static
-void process_tri(EEGPanel* pan, unsigned int ns, const uint32_t* tri)
+void process_tri(mcpanel* pan, unsigned int ns, const uint32_t* tri)
 {
 	unsigned int i;
 	uint32_t *dst;
@@ -123,7 +123,7 @@ void process_tri(EEGPanel* pan, unsigned int ns, const uint32_t* tri)
 
 
 LOCAL_FN
-int set_data_length(EEGPanel* pan, float len)
+int set_data_length(mcpanel* pan, float len)
 {
 	unsigned int i;
 	pan->display_length = len;
@@ -141,7 +141,7 @@ int set_data_length(EEGPanel* pan, float len)
 //	API functions
 //
 ///////////////////////////////////////////////////
-void init_eegpanel_lib(int *argc, char ***argv)
+void init_mcp_lib(int *argc, char ***argv)
 {
 	g_thread_init(NULL);
 	gdk_threads_init();
@@ -149,10 +149,10 @@ void init_eegpanel_lib(int *argc, char ***argv)
 }
 
 
-EEGPanel* eegpanel_create(const char* uifilename, const struct PanelCb* cb,
+mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
                      unsigned int ntab, const struct panel_tabconf* tabconf)
 {
-	EEGPanel* pan = NULL;
+	mcpanel* pan = NULL;
 
 	// Allocate memory for the structures
 	pan = g_malloc0(sizeof(*pan));
@@ -171,7 +171,7 @@ EEGPanel* eegpanel_create(const char* uifilename, const struct PanelCb* cb,
 
 	// Create the panel widgets according to the ui definition files
 	if (!create_panel_gui(pan, uifilename, ntab, tabconf)) {
-		eegpanel_destroy(pan);
+		mcp_destroy(pan);
 		return NULL;
 	}
 
@@ -182,7 +182,7 @@ EEGPanel* eegpanel_create(const char* uifilename, const struct PanelCb* cb,
 }
 
 
-void eegpanel_show(EEGPanel* pan, int state)
+void mcp_show(mcpanel* pan, int state)
 {
 	//if (pan->main_loop_thread != g_thread_self()) 
 	
@@ -201,7 +201,7 @@ void eegpanel_show(EEGPanel* pan, int state)
 }
 
 
-void eegpanel_run(EEGPanel* pan, int nonblocking)
+void mcp_run(mcpanel* pan, int nonblocking)
 {
 	if (!nonblocking) {
 		pan->main_loop_thread = g_thread_self();
@@ -216,7 +216,7 @@ void eegpanel_run(EEGPanel* pan, int nonblocking)
 }
 
 
-void eegpanel_destroy(EEGPanel* pan)
+void mcp_destroy(mcpanel* pan)
 {
 	// Stop refreshing the scopes content
 	g_source_remove_by_user_data(pan);
@@ -235,7 +235,7 @@ void eegpanel_destroy(EEGPanel* pan)
 }
 
 
-void eegpanel_popup_message(EEGPanel* pan, const char* message)
+void mcp_popup_message(mcpanel* pan, const char* message)
 {
 	struct DialogParam dlgprm = {
 		.str_in = message,
@@ -246,7 +246,7 @@ void eegpanel_popup_message(EEGPanel* pan, const char* message)
 }
 
 
-char* eegpanel_open_filename_dialog(EEGPanel* pan, const char* filefilters)
+char* mcp_open_filename_dialog(mcpanel* pan, const char* filefilters)
 {
 	struct DialogParam dlgprm = {
 		.str_in = filefilters,
@@ -259,7 +259,7 @@ char* eegpanel_open_filename_dialog(EEGPanel* pan, const char* filefilters)
 }
 
 
-int eegpanel_notify(EEGPanel* pan, enum notification event)
+int mcp_notify(mcpanel* pan, enum notification event)
 {
 	struct notification_param prm = {
 		.pan = pan,
@@ -270,7 +270,7 @@ int eegpanel_notify(EEGPanel* pan, enum notification event)
 }
 
 
-int eegpanel_define_tab_input(EEGPanel* pan, int tabid,
+int mcp_define_tab_input(mcpanel* pan, int tabid,
                               unsigned int nch, float fs, 
 			      const char** labels)
 {
@@ -293,14 +293,14 @@ int eegpanel_define_tab_input(EEGPanel* pan, int tabid,
 }
 
 
-void eegpanel_add_samples(EEGPanel* pan, int tabid,
+void mcp_add_samples(mcpanel* pan, int tabid,
                          unsigned int ns, const float* data)
 {
 	signaltab_add_samples(pan->tabs[tabid], ns, data);
 }
 
 
-int eegpanel_define_triggers(EEGPanel* pan, unsigned int nline, float fs)
+int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs)
 {
 	pan->nlines_tri = nline;
 	pan->fs = fs;
@@ -310,7 +310,7 @@ int eegpanel_define_triggers(EEGPanel* pan, unsigned int nline, float fs)
 }
 
 
-void eegpanel_add_triggers(EEGPanel* pan, unsigned int ns,
+void mcp_add_triggers(mcpanel* pan, unsigned int ns,
                           const uint32_t* trigg)
 {
 	unsigned int ns_w = 0;
@@ -327,7 +327,7 @@ void eegpanel_add_triggers(EEGPanel* pan, unsigned int ns,
 }
 
 
-unsigned int eegpanel_register_callback(EEGPanel* pan, int timeout,
+unsigned int mcp_register_callback(mcpanel* pan, int timeout,
                                 int (*func)(void*), void* data)
 {
 	(void)pan;
@@ -341,13 +341,13 @@ unsigned int eegpanel_register_callback(EEGPanel* pan, int timeout,
 }
 
 
-int eegpanel_unregister_callback(EEGPanel* pan, unsigned int id)
+int mcp_unregister_callback(mcpanel* pan, unsigned int id)
 {
 	(void)pan;
 	return g_source_remove(id);
 }
 
-void eegpanel_connect_signal(EEGPanel* pan, const char* signal, int (*callback)(void*), void* data)
+void mcp_connect_signal(mcpanel* pan, const char* signal, int (*callback)(void*), void* data)
 {
 	g_signal_connect_after(pan->gui.widgets[TOP_WINDOW],
 	                       signal, G_CALLBACK(callback), data);

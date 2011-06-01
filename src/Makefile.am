@@ -6,17 +6,17 @@ led-images.h: led_gray.png led_red.png led_green.png led_blue.png
 default-ui.h: default.ui
 	$(top_srcdir)/build-aux/file-to-string.sh -o $@ $^
 
-lib_LTLIBRARIES = libeegpanel.la
-include_HEADERS = eegpanel.h
+lib_LTLIBRARIES = libmcpanel.la
+include_HEADERS = mcpanel.h
 
-#libeegpanel_la_CPPFLAGS = $(GTK_CFLAGS)
-libeegpanel_la_SOURCES = eegpanel.c		\
-                         eegpanel_shared.h	\
-			 eegpanel_sighandler.h	\
-			 eegpanel_sighandler.c	\
-			 eegpanel_gui.h		\
-			 eegpanel_gui.c		\
-			 eegpanel.h		\
+#libmcp_la_CPPFLAGS = $(GTK_CFLAGS)
+libmcpanel_la_SOURCES = mcpanel.c		\
+			 mcpanel.h		\
+                         mcp_shared.h		\
+			 mcp_sighandler.h	\
+			 mcp_sighandler.c	\
+			 mcp_gui.h		\
+			 mcp_gui.c		\
 			 signaltab.h		\
 			 signaltab.c		\
 			 scopetab.c		\
@@ -40,12 +40,12 @@ libeegpanel_la_SOURCES = eegpanel.c		\
 			 led_blue.png		\
 			 default.ui
 
-nodist_libeegpanel_la_SOURCES = led-images.h default-ui.h
+nodist_libmcpanel_la_SOURCES = led-images.h default-ui.h
 BUILT_SOURCES = led-images.h default-ui.h
 CLEANFILES = led-images.h default-ui.h
 
-#libeegpanel_la_LIBADD = $(GTK_LIBS)
-libeegpanel_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined 
+#libmcpanel_la_LIBADD = $(GTK_LIBS)
+libmcpanel_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined 
 			 
-#libeegpanel_la_LIBADD = $(top_builddir)/res/libres.a
+#libmcpanel_la_LIBADD = $(top_builddir)/res/libres.a
 

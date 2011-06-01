@@ -4,7 +4,7 @@
 
 #include <string.h>
 #include <gtk/gtk.h>
-#include "eegpanel.h"
+#include "mcpanel.h"
 #include "signaltab.h"
 
 static

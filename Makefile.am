@@ -4,8 +4,8 @@ SUBDIRS = lib src test
 EXTRA_DIST = debian/changelog debian/compat debian/control\
 		debian/copyright debian/docs		\
 		debian/rules				\
-		debian/libeegpanel0.install		\
-		debian/libeegpanel0-dev.install
+		debian/libmcpanel0.install		\
+		debian/libmcpanel0-dev.install
 
 REMOVE_DISTDIR = \
   { test ! -d "$(distdir)" \
