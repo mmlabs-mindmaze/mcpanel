@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
 		.toggle_recording = ToggleRecording
 	};
 	
-	init_mcp_lib(&argc, &argv);
+	mcp_init_lib(&argc, &argv);
 
 	panel = mcp_create(NULL, &cb, NTAB, tabconf);
 	if (!panel) {

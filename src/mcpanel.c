@@ -141,7 +141,7 @@ int set_data_length(mcpanel* pan, float len)
 //	API functions
 //
 ///////////////////////////////////////////////////
-void init_mcp_lib(int *argc, char ***argv)
+void mcp_init_lib(int *argc, char ***argv)
 {
 	g_thread_init(NULL);
 	gdk_threads_init();

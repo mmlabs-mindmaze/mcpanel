@@ -64,7 +64,7 @@ struct panel_tabconf {
 	const float* scales;
 };
 
-void init_mcp_lib(int *argc, char ***argv);
+void mcp_init_lib(int *argc, char ***argv);
 mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
                         unsigned int ntab, const struct panel_tabconf* tab);
 void mcp_destroy(mcpanel* panel);
