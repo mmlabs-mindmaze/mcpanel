@@ -34,6 +34,7 @@
 #define REFRESH_INTERVAL	30
 
 
+static
 const LinkWidgetName widget_name_table[] = {
 	{TOP_WINDOW, "topwindow", "GtkWindow"},
 	{SCOPE_NOTEBOOK, "scope_notebook", "GtkNotebook"},

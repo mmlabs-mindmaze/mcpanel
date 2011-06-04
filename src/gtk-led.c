@@ -64,6 +64,7 @@ GType led_color_get_type(void)
 
 
 
+LOCAL_FN GType gtk_led_get_type(void);
 G_DEFINE_TYPE (GtkLed, gtk_led, GTK_TYPE_WIDGET)
 
 static

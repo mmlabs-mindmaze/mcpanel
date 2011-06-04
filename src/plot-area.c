@@ -37,6 +37,7 @@ static void plot_area_set_color(PlotArea* self, const gchar* colorstr, GdkColor*
 static void plot_area_set_channel_colors(PlotArea* self, const gchar* colorstr);
 
 
+LOCAL_FN GType plot_area_get_type(void);
 G_DEFINE_TYPE (PlotArea, plot_area, GTK_TYPE_DRAWING_AREA)
 
 

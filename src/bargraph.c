@@ -35,6 +35,7 @@ static void bargraph_draw_samples(const Bargraph* self);
 static gboolean bargraph_expose_event_callback(Bargraph *self, GdkEventExpose *event, gpointer data);
 static gboolean bargraph_configure_event_callback(Bargraph *self, GdkEventConfigure *event, gpointer data);
 
+LOCAL_FN GType bargraph_get_type(void);
 G_DEFINE_TYPE (Bargraph, bargraph, TYPE_PLOT_AREA)
 #define GET_PRIVATE(o) \
 	(G_TYPE_INSTANCE_GET_PRIVATE ((o), TYPE_BARGRAPH, BargraphPrivate))

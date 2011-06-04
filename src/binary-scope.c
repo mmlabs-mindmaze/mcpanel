@@ -28,6 +28,7 @@ static void binary_scope_draw_samples(const BinaryScope* self, unsigned int firs
 static gboolean binary_scope_expose_event_callback(BinaryScope *self, GdkEventExpose *event, gpointer data);
 static gboolean binary_scope_configure_event_callback(BinaryScope *self, GdkEventConfigure *event, gpointer data);
 
+LOCAL_FN GType binary_scope_get_type(void);
 G_DEFINE_TYPE (BinaryScope, binary_scope, TYPE_PLOT_AREA)
 #define GET_PRIVATE(o) \
 	(G_TYPE_INSTANCE_GET_PRIVATE ((o), TYPE_BINARY_SCOPE, BinaryScopePrivate))

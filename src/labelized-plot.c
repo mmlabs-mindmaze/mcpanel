@@ -33,6 +33,8 @@ enum {
 
 static gboolean labelized_plot_expose_event_callback(LabelizedPlot *self, GdkEventExpose *event, gpointer data);
 
+LOCAL_FN GType labelized_plot_get_type(void);
+
 G_DEFINE_TYPE (LabelizedPlot, labelized_plot, GTK_TYPE_ALIGNMENT)
 #define GET_PRIVATE(o) \
 	(G_TYPE_INSTANCE_GET_PRIVATE ((o), TYPE_LABELIZED_PLOT, ScopePrivate))

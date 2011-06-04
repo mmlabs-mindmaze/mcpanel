@@ -34,6 +34,7 @@ static void scope_draw_samples(const Scope* self, unsigned int first, unsigned i
 static gboolean scope_expose_event_callback(Scope *self, GdkEventExpose *event, gpointer data);
 static gboolean scope_configure_event_callback(Scope *self, GdkEventConfigure *event, gpointer data);
 
+LOCAL_FN GType scope_get_type(void);
 G_DEFINE_TYPE (Scope, scope, TYPE_PLOT_AREA)
 #define GET_PRIVATE(o) \
 	(G_TYPE_INSTANCE_GET_PRIVATE ((o), TYPE_SCOPE, ScopePrivate))
