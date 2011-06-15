@@ -20,7 +20,6 @@ AC_CONFIG_LIBOBJ_DIR([lib])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config/config.h])
 AM_INIT_AUTOMAKE([-Wall])
-AC_REQUIRE_AUX_FILE([file-to-string.sh])
 
 # Initialize Automake
 AM_INIT_AUTOMAKE([subdir-objects no-dist-gzip dist-bzip2 color-tests])

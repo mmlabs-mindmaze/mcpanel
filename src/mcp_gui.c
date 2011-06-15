@@ -29,7 +29,6 @@
 #include "mcp_gui.h"
 #include "signaltab.h"
 
-#include "default-ui.h"
 
 #define REFRESH_INTERVAL	30
 
@@ -433,8 +432,10 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 	GtkBuilder* builder;
 	int res = 0;
 	GError* error = NULL;
-	const gchar* uidef = str_default_ui_;
-	gsize uisize = sizeof(str_default_ui_)-1; 
+	gchar* uidef;
+	gsize uisize;
+	const char* envpath;
+	char path[256];
 
 	RegisterCustomDefinition();
 
@@ -443,14 +444,15 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 
 	// Create the panel widgets according to the ui definition files
 	builder = gtk_builder_new();
-	if (uifile) {
-		if (!g_file_get_contents(uifile, (gchar**)&uidef,
-		                         &uisize, &error)) {
-			fprintf(stderr, "%s\n", error->message);
-			goto out;
-		}
+	if (!uifile) {
+		envpath = getenv("MCPANEL_DATADIR");
+		snprintf(path, sizeof(path)-1, "%s/default.ui",
+		                               envpath ? envpath : DATADIR);
+		uifile = path;
 	}
-	if (!gtk_builder_add_from_string(builder, uidef, uisize, &error)) {
+
+	if ( !g_file_get_contents(uifile, &uidef, &uisize, &error)
+	   ||!gtk_builder_add_from_string(builder, uidef, uisize, &error)) {
 		fprintf(stderr, "%s\n", error->message);
 		goto out;
 	}
@@ -473,8 +475,7 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 	res = 1;
 	
 out:
-	if (uidef != str_default_ui_)
-		g_free((gchar**)uidef);
+	g_free(uidef);
 	g_object_unref(builder);
 	return res;
 }
