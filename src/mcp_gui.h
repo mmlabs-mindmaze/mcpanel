@@ -58,6 +58,11 @@ typedef struct _LinkWidgetName {
 	const char* type;
 } LinkWidgetName;
 
+struct custom_button {
+	void (*callback)(int id, void* data);
+	int id;
+};
+
 struct PanelGUI {
 	GtkWindow* window;
 	GMutex* syncmtx;
@@ -65,6 +70,7 @@ struct PanelGUI {
 	GObject* widgets[NUM_PANEL_WIDGETS_DEFINED];
 	GtkNotebook* notebook;
 	BinaryScope *tri_scope;
+	struct custom_button* buttons;
 };
 
 

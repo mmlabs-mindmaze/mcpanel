@@ -156,15 +156,18 @@ mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
 
 	// Allocate memory for the structures
 	pan = g_malloc0(sizeof(*pan));
-	if (!pan)
-		return NULL;
 	pan->data_mutex = g_mutex_new();
 
 	// Set callbacks
-	if (cb)
+	if (cb) {
 		memcpy(&(pan->cb), cb, sizeof(*cb));
+		pan->cb.custom_button = g_malloc0(cb->nbutton*sizeof(*(cb->custom_button)));
+		memcpy(pan->cb.custom_button, cb->custom_button, 
+		       cb->nbutton*sizeof(*(cb->custom_button)));
+	}
 	if (pan->cb.user_data == NULL)
 		pan->cb.user_data = pan;
+
 	
 	// Needed initializations
 	pan->display_length = 1.0f;
@@ -231,6 +234,7 @@ void mcp_destroy(mcpanel* pan)
 
 	g_mutex_free(pan->data_mutex);
 	//destroy_dataproc(pan);
+	g_free(pan->cb.custom_button);
 	g_free(pan);
 }
 

@@ -373,6 +373,7 @@ int add_signal_tabs(mcpanel* pan, const char* uidef, unsigned int ntab,
 	return 1;
 }
 
+
 static
 void destroy_signal_tabs(mcpanel* pan)
 {
@@ -381,6 +382,49 @@ void destroy_signal_tabs(mcpanel* pan)
 		signaltab_destroy(pan->tabs[i]);
 	g_free(pan->tabs);
 }
+
+
+static
+void custom_button_callback(GtkButton* butt, gpointer data)
+{
+	struct custom_button* bt;
+	
+	bt = g_object_get_data(G_OBJECT(butt), "custom_button");
+	gdk_threads_leave();
+	bt->callback(bt->id, data);
+	gdk_threads_enter();
+}
+
+
+static
+int create_custom_buttons(mcpanel* pan, GtkBuilder* builder)
+{
+	unsigned int i, nbutton = pan->cb.nbutton;
+	struct panel_button* bt = pan->cb.custom_button;
+	struct custom_button* lbt;
+	GtkWidget* wid;
+	GtkContainer* cont;
+
+	cont = GTK_CONTAINER(gtk_builder_get_object(builder, "custom_button_container"));	
+	if (!cont && nbutton)
+		return -1;
+
+	lbt = g_malloc0(nbutton*sizeof(*lbt));
+
+	for (i=0; i<nbutton; i++) {
+		lbt[i].id = bt[i].id;
+		lbt[i].callback = bt[i].callback;
+		wid = gtk_button_new_with_label(bt[i].label);
+		gtk_container_add(cont, wid);
+		g_object_set_data(G_OBJECT(wid), "custom_button", lbt+i);
+		g_signal_connect(wid, "clicked", G_CALLBACK(custom_button_callback), pan->cb.user_data);
+	}
+
+	pan->gui.buttons = lbt;
+
+	return 0;
+}
+
 
 LOCAL_FN
 int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
@@ -413,6 +457,7 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 	pan->gui.is_destroyed = 0;
 
 	gtk_builder_connect_signals(builder, pan);
+	create_custom_buttons(pan, builder);
 
 
 	// Get the pointers of the control widgets
@@ -446,6 +491,7 @@ void destroy_panel_gui(mcpanel* pan)
 
 	g_mutex_free(pan->gui.syncmtx);
 	destroy_signal_tabs(pan);
+	g_free(pan->gui.buttons);
 }
 
 

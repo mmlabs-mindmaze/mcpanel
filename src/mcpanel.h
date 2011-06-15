@@ -29,6 +29,11 @@ typedef int (*StopRecordingFunc)(void* user_data);
 typedef int (*ToggleRecordingFunc)(int start, void* user_data);
 typedef int (*ClosePanelFunc)(void* user_data);
 
+struct panel_button {
+	const char* label;
+	void (*callback)(int id, void* data);
+	int id;
+};
 
 struct PanelCb {
 	/* function supplied by the user */
@@ -40,6 +45,9 @@ struct PanelCb {
 
 	/* pointer used to pass data to the user functions */
 	void* user_data;
+
+	unsigned int nbutton;
+	struct panel_button* custom_button;
 };
 
 enum notification {

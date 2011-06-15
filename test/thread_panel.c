@@ -202,17 +202,32 @@ int ClosePanel(void* user_data)
 	return 1;
 }
 
+static
+void on_device_info(int id, void* data)
+{
+	(void)id;
+	mcpanel* panel = data;
+	mcp_popup_message(panel, "Device info clicked");
+}
+
 
 int main(int argc, char* argv[])
 {
 	mcpanel* panel;
+	struct panel_button cust_buttons = {
+		.label = "device info",
+		.id = 0,
+		.callback = on_device_info
+	};
 	struct PanelCb cb = {
 		.user_data = NULL,
 		.close_panel = ClosePanel,
 		.system_connection = SystemConnection,
 		.setup_recording = SetupRecording,
 		.stop_recording = StopRecording,
-		.toggle_recording = ToggleRecording
+		.toggle_recording = ToggleRecording,
+		.nbutton = 1,
+		.custom_button = &cust_buttons
 	};
 	
 	mcp_init_lib(&argc, &argv);
