@@ -2,8 +2,8 @@
 
 lib_LTLIBRARIES = libmcpanel.la
 include_HEADERS = mcpanel.h
-dist_data_DATA = led_gray.png led_green.png led_red.png led_blue.png \
-                 default.ui
+dist_pkgdata_DATA = led_gray.png led_green.png led_red.png led_blue.png \
+                    default.ui
 
 #libmcp_la_CPPFLAGS = $(GTK_CFLAGS)
 libmcpanel_la_SOURCES = mcpanel.c		\
