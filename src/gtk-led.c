@@ -19,17 +19,18 @@
 # include <config.h>
 #endif
 
+#include <stdlib.h>
 #include <gtk/gtk.h>
 #include "gtk-led.h"
 
-#include <gdk-pixbuf/gdk-pixdata.h>
-#include "led-images.h"
+#include <gdk-pixbuf/gdk-pixbuf.h>
+//#include "led-images.h"
 
-static const GdkPixdata const* led_image_data[NUM_COLORS_LED] = {
-	[GRAY_LED] = &pix_led_gray,
-	[RED_LED] = &pix_led_red,
-	[GREEN_LED] = &pix_led_green,
-	[BLUE_LED] = &pix_led_blue
+static const char* const led_image_path[NUM_COLORS_LED] = {
+	[GRAY_LED] = "led_gray.png",
+	[RED_LED] = "led_red.png",
+	[GREEN_LED] = "led_green.png",
+	[BLUE_LED] = "led_blue.png"
 };
 
 enum {
@@ -169,14 +170,20 @@ void gtk_led_class_init(GtkLedClass *klass)
 {
 	int i;
 	GdkPixbuf* pixbuf;
+	char path[256];
+	char* prefix;
 
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 	//gtk_led_parent_class = g_type_class_peek_parent (klass);
 
 	// Load the state pixbuf
+	prefix = getenv("MCPANEL_DATADIR");
 	for (i=0; i<NUM_COLORS_LED; i++) {
-		pixbuf = gdk_pixbuf_from_pixdata(led_image_data[i], FALSE, NULL);
+		snprintf(path, sizeof(path)-1, "%s/%s",
+				prefix ? prefix : DATADIR,
+				led_image_path[i]);
+		pixbuf = gdk_pixbuf_new_from_file(path, NULL);
 		klass->icon_sets[i] = gtk_icon_set_new_from_pixbuf(pixbuf);
 		g_object_unref(pixbuf);
 	}

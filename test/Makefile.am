@@ -9,5 +9,6 @@ test_thread_panel_LDADD = $(top_builddir)/src/libmcpanel.la  $(LTLIBOBJS)
 test_signal_panel_SOURCES = signal_panel.c
 test_signal_panel_LDADD = $(top_builddir)/src/libmcpanel.la  $(LTLIBOBJS)
 
+TESTS_ENVIRONMENT = MCPANEL_DATADIR=$(top_srcdir)/src
 TESTS = test-thread-panel test-signal-panel
 

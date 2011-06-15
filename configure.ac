@@ -20,7 +20,6 @@ AC_CONFIG_LIBOBJ_DIR([lib])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config/config.h])
 AM_INIT_AUTOMAKE([-Wall])
-AC_REQUIRE_AUX_FILE([convert-image.sh])
 AC_REQUIRE_AUX_FILE([file-to-string.sh])
 
 # Initialize Automake
@@ -62,6 +61,8 @@ AC_CHECK_DECLS([clock_gettime, clock_nanosleep],,,[#include <time.h>])
 AC_CHECK_FUNCS([nanosleep gettimeofday ftime _ftime])
 AC_CHECK_FUNC_FNARG([GetSystemTimeAsFileTime], [0], [#include <windows.h>])
 AC_REPLACE_FUNCS([clock_gettime clock_nanosleep])
+
+AX_DEFINE_DIR([DATADIR], [datadir], [read-only architecture-independent data path])
 
 AC_SUBST([CURRENT],[lib_current])
 AC_SUBST([REVISION],[lib_revision])

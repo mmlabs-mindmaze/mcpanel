@@ -1,13 +1,11 @@
 #AUTOMAKE_OPTIONS = subdir-objects
 
-led-images.h: led_gray.png led_red.png led_green.png led_blue.png
-	$(top_srcdir)/build-aux/convert-image.sh -o $@ $^
-
 default-ui.h: default.ui
 	$(top_srcdir)/build-aux/file-to-string.sh -o $@ $^
 
 lib_LTLIBRARIES = libmcpanel.la
 include_HEADERS = mcpanel.h
+dist_data_DATA = led_gray.png led_green.png led_red.png led_blue.png
 
 #libmcp_la_CPPFLAGS = $(GTK_CFLAGS)
 libmcpanel_la_SOURCES = mcpanel.c		\
@@ -34,15 +32,11 @@ libmcpanel_la_SOURCES = mcpanel.c		\
 			 plottk-types.h		\
 			 scope.c		\
 			 scope.h		\
-			 led_gray.png		\
-			 led_red.png		\
-			 led_green.png		\
-			 led_blue.png		\
 			 default.ui
 
-nodist_libmcpanel_la_SOURCES = led-images.h default-ui.h
-BUILT_SOURCES = led-images.h default-ui.h
-CLEANFILES = led-images.h default-ui.h
+nodist_libmcpanel_la_SOURCES = default-ui.h
+BUILT_SOURCES = default-ui.h
+CLEANFILES = default-ui.h
 
 #libmcpanel_la_LIBADD = $(GTK_LIBS)
 libmcpanel_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined 
