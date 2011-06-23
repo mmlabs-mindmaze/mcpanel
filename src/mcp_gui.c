@@ -447,7 +447,7 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 	if (!uifile) {
 		envpath = getenv("MCPANEL_DATADIR");
 		snprintf(path, sizeof(path)-1, "%s/default.ui",
-		                            envpath ? envpath : PKGDATADIR);
+		                     envpath ? envpath : DATADIR"/"PACKAGE);
 		uifile = path;
 	}
 
