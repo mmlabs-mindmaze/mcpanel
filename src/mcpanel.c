@@ -179,7 +179,7 @@ mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
 	}
 
 	get_initial_values(pan);
-	set_data_length(pan, 1.0f);
+	set_data_length(pan, pan->display_length);
 
 	return pan;
 }

@@ -225,12 +225,13 @@ void get_initial_values(mcpanel* pan)
 	GtkTreeIter iter;
 	GValue value;
 	GtkComboBox* combo;
+	gboolean res;
 
 	// Get the display length
 	combo = GTK_COMBO_BOX(pan->gui.widgets[TIME_WINDOW_COMBO]);
 	memset(&value, 0, sizeof(value));
 	model = gtk_combo_box_get_model(combo);
-	gtk_combo_box_get_active_iter(combo, &iter);
+	res = gtk_combo_box_get_active_iter(combo, &iter);
 	gtk_tree_model_get_value(model, &iter, 1, &value);
 	pan->display_length = g_value_get_float(&value);
 }
@@ -275,10 +276,16 @@ int poll_widgets(mcpanel* pan, GtkBuilder* builder)
 static
 int initialize_widgets(mcpanel* pan)
 {
+	int active;
+	GtkComboBox* combo;
+
 	gtk_widget_set_sensitive(GTK_WIDGET(pan->gui.widgets[PAUSE_RECORDING_BUTTON]),FALSE);
 
 	// Time window combo
-	gtk_combo_box_set_active(GTK_COMBO_BOX(pan->gui.widgets[TIME_WINDOW_COMBO]), 0);
+	combo = GTK_COMBO_BOX(pan->gui.widgets[TIME_WINDOW_COMBO]);
+	active = gtk_combo_box_get_active(combo);
+	if (active < 0)
+		gtk_combo_box_set_active(combo, 0);
 
 	return 1;
 }

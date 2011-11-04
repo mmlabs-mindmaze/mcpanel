@@ -594,6 +594,7 @@ void scopetab_define_input(struct signaltab* tab, const char** labels)
 	init_buffers(sctab);
 	init_filter(sctab, 0);
 	init_filter(sctab, 1);
+	scopetab_set_xticks(sctab, sctab->wndlen);
 }
 
 
