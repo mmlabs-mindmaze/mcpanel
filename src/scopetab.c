@@ -399,6 +399,33 @@ void scopetab_scale_changed_cb(GtkComboBox* combo, gpointer user_data)
  *                                                                        *
  **************************************************************************/
 static
+void setup_initial_values(struct scopetab* sctab)
+{
+	gint active;
+	GObject** widg = sctab->widgets;
+
+	sctab->filt_on[0] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widg[LP_CHECK]));
+	sctab->filt_on[1] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widg[HP_CHECK]));
+	sctab->cutoff[0] = gtk_spin_button_get_value(GTK_SPIN_BUTTON(widg[LP_SPIN]));
+	sctab->cutoff[1] = gtk_spin_button_get_value(GTK_SPIN_BUTTON(widg[HP_SPIN]));
+	if (sctab->cutoff[0] <= 0.0)
+		sctab->cutoff[0] = 100.0;
+	if (sctab->cutoff[1] <= 0.0)
+		sctab->cutoff[1] = 1.0;
+
+	sctab->tab.scale = 1;
+
+	// Make sure that scale combo select something
+	if (gtk_combo_box_get_active(GTK_COMBO_BOX(widg[SCALE_COMBO])) < 0)
+		gtk_combo_box_set_active(GTK_COMBO_BOX(widg[SCALE_COMBO]), 0);
+
+	// Make sure that reference combo select something
+	active = gtk_combo_box_get_active(GTK_COMBO_BOX(widg[REFTYPE_COMBO]));
+	sctab->ref = (active >= 0) ? active : REF_NONE;
+}
+
+
+static
 void initialize_widgets(struct scopetab* sctab)
 {
 	GObject** widg = sctab->widgets;
@@ -415,7 +442,6 @@ void initialize_widgets(struct scopetab* sctab)
 	                          (sctab->ref == REF_ELEC)? TRUE : FALSE);
 
 	// Initialize scale combo
-	gtk_combo_box_set_active(GTK_COMBO_BOX(widg[SCALE_COMBO]), 0);
 	scopetab_scale_changed_cb(GTK_COMBO_BOX(widg[SCALE_COMBO]), sctab);
 }
 
@@ -662,16 +688,12 @@ struct signaltab* create_tab_scope(const char* uidef,
 		fprintf(stderr, "%s\n", error->message);
 		goto error;
 	}
-	sctab->filt_on[0] = sctab->filt_on[1] = 0;
-	sctab->filt[0] = sctab->filt[1] = NULL;
-	sctab->cutoff[0] = 100.0;
-	sctab->cutoff[1] = 1.0;
-	sctab->tab.scale = 1;
-
 	
 	if (find_widgets(sctab, builder))
 		goto error;
+
 	initialize_signaltab(&(sctab->tab), nscales, sclabels, scales);
+	setup_initial_values(sctab);
 	initialize_widgets(sctab);
 	connect_widgets_signals(sctab);
 

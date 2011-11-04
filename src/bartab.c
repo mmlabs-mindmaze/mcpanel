@@ -233,6 +233,24 @@ void bartab_filter_button_cb(GtkButton* button, gpointer user_data)
  *                                                                        *
  **************************************************************************/
 static
+void setup_initial_values(struct bartab* brtab)
+{
+	GObject** widg = brtab->widgets;
+
+	brtab->filt_on = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widg[LP_CHECK]));
+	brtab->cutoff = gtk_spin_button_get_value(GTK_SPIN_BUTTON(widg[LP_SPIN]));
+	if (brtab->cutoff <= 0.0)
+		brtab->cutoff = 1.0;
+
+	brtab->tab.scale = 1;
+
+	// Make sure that scale combo select something
+	if (gtk_combo_box_get_active(GTK_COMBO_BOX(widg[SCALE_COMBO])) < 0)
+		gtk_combo_box_set_active(GTK_COMBO_BOX(widg[SCALE_COMBO]), 0);
+}
+
+
+static
 void initialize_widgets(struct bartab* brtab)
 {
 	GObject** widg = brtab->widgets;
@@ -241,7 +259,6 @@ void initialize_widgets(struct bartab* brtab)
 	g_object_set(widg[LP_SPIN], "value", brtab->cutoff, NULL);
 
 	// Initialize scale combo
-	gtk_combo_box_set_active(GTK_COMBO_BOX(widg[SCALE_COMBO]), 0);
 	bartab_scale_changed_cb(GTK_COMBO_BOX(widg[SCALE_COMBO]), brtab);
 }
 
@@ -460,14 +477,12 @@ struct signaltab* create_tab_bargraph(const char* uidef,
 		fprintf(stderr, "%s\n", error->message);
 		goto error;
 	}
-	brtab->tab.scale = 1;
-	brtab->filt_on = 1;
-	brtab->cutoff = 1.0;
-
+	
 	// Initialize the struture with the builded widget
 	if (find_widgets(brtab, builder))
 		goto error;
 	initialize_signaltab(&(brtab->tab), nscales, sclabels, scales);
+	setup_initial_values(brtab);
 	initialize_widgets(brtab);
 	connect_widgets_signals(brtab);
 

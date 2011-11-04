@@ -11,15 +11,19 @@ static
 void signaltab_fill_scale_combo(struct signaltab* tab, int nscales,
                                 const char** sclabels, const float* scales)
 {
-	int i;
+	int i, active;
 	GtkListStore* list;
 	GtkTreeIter iter;
+	GtkComboBox* combo;
 	
+
 	if (tab->scale_combo == NULL
 	    || nscales <= 0 || sclabels == NULL || scales == NULL) 
 		return;
+	combo = tab->scale_combo;
 
-	list = GTK_LIST_STORE(gtk_combo_box_get_model(tab->scale_combo));
+	active = gtk_combo_box_get_active(combo);
+	list = GTK_LIST_STORE(gtk_combo_box_get_model(combo));
 	gtk_list_store_clear(list);
 
 	for (i=0; i<nscales; i++) {
@@ -27,6 +31,7 @@ void signaltab_fill_scale_combo(struct signaltab* tab, int nscales,
 		gtk_list_store_set(list, &iter, 0, sclabels[i],
 		                                1, (double)scales[i], -1);
 	}
+	gtk_combo_box_set_active(combo, (active < nscales) ? active : 0);
 }
 
 
