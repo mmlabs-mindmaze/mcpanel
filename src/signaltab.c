@@ -36,10 +36,9 @@ void signaltab_fill_scale_combo(struct signaltab* tab, int nscales,
 
 
 LOCAL_FN 
-int initialize_signaltab(struct signaltab* tab, int nscales,
-                         const char** sclabels, const float* scales)
+int initialize_signaltab(struct signaltab* tab, const struct tabconf* conf)
 {
-        signaltab_fill_scale_combo(tab, nscales, sclabels, scales);
+        signaltab_fill_scale_combo(tab, conf->nscales, conf->sclabels, conf->scales);
 	tab->datlock = g_mutex_new();
 	return 0;
 }
@@ -103,14 +102,13 @@ void signaltab_add_samples(struct signaltab* tab, unsigned int ns,
 
 
 LOCAL_FN 
-struct signaltab* create_signaltab(const char* uidef, int type,
-		    int nscales, const char** sclabels, const float* scales)
+struct signaltab* create_signaltab(const struct tabconf* conf)
 {
 	struct signaltab* tab;
-	if (type == TABTYPE_SCOPE)
-		tab = create_tab_scope(uidef, nscales, sclabels, scales);
-	else if(type == TABTYPE_BARGRAPH)
-		tab = create_tab_bargraph(uidef, nscales, sclabels, scales);
+	if (conf->type == TABTYPE_SCOPE)
+		tab = create_tab_scope(conf);
+	else if(conf->type == TABTYPE_BARGRAPH)
+		tab = create_tab_bargraph(conf);
 	else
 		tab = NULL;
 

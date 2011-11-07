@@ -359,14 +359,18 @@ int add_signal_tabs(mcpanel* pan, const char* uidef, unsigned int ntab,
 	unsigned int i;
 	GtkNotebook* notebook = pan->gui.notebook;
 	GtkWidget *widget, *label = NULL;
+	struct tabconf conf;
 
 	pan->ntab = ntab;
 	pan->tabs = g_malloc0(ntab*sizeof(*(pan->tabs)));
 	for (i=0; i<ntab; i++) {
-		pan->tabs[i] = create_signaltab(uidef, tabconf[i].type,
-		                                tabconf[i].nscales,
-						tabconf[i].sclabels,
-						tabconf[i].scales);
+		conf.nscales = tabconf[i].nscales;
+		conf.sclabels = tabconf[i].sclabels;
+		conf.scales = tabconf[i].scales;
+		conf.type = tabconf[i].type;
+		conf.uidef = uidef;
+		
+		pan->tabs[i] = create_signaltab(&conf);
 		if (pan->tabs[i] == NULL)
 			return 0;
 

@@ -671,8 +671,7 @@ void scopetab_set_wndlen(struct signaltab* tab, float len)
 
 
 LOCAL_FN 
-struct signaltab* create_tab_scope(const char* uidef,
-		    int nscales, const char** sclabels, const float* scales)
+struct signaltab* create_tab_scope(const struct tabconf* conf)
 {
 	struct scopetab* sctab = NULL;
 	GtkBuilder* builder;
@@ -682,7 +681,7 @@ struct signaltab* create_tab_scope(const char* uidef,
 	// Create the tab widget according to the ui definition files
 	sctab = g_malloc0(sizeof(*sctab));
 	builder = gtk_builder_new();
-	res = gtk_builder_add_objects_from_string(builder, uidef, -1,
+	res = gtk_builder_add_objects_from_string(builder, conf->uidef, -1,
 	                                          object_list, &error);
 	if (!res) {
 		fprintf(stderr, "%s\n", error->message);
@@ -692,7 +691,7 @@ struct signaltab* create_tab_scope(const char* uidef,
 	if (find_widgets(sctab, builder))
 		goto error;
 
-	initialize_signaltab(&(sctab->tab), nscales, sclabels, scales);
+	initialize_signaltab(&(sctab->tab), conf);
 	setup_initial_values(sctab);
 	initialize_widgets(sctab);
 	connect_widgets_signals(sctab);

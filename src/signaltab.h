@@ -21,12 +21,16 @@ struct signaltab {
 	
 };
 
-LOCAL_FN int initialize_signaltab(struct signaltab* tab,
-		   int nscales, const char** sclabels, const float* scales);
-LOCAL_FN struct signaltab* create_tab_scope(const char* uidef,
-		   int nscales, const char** sclabels, const float* scales);
-LOCAL_FN struct signaltab* create_tab_bargraph(const char* uidef,
-		   int nscales, const char** sclabels, const float* scales);
+struct tabconf {
+	const char* uidef;
+	int nscales, type;
+	const char** sclabels;
+	const float* scales;
+};
+
+LOCAL_FN int initialize_signaltab(struct signaltab* tab, const struct tabconf* conf);
+LOCAL_FN struct signaltab* create_tab_scope(const struct tabconf* conf);
+LOCAL_FN struct signaltab* create_tab_bargraph(const struct tabconf* conf);
 
 
 // For the user of signal tab
@@ -38,7 +42,6 @@ LOCAL_FN void signaltab_define_input(struct signaltab* tab, unsigned int fs,
 LOCAL_FN void signatab_set_wndlength(struct signaltab* tab, float len);
 LOCAL_FN void signaltab_add_samples(struct signaltab* tab, unsigned int ns,
                                                     const float* data);
-LOCAL_FN struct signaltab* create_signaltab(const char* uidef, int type,
-                   int nscales, const char** sclabels, const float* scales);
+LOCAL_FN struct signaltab* create_signaltab(const struct tabconf* conf);
 
 #endif //SIGNALTAB_H
