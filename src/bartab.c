@@ -8,6 +8,7 @@
 #include <rtf_common.h>
 #include "bargraph.h"
 #include "signaltab.h"
+#include "misc.h"
 
 
 enum bartab_widgets {
@@ -233,7 +234,7 @@ void bartab_filter_button_cb(GtkButton* button, gpointer user_data)
  *                                                                        *
  **************************************************************************/
 static
-void setup_initial_values(struct bartab* brtab)
+void setup_initial_values(struct bartab* brtab, const struct tabconf* cf)
 {
 	GObject** widg = brtab->widgets;
 
@@ -241,6 +242,11 @@ void setup_initial_values(struct bartab* brtab)
 	brtab->cutoff = gtk_spin_button_get_value(GTK_SPIN_BUTTON(widg[LP_SPIN]));
 	if (brtab->cutoff <= 0.0)
 		brtab->cutoff = 1.0;
+
+	mcpi_key_get_bval(cf->keyfile, cf->group, "lp-filter-on", &brtab->filt_on);
+	mcpi_key_get_dval(cf->keyfile, cf->group, "lp-filter-cutoff", &brtab->cutoff);
+	mcpi_key_set_combo(cf->keyfile, cf->group, "scale", 
+	                   GTK_COMBO_BOX(widg[SCALE_COMBO]));
 
 	brtab->tab.scale = 1;
 
@@ -481,7 +487,7 @@ struct signaltab* create_tab_bargraph(const struct tabconf* conf)
 	if (find_widgets(brtab, builder))
 		goto error;
 	initialize_signaltab(&(brtab->tab), conf);
-	setup_initial_values(brtab);
+	setup_initial_values(brtab, conf);
 	initialize_widgets(brtab);
 	connect_widgets_signals(brtab);
 

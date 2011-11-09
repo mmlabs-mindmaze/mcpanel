@@ -28,6 +28,7 @@
 #include "mcp_sighandler.h"
 #include "mcp_gui.h"
 #include "signaltab.h"
+#include "misc.h"
 
 
 #define REFRESH_INTERVAL	30
@@ -225,13 +226,12 @@ void get_initial_values(mcpanel* pan)
 	GtkTreeIter iter;
 	GValue value;
 	GtkComboBox* combo;
-	gboolean res;
 
 	// Get the display length
 	combo = GTK_COMBO_BOX(pan->gui.widgets[TIME_WINDOW_COMBO]);
 	memset(&value, 0, sizeof(value));
 	model = gtk_combo_box_get_model(combo);
-	res = gtk_combo_box_get_active_iter(combo, &iter);
+	gtk_combo_box_get_active_iter(combo, &iter);
 	gtk_tree_model_get_value(model, &iter, 1, &value);
 	pan->display_length = g_value_get_float(&value);
 }
@@ -354,12 +354,14 @@ int RegisterCustomDefinition(void)
 
 static
 int add_signal_tabs(mcpanel* pan, const char* uidef, unsigned int ntab,
-                     const struct panel_tabconf* tabconf)
+                    const struct panel_tabconf* tabconf, GKeyFile* keyfile)
 {
 	unsigned int i;
 	GtkNotebook* notebook = pan->gui.notebook;
 	GtkWidget *widget, *label = NULL;
-	struct tabconf conf;
+	char group[64];
+	struct tabconf conf = {.group = group, .uidef = uidef,
+	                       .keyfile=keyfile};
 
 	pan->ntab = ntab;
 	pan->tabs = g_malloc0(ntab*sizeof(*(pan->tabs)));
@@ -368,7 +370,7 @@ int add_signal_tabs(mcpanel* pan, const char* uidef, unsigned int ntab,
 		conf.sclabels = tabconf[i].sclabels;
 		conf.scales = tabconf[i].scales;
 		conf.type = tabconf[i].type;
-		conf.uidef = uidef;
+		sprintf(group, "panel%u", i);
 		
 		pan->tabs[i] = create_signaltab(&conf);
 		if (pan->tabs[i] == NULL)
@@ -438,7 +440,7 @@ int create_custom_buttons(mcpanel* pan, GtkBuilder* builder)
 
 LOCAL_FN
 int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
-                     const struct panel_tabconf* tabconf)
+                     const struct panel_tabconf* tabconf, const char* confname)
 {
 	GtkBuilder* builder;
 	int res = 0;
@@ -446,7 +448,8 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 	gchar* uidef;
 	gsize uisize;
 	const char* envpath;
-	char path[256];
+	char path[256], keyfilepath[256];
+	GKeyFile* keyfile, *kfile = NULL;
 
 	RegisterCustomDefinition();
 
@@ -462,6 +465,13 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 		uifile = path;
 	}
 
+	// Load settings file
+	keyfile = g_key_file_new();
+	sprintf(keyfilepath, "%s/%s.conf", g_get_user_config_dir(),
+	                                   confname ? confname : PACKAGE_NAME);
+	if (g_key_file_load_from_file(keyfile, keyfilepath, 0, NULL))
+		kfile = keyfile;
+
 	if ( !g_file_get_contents(uifile, &uidef, &uisize, &error)
 	   ||!gtk_builder_add_from_string(builder, uidef, uisize, &error)) {
 		fprintf(stderr, "%s\n", error->message);
@@ -475,9 +485,11 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 
 	// Get the pointers of the control widgets
 	if (!poll_widgets(pan, builder)
-	    || !add_signal_tabs(pan, uidef, ntab, tabconf))
+	    || !add_signal_tabs(pan, uidef, ntab, tabconf, kfile))
 		goto out;
 	
+	mcpi_key_set_combo(keyfile, "main", "time-window",
+	                   GTK_COMBO_BOX(pan->gui.widgets[TIME_WINDOW_COMBO]));
 	initialize_widgets(pan);
 	connect_panel_signals(pan);
 
@@ -486,6 +498,7 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 	res = 1;
 	
 out:
+	g_key_file_free(keyfile);
 	g_free(uidef);
 	g_object_unref(builder);
 	return res;

@@ -153,6 +153,7 @@ mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
                      unsigned int ntab, const struct panel_tabconf* tabconf)
 {
 	mcpanel* pan = NULL;
+	const char* confname = NULL;
 
 	// Allocate memory for the structures
 	pan = g_malloc0(sizeof(*pan));
@@ -164,6 +165,8 @@ mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
 		pan->cb.custom_button = g_malloc0(cb->nbutton*sizeof(*(cb->custom_button)));
 		memcpy(pan->cb.custom_button, cb->custom_button, 
 		       cb->nbutton*sizeof(*(cb->custom_button)));
+	
+		confname = cb->confname;
 	}
 	if (pan->cb.user_data == NULL)
 		pan->cb.user_data = pan;
@@ -173,7 +176,7 @@ mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
 	pan->display_length = 1.0f;
 
 	// Create the panel widgets according to the ui definition files
-	if (!create_panel_gui(pan, uifilename, ntab, tabconf)) {
+	if (!create_panel_gui(pan, uifilename, ntab, tabconf, confname)) {
 		mcp_destroy(pan);
 		return NULL;
 	}

@@ -9,6 +9,7 @@
 //#include "mcp_gui.h"
 #include "scope.h"
 #include "signaltab.h"
+#include "misc.h"
 
 #define CHUNKLEN	0.1 // in seconds
 
@@ -399,7 +400,7 @@ void scopetab_scale_changed_cb(GtkComboBox* combo, gpointer user_data)
  *                                                                        *
  **************************************************************************/
 static
-void setup_initial_values(struct scopetab* sctab)
+void setup_initial_values(struct scopetab* sctab, const struct tabconf* cf)
 {
 	gint active;
 	GObject** widg = sctab->widgets;
@@ -413,6 +414,16 @@ void setup_initial_values(struct scopetab* sctab)
 	if (sctab->cutoff[1] <= 0.0)
 		sctab->cutoff[1] = 1.0;
 
+	mcpi_key_get_bval(cf->keyfile, cf->group, "lp-filter-on", &sctab->filt_on[0]);
+	mcpi_key_get_dval(cf->keyfile, cf->group, "lp-filter-cutoff", &sctab->cutoff[0]);
+	mcpi_key_get_bval(cf->keyfile, cf->group, "hp-filter-on", &sctab->filt_on[1]);
+	mcpi_key_get_dval(cf->keyfile, cf->group, "hp-filter-cutoff", &sctab->cutoff[1]);
+	mcpi_key_set_combo(cf->keyfile, cf->group, "scale", 
+	                   GTK_COMBO_BOX(widg[SCALE_COMBO]));
+	mcpi_key_set_combo(cf->keyfile, cf->group, "reference-type", 
+	                   GTK_COMBO_BOX(widg[REFTYPE_COMBO]));
+	mcpi_key_set_combo(cf->keyfile, cf->group, "reference-electrode", 
+	                   GTK_COMBO_BOX(widg[ELECREF_COMBO]));
 	sctab->tab.scale = 1;
 
 	// Make sure that scale combo select something
@@ -692,7 +703,7 @@ struct signaltab* create_tab_scope(const struct tabconf* conf)
 		goto error;
 
 	initialize_signaltab(&(sctab->tab), conf);
-	setup_initial_values(sctab);
+	setup_initial_values(sctab, conf);
 	initialize_widgets(sctab);
 	connect_widgets_signals(sctab);
 

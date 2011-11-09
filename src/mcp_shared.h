@@ -66,4 +66,7 @@ struct _mcpanel {
 
 LOCAL_FN int set_data_length(mcpanel* pan, float len);
 
+LOCAL_FN void mcpi_key_get_dval(GKeyFile* keyfile, const char* group, const char* key, gdouble* val);
+LOCAL_FN void mcpi_key_get_bval(GKeyFile* keyfile, const char* group, const char* key, gboolean* val);
+
 #endif /*MCPANEL_SHARED_H*/

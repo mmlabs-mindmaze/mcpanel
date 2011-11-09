@@ -29,7 +29,8 @@ libmcpanel_la_SOURCES = mcpanel.c		\
 			 plot-area.h		\
 			 plottk-types.h		\
 			 scope.c		\
-			 scope.h
+			 scope.h		\
+			 misc.h misc.c
 
 #libmcpanel_la_LIBADD = $(GTK_LIBS)
 libmcpanel_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined 

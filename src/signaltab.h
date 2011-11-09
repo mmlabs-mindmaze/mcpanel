@@ -26,6 +26,8 @@ struct tabconf {
 	int nscales, type;
 	const char** sclabels;
 	const float* scales;
+	const char* group;
+	GKeyFile* keyfile;
 };
 
 LOCAL_FN int initialize_signaltab(struct signaltab* tab, const struct tabconf* conf);

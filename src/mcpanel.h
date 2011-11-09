@@ -46,6 +46,9 @@ struct PanelCb {
 	/* pointer used to pass data to the user functions */
 	void* user_data;
 
+	/* configuration name (basename of the configuration file) */
+	const char* confname;
+
 	unsigned int nbutton;
 	struct panel_button* custom_button;
 };

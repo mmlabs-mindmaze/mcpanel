@@ -93,7 +93,8 @@ struct BlockingCallParam {
 
 LOCAL_FN int create_panel_gui(mcpanel* pan, const char* uifile,
                               unsigned int ntab,
-                              const struct panel_tabconf* tabconf);
+                              const struct panel_tabconf* tabconf,
+			      const char* confname);
 LOCAL_FN void get_initial_values(mcpanel* pan);
 LOCAL_FN void destroy_panel_gui(mcpanel* pan);
 LOCAL_FN void update_triggers_gui(mcpanel* pan);
