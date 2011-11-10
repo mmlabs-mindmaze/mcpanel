@@ -456,6 +456,17 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 	pan->gui.is_destroyed = 1;
 	pan->gui.syncmtx = g_mutex_new();
 
+	// Load settings file
+	keyfile = g_key_file_new();
+	sprintf(keyfilepath, "%s/%s.conf", g_get_user_config_dir(),
+	                                   confname ? confname : PACKAGE_NAME);
+	if (g_key_file_load_from_file(keyfile, keyfilepath, 0, NULL))
+		kfile = keyfile;
+
+	// Try to load the uifile path from configuration file if unset previously
+	if (!uifile && kfile)
+		uifile = g_key_file_get_string(kfile, "main", "uifile", NULL);
+
 	// Create the panel widgets according to the ui definition files
 	builder = gtk_builder_new();
 	if (!uifile) {
@@ -464,13 +475,6 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 		                     envpath ? envpath : DATADIR"/"PACKAGE);
 		uifile = path;
 	}
-
-	// Load settings file
-	keyfile = g_key_file_new();
-	sprintf(keyfilepath, "%s/%s.conf", g_get_user_config_dir(),
-	                                   confname ? confname : PACKAGE_NAME);
-	if (g_key_file_load_from_file(keyfile, keyfilepath, 0, NULL))
-		kfile = keyfile;
 
 	if ( !g_file_get_contents(uifile, &uidef, &uisize, &error)
 	   ||!gtk_builder_add_from_string(builder, uidef, uisize, &error)) {
