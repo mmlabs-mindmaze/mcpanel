@@ -431,7 +431,7 @@
             <child>
               <object class="Scope" id="scopetab_scope">
                 <property name="background">white</property>
-                <property name="channel-colors">blue;yellow;red;green;orange;brown;magenta;cyan</property>
+                <property name="channel-colors">blue;black;red;green;orange;brown;magenta;cyan</property>
               </object>
             </child>
           </object>
@@ -690,7 +690,7 @@
                                   <property name="height-request">48</property>
                                   <property name="width_request">100</property>
                                   <property name="background">white</property>
-                                  <property name="channel-colors">blue;yellow;red;green;orange;brown;magenta;cyan</property>
+                                  <property name="channel-colors">blue;black;red;green;orange;brown;magenta;cyan</property>
                                 </object>
                               </child>
                             </object>
