@@ -5,6 +5,8 @@ include_HEADERS = mcpanel.h
 dist_pkgdata_DATA = led_gray.png led_green.png led_red.png led_blue.png \
                     default.ui
 
+EXTRA_DIST = led.license
+
 #libmcp_la_CPPFLAGS = $(GTK_CFLAGS)
 libmcpanel_la_SOURCES = mcpanel.c		\
 			 mcpanel.h		\
