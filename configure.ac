@@ -13,7 +13,7 @@ m4_define([lib_age],0)
 
 
 # Setup Automake
-AC_INIT(mcpanel,[lib_current.lib_revision],nicolas.bourdaud@epfl.ch)
+AC_INIT(mcpanel,[lib_current.lib_revision],nicolas.bourdaud@gmail.com)
 AC_CONFIG_SRCDIR([src/mcpanel.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_LIBOBJ_DIR([lib])

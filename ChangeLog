@@ -1,0 +1,657 @@
+2012-01-17  Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
+
+	* src/Makefile.am, src/led.license: Change led image because of
+	license I have lost track of who were the authors of the previously used led
+	images as well as their exaect license terms. So I prefer to use new
+	one that I know the origins.
+
+2011-11-10  Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
+
+	* src/default.ui: Change default channel colors of the scopes
+
+2011-11-10  Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
+
+	* src/mcp_gui.c: Supports uifile key in configuration file
+
+2011-11-09  Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
+
+	* src/Makefile.am, src/bartab.c, src/mcp_gui.c, src/mcp_gui.h,
+	src/mcp_shared.h, src/mcpanel.c, src/mcpanel.h, src/misc.c,
+	src/misc.h, src/scopetab.c, src/signaltab.h, test/Makefile.am,
+	test/mcpanel.conf, test/test.conf, test/thread_panel.c: Implement
+	default settings using a keyfile If the keyfile is present and the corresponding key are set, the gui
+	will start the those settings. The basename of the keyfile can be
+	set in PanelCb structure. If none are set, "mcpanel" will be used.
+	The path is then: $XDG_CONFIG_HOME/<basename>.conf
+
+2011-11-08  Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
+
+	* src/bartab.c, src/mcp_gui.c, src/scopetab.c, src/signaltab.c,
+	src/signaltab.h: group signal configuration into struct tabconf
+
+2011-11-04  Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
+
+	* src/bartab.c, src/scopetab.c, src/signaltab.c: Get signatabs
+	initial settings from the ui file
+
+2011-11-04  Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
+
+	* src/mcp_gui.c, src/mcpanel.c, src/scopetab.c: Bugfix: timewnd
+	initial values not taken into account
+
+2011-11-07  Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
+
+	* m4/funcarg.m4: Fix warnings of new version of autoconf
+
+2011-11-04  Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
+
+	* Makefile.am, debian/changelog, debian/compat, debian/control,
+	debian/copyright, debian/docs, debian/libmcpanel0-dev.install,
+	debian/libmcpanel0.install, debian/rules: Remove debian packaging
+	from main development branches
+
+2011-06-23  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* configure.ac, src/gtk-led.c, src/mcp_gui.c: bugfix: data files
+	cannot be found once installed
+
+2011-06-15  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* configure.ac, debian/libmcpanel0.install, src/Makefile.am,
+	src/gtk-led.c, src/mcp_gui.c: install the data in package subfolder
+
+2011-06-15  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* build-aux/file-to-string.sh, configure.ac, src/Makefile.am,
+	src/mcp_gui.c: Don't build default.ui into the shared library
+
+2011-06-15  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* build-aux/convert-image.sh, configure.ac, m4/ax_define_dir.m4,
+	src/Makefile.am, src/gtk-led.c, test/Makefile.am: Do not built image
+	data into the shared library
+
+2011-06-15  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* debian/changelog: Release mcpanel0.0-0alpha0
+
+2011-06-15  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/default.ui, src/mcp_gui.c, src/mcp_gui.h, src/mcpanel.c,
+	src/mcpanel.h, test/thread_panel.c: Add custom buttons facilities
+
+2011-06-04  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/mcpanel.c, src/mcpanel.h, test/signal_panel.c,
+	test/thread_panel.c: Rename init_mcp_lib to mcp_init_lib (to be
+	consistent)
+
+2011-06-04  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/bargraph.c, src/binary-scope.c, src/gtk-led.c,
+	src/labelized-plot.c, src/mcp_gui.c, src/plot-area.c, src/scope.c: 
+	Don't export *_get_type functions
+
+2011-06-01  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* Makefile.am, README, configure.ac, debian/changelog,
+	debian/control, debian/libeegpanel0-dev.install,
+	debian/libeegpanel0.install, debian/libmcpanel0-dev.install,
+	debian/libmcpanel0.install, src/Makefile.am, src/bargraph.c,
+	src/bargraph.h, src/binary-scope.c, src/binary-scope.h,
+	src/eegpanel.c, src/eegpanel.h, src/eegpanel_gui.c,
+	src/eegpanel_gui.h, src/eegpanel_shared.h,
+	src/eegpanel_sighandler.c, src/eegpanel_sighandler.h,
+	src/gtk-led.c, src/gtk-led.h, src/labelized-plot.c,
+	src/labelized-plot.h, src/mcp_gui.c, src/mcp_gui.h,
+	src/mcp_shared.h, src/mcp_sighandler.c, src/mcp_sighandler.h,
+	src/mcpanel.c, src/mcpanel.h, src/plot-area.c, src/plot-area.h,
+	src/plottk-types.h, src/scope.c, src/scope.h, src/scopetab.c,
+	src/signaltab.c, test/Makefile.am, test/signal_panel.c,
+	test/test_filter.c, test/thread_panel.c: rename the library:
+	eegpanel -> mcpanel EEGPanel* -> eegpanel* All API function are now prefixed by mcp_
+	instead of eegpanel_
+
+2011-05-30  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/default.ui: Increase the area for channels/scales labels
+
+2011-05-27  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* Makefile.am, README, configure.ac, debian/changelog,
+	debian/compat, debian/control, debian/copyright, debian/docs,
+	debian/libeegpanel0-dev.install, debian/libeegpanel0.install,
+	debian/rules: Add debian packaging and use the correct version
+	scheme
+
+2010-12-22  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* test/thread_panel.c: Keep refresh rate constant in thread-panel
+	test
+
+2010-12-22  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/bartab.c, test/thread_panel.c: bugfix: segfault if ns added is
+	too big
+
+2010-12-17  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/scope.c: Redraw scope per rectangle
+
+2010-12-17  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/scope.c: Request scope redraw in one pass (use a region)
+
+2010-12-16  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/scopetab.c: Correct scopetab filter initialization
+
+2010-12-16  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel_gui.c, src/signaltab.c: memleak fix: signal tabs not
+	destroyed
+
+2010-12-08  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/bartab.c, src/default.ui: Add lowpass to bartab
+
+2010-12-08  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* build-aux/convert-image.sh, configure.ac: Disable glib type check
+	on cast Define G_DISABLE_CAST_CHECK to disable useless check and improve
+	runtime speed. The option "enable-debug" in the configure script
+	reenable those checks
+
+2010-12-07  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/scope.c, test/signal_panel.c: Fix display glitches in the
+	scope
+
+2010-12-07  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/bargraph.c, src/binary-scope.c, src/gtk-led.c,
+	src/labelized-plot.c, src/plot-area.c, src/scope.c: Widgets: set
+	evrything not static as LOCAL_FN
+
+2010-11-26  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/default.ui, src/eegpanel.c, src/eegpanel.h: Add custom signals
+
+2010-11-25  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel.c, src/eegpanel.h: Add callback registration
+
+2010-11-25  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/scope.c: Limits drawing in the scope in the plotting area
+
+2010-11-25  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel_sighandler.c: bugfix: pass user_data to pause
+	recording callback when stopping
+
+2010-11-24  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/scopetab.c: scopetab now filter always whole incoming data This avoids several reset in filter and glitch in the referencing
+
+2010-11-24  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/bartab.c, src/scopetab.c: Select all channel on define_input
+
+2010-11-24  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/bartab.c, src/eegpanel.h, src/eegpanel_gui.c, src/scopetab.c,
+	src/signaltab.c, src/signaltab.h, test/thread_panel.c: Provide a way
+	to override scales default in tabs
+
+2010-11-08  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/Makefile.am, src/bargraph.c, src/bartab.c,
+	src/binary-scope.c, src/default.ui, src/eegpanel.c, src/eegpanel.h,
+	src/eegpanel_dataproc.c, src/eegpanel_dataproc.h,
+	src/eegpanel_gui.c, src/eegpanel_gui.h, src/eegpanel_shared.h,
+	src/eegpanel_sighandler.c, src/gtk-led.c, src/labelized-plot.c,
+	src/plot-area.c, src/scopetab.c, src/signaltab.c, src/signaltab.h,
+	test/signal_panel.c, test/thread_panel.c: Add tab on demand (major
+	rework) Huge rework: all the code related to tabs have been separated.
+	Consequently, several API function have been added to add tabs,
+	configure their input, and feed them with data. Now trigger data is
+	separated
+
+2010-11-24  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/bargraph.c: bugfix: bargraph y axis is inverted (only the
+	axis)
+
+2010-11-17  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* Makefile.am, build-aux/file-to-string.sh, configure.ac: Add lib to
+	the distribution and make file-to-string.sh MSYS compliant
+
+2010-11-10  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/labelized-plot.c, src/plot-area.c, src/scope.c: Fix warning in
+	custom widgets
+
+2010-11-02  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel.c, src/eegpanel_gui.c, src/eegpanel_sighandler.c,
+	src/gtk-led.c: Fix deadlocks in win32 The problem came actually from a bad locking schema. The bugs were
+	actually silent in linux (although could be seen in certain
+	circumstance) but existed as well. Now protect whenever necessary
+	with gdk_threads_{enter/leave}
+
+2010-11-02  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* configure.ac, test/Makefile.am, test/main.c, test/signal_panel.c,
+	test/thread_panel.c: Separate test into 2 test (signal based or
+	thread). Remove pthread dependency
+
+2010-11-01  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* configure.ac, lib/Makefile.am, lib/clock_gettime.c,
+	lib/clock_gettime.h, lib/clock_nanosleep.c, lib/clock_nanosleep.h,
+	lib/convfiletime.h, lib/timespec.h, m4/api-exports.m4,
+	m4/funcarg.m4, src/Makefile.am, test/Makefile.am, test/main.c: Win32
+	build works (test not running in wine)
+
+2010-09-24  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel.c, src/eegpanel.h, src/eegpanel_gui.c,
+	src/eegpanel_gui.h, src/eegpanel_sighandler.c, test/main.c: Add
+	close_panel callback This adds an optional callback named close_panel which is called
+	when the user presses the quit button of the panel. As a
+	consequence, all the closure code related to device connection and
+	recording has been dropped and should be implemented by the user
+	himself (much better).
+
+2010-09-23  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* configure.ac, src/Makefile.am: Add silent build and modernize
+	build system
+
+2010-09-23  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* configure.ac, src/eegpanel_dataproc.c, src/eegpanel_dataproc.h: 
+	Integrates the changes of rtfilter API
+
+2010-01-04  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* test/main.c: minor change in the test
+
+2009-12-15  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel.c, src/eegpanel_gui.c, src/eegpanel_sighandler.c,
+	test/main.c: Notification system added
+
+2009-12-15  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel.c, src/eegpanel.h, src/eegpanel_gui.c,
+	src/eegpanel_gui.h, test/main.c: Modified open_filename_dialog and
+	clean this part of the code
+
+2009-12-14  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/default.ui, src/eegpanel.c, src/eegpanel.h,
+	src/eegpanel_gui.c, src/eegpanel_gui.h, src/eegpanel_sighandler.c,
+	test/main.c: Simplify and clean the code for outoftheloop gui call
+	prepare gui func for notifications
+
+2009-12-11  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel.c, src/eegpanel_dataproc.c, src/eegpanel_dataproc.h,
+	src/eegpanel_sighandler.c: Clean the dataproc a little bit
+
+2009-12-09  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel.c, src/eegpanel.h, test/main.c: Change the settings
+	structure
+
+2009-12-07  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel.c, src/eegpanel.h, src/eegpanel_dataproc.c,
+	src/eegpanel_dataproc.h, test/main.c: Pass default settings at
+	creation by structure
+
+2009-12-05  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel.c, test/main.c: Fix init of filters
+
+2009-12-04  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* src/eegpanel.c, test/main.c, test/settings.ini: Fix integration of
+	settings file
+
+2009-11-09  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/Makefile.am, src/eegpanel_dataproc.c: Fix the the new usage of
+	rtfilter git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@151 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-11-09  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* configure.ac, src/eegpanel_dataproc.c: Integrate the change of
+	rtfilter library git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@150 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-21  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/eegpanel.c, src/eegpanel_dataproc.c, src/eegpanel_dataproc.h,
+	src/eegpanel_shared.h, src/eegpanel_sighandler.c: Implement tricks
+	to minimize the update of filter params git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@124 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-18  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/eegpanel_gui.c: Fix labels displayed in scopes git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@118 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-18  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* configure.ac, src/Makefile.am, src/eegpanel.c,
+	src/eegpanel_dataproc.c, src/eegpanel_dataproc.h,
+	src/eegpanel_gui.c, src/filter.c, src/filter.h: Base filtering on
+	rtfilter library and fix memory leaks git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@116 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-18  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/eegpanel.c, src/eegpanel_dataproc.c, src/eegpanel_gui.c: Clean
+	alloc (replace g_malloc when code does not really depends on glib) git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@115 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-18  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/eegpanel.c, src/eegpanel_gui.c, test/main.c: Seems to work
+	(same functionality than before the separation) git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@114 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-18  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/eegpanel_sighandler.c, src/eegpanel_sighandler.h: Forgot
+	sighandler git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@113 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-18  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/labelized-plot.c: Do not hold font description anymore git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@112 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-18  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/binary-scope.c: Fix small bug in displaying the values
+	(possible out of range read fixed) git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@111 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-18  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/eegpanel.c, src/eegpanel_gui.c, src/eegpanel_gui.h,
+	test/main.c: Add popup dialog function, thread safe (not yet
+	working) git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@110 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-18  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/Makefile.am, src/eegpanel.c, src/eegpanel_dataproc.c,
+	src/eegpanel_dataproc.h, src/eegpanel_gui.c, src/eegpanel_gui.h,
+	src/eegpanel_shared.h, test/main.c: code separated (still bugged) git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@109 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-18  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/Makefile.am, src/eegpanel.c, src/eegpanel_dataproc.c,
+	src/eegpanel_dataproc.h, src/eegpanel_gui.c, src/eegpanel_gui.h,
+	src/eegpanel_shared.h: started separation of gui, API and data proc
+	code (not yet functional) git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@108 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-18  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/eegpanel.c, src/eegpanel.h, test/main.c: remove private data,
+	make the whole panel struct hidden git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@107 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-08-03  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/eegpanel.c: Toggle off and stop recording when closing the
+	panel (and toggle off when stopping recording) git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@100 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-07-17  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/default.ui, src/eegpanel.c: Initial values based on ui git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@73 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-07-17  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* src/default.ui, src/eegpanel.c: Add values less than 1 to time
+	window combo git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@72 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-07-17  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* test/main.c: Integrate recording change into the test git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@71 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-07-17  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* configure.ac, src/default.ui, src/eegpanel.c, src/eegpanel.h,
+	test/main.c: Feature recording git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@70 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-07-14  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* README: Fill README git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@47 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-07-09  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* : commit 4cfdc1c873f8fae5f36b5a0c96d2afb6356f1c94 Author: Nicolas
+	Bourdaud <nicolas.bourdaud@epfl.ch> Date:   Fri Jul 3 16:40:13 2009
+	+0200
+
+2009-07-03  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* build-aux/file-to-string.sh, configure.ac, src/Makefile.am,
+	src/default.ui, src/eegpanel.c, src/eegpanel.h, test/Makefile.am,
+	test/eegpanel.ui, test/main.c: Integrate default ui into the code
+	and provide way to specify ui and settings
+
+2009-06-19  bourdaud <bourdaud@3b4714c8-b19d-487d-9711-26c957be2895>
+
+	* : Add missing test/Makefile.am git-svn-id:
+
+	https://svn.epfl.ch/svn/activetwotools/trunk/visualization/eegpanel@6 3b4714c8-b19d-487d-9711-26c957be2895
+
+2009-02-12  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* test/Makefile.am: Add missing test/Makefile.am
+
+2009-02-12  Nicolas Bourdaud <nicolas.bourdaud@epfl.ch>
+
+	* config/.dummy, m4/.dummy, src/bargraph.c, src/bargraph.h,
+	src/binary-scope.c, src/binary-scope.h, src/eegpanel.c,
+	src/eegpanel.h, src/filter.c, src/filter.h, src/gtk-led.c,
+	src/gtk-led.h, src/labelized-plot.c, src/labelized-plot.h,
+	src/plot-area.c, src/plot-area.h, src/plottk-types.h, src/scope.c,
+	src/scope.h, test/test_filter.c: Add copyright and config and m4
+	folders
+
+2008-12-03  Nicolas Bourdaud <nicolas.bourdaud@idiap.ch>
+
+	* Makefile.am, build-aux/convert-image.sh, configure.ac,
+	test/main.c: check for verion of the GTK libs
+
+2008-12-01  Nicolas Bourdaud <nicolas.bourdaud@idiap.ch>
+
+	* AUTHORS, COPYING, ChangeLog, INSTALL, Makefile, Makefile.am,
+	NEWS, README, bargraph.c, bargraph.h, binary-scope.c,
+	binary-scope.h, build-aux/convert-image.sh, configure.ac,
+	eegpanel.c, eegpanel.glade, eegpanel.h, eegpanel.ui, filter.c,
+	filter.h, gtk-led.c, gtk-led.h, labelized-plot.c, labelized-plot.h,
+	main.c, plot-area.c, plot-area.h, plottk-types.h, scope.c, scope.h,
+	src/Makefile.am, src/bargraph.c, src/bargraph.h,
+	src/binary-scope.c, src/binary-scope.h, src/eegpanel.c,
+	src/eegpanel.h, src/filter.c, src/filter.h, src/gtk-led.c,
+	src/gtk-led.h, src/labelized-plot.c, src/labelized-plot.h,
+	src/plot-area.c, src/plot-area.h, src/plottk-types.h, src/scope.c,
+	src/scope.h, test/eegpanel.glade, test/eegpanel.ui, test/main.c,
+	test/settings.ini, test/test_filter.c: Making an GNU package
+
+2008-11-27  Nicolas Bourdaud <nicolas.bourdaud@idiap.ch>
+
+	* Makefile, eegpanel.c, eegpanel.ui, filter.c, filter.h: fix error
+	and warning caused by the newer version of GTK
+
+2008-07-01  Nicolas Bourdaud <nicolas.bourdaud@idiap.ch>
+
+	* bargraph.c, binary-scope.c, binary-scope.h, eegpanel.c,
+	eegpanel.glade, eegpanel.h, eegpanel.ui, gtk-led.c, main.c: add
+	eegpanel_open_filename_dialog and eegpanel_popup_message and fix
+	mask for triggers
+
+2008-06-24  Nicolas Bourdaud <nicolas.bourdaud@idiap.ch>
+
+	* Makefile, eegpanel.c: add default channel labels loaded from
+	settings.ini
+
+2008-06-23  Nicolas Bourdaud <nicolas.bourdaud@idiap.ch>
+
+	* Makefile, eegpanel.c, eegpanel.h, eegpanel.ui, gtk-led.c: add low
+	scales and correct some warnings
+
+2008-06-23  Nicolas Bourdaud <nicolas.bourdaud@idiap.ch>
+
+	* Makefile, bargraph.c, eegpanel.c, filter.c, filter.h, main.c: fix
+	the bug of compute_chebychev and removes some warnings
+
+2008-06-17  Nicolas Bourdaud <nicolas.bourdaud@idiap.ch>
+
+	* eegpanel.c, eegpanel.glade, eegpanel.ui, main.c: Make cms in range
+	and low battery functional
+
+2008-06-10  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* Makefile, eegpanel.c, eegpanel.ui, gtk-led.c: embed led icon files
+	into the code and start to provide settings to the panel
+
+2008-06-09  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* bargraph.c, eegpanel.c, main.c: prevent deadlocks by moving the
+	redraw code in a idle function
+
+2008-06-06  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* Makefile, eegpanel.c, eegpanel.h, eegpanel.ui, main.c: panel is
+	ready but there are still deadlocks it seems
+
+2008-05-28  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.c, eegpanel.ui, labelized-plot.c, main.c: make the panel
+	almost thread safe
+
+2008-05-28  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* Makefile, eegpanel.c, eegpanel.ui: implemented eeg offset scopes
+
+2008-05-28  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.c, eegpanel.glade, eegpanel.ui: eeg tab looks fully
+	implemented
+
+2008-05-27  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.c, eegpanel.ui: referencing
+
+2008-05-27  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.c, main.c: implement eeg, exg signal processing in the
+	panel (mainly filtering)
+
+2008-05-27  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.c, filter.c, main.c: implemented filter part of the gui
+
+2008-05-27  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* filter.c, filter.h, main.c: butterworth and chebyshev filter
+	finished but stability problems encountered
+
+2008-05-26  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* filter.c: implemented almost everyting for iir filter
+
+2008-05-26  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.c, eegpanel.ui, labelized-plot.c: display_length can
+	change
+
+2008-05-26  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.c, eegpanel.ui, main.c: add scaling stuff
+
+2008-05-25  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.c, eegpanel.ui, main.c, scope.c: scale and stuff
+
+2008-05-21  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.c, eegpanel.glade, eegpanel.ui: change some widget name
+	and add right panel part
+
+2008-05-21  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.c, eegpanel.glade, eegpanel.ui, filter.c, filter.h,
+	main.c: Use a table to check the validity of the widgets provided in
+	the ui file
+
+2008-05-20  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.glade, eegpanel.ui: removed warnings (removed default
+	selection in combos)
+
+2008-05-20  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.ui: eegpanel.ui works with warnings
+
+2008-05-20  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.glade, eegpanel.ui: add eegpanel.ui
+
+2008-05-20  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.glade: change names of leds
+
+2008-05-20  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.glade: change small things in the glade file
+
+2008-05-20  Nicolas Bourdaud <nbourdau@tapadufrix.(none)>
+
+	* eegpanel.glade, gtk-led.c, gtk-led.h: Add color properties of the
+	LED and finished the panel
+
+2008-05-20  Nicolas Bourdaud <nicolas.bourdaud@idiap.ch>
+
+	* Initial commit
+
