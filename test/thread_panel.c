@@ -6,7 +6,7 @@
 #include <mcpanel.h>
 #include <stdlib.h>
 #include <time.h>
-#include <gtk/gtk.h>
+#include <glib.h>
 #if !HAVE_DECL_CLOCK_NANOSLEEP
 #include "../lib/clock_nanosleep.h"
 #endif

@@ -5,10 +5,9 @@
 #include <stdio.h>
 #include <mcpanel.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <time.h>
-#include <gtk/gtk.h>
 #include <math.h>
+#include <glib.h>
 
 #define EEGSET	AB
 #define NEEG	64
