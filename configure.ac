@@ -34,8 +34,8 @@ AC_SUBST(LIBTOOL_DEPS)
 
 AC_DEF_API_EXPORT_ATTRS
 
-PKG_CHECK_MODULES(GTK2, gtk+-2.0)
-PKG_CHECK_MODULES(GTHREAD2, gthread-2.0)
+PKG_CHECK_MODULES_EXT(GTK2, gtk+-2.0)
+PKG_CHECK_MODULES_EXT(GTHREAD2, gthread-2.0)
 
 AC_SEARCH_LIBS([rtf_create_filter], [rtfilter], [], AC_MSG_ERROR([The rtfilter library must be installed.]))
 
@@ -65,9 +65,6 @@ AX_DEFINE_DIR([DATADIR], [datadir], [read-only architecture-independent data pat
 AC_SUBST([CURRENT],[lib_current])
 AC_SUBST([REVISION],[lib_revision])
 AC_SUBST([AGE],[lib_age])
-LIBS="$LIBS $GTK2_LIBS $GTHREAD2_LIBS"
-AC_SUBST(AM_CPPFLAGS, "$GTK2_CFLAGS $GTHREAD2_CFLAGS")
-AC_SUBST(AM_LDFLAGS, "$GTK2_LDFLAGS $GTHREAD2_LDFLAGS")
 
 AC_CONFIG_FILES([Makefile lib/Makefile src/Makefile test/Makefile])
 AC_OUTPUT

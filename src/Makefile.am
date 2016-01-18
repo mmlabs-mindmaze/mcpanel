@@ -5,6 +5,8 @@ include_HEADERS = mcpanel.h
 dist_pkgdata_DATA = led_gray.png led_green.png led_red.png led_blue.png \
                     default.ui
 
+AM_CPPFLAGS = $(GTK2_CPPFLAGS) $(GTHREAD2_CPPFLAGS)
+AM_CFLAGS = $(GTK2_CFLAGS) $(GTHREAD2_CFLAGS)
 EXTRA_DIST = led.license
 
 #libmcp_la_CPPFLAGS = $(GTK_CFLAGS)
@@ -34,8 +36,9 @@ libmcpanel_la_SOURCES = mcpanel.c		\
 			 scope.h		\
 			 misc.h misc.c
 
-#libmcpanel_la_LIBADD = $(GTK_LIBS)
-libmcpanel_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined 
+libmcpanel_la_LIBADD = $(GTK2_LIBS) $(GTHREAD2_LIBS)
+libmcpanel_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined \
+	$(GTK2_LDFLAGS) $(GTHREAD2_LDFLAGS)
 			 
 #libmcpanel_la_LIBADD = $(top_builddir)/res/libres.a
 
