@@ -38,6 +38,7 @@ PKG_CHECK_MODULES_EXT(GTK2, gtk+-2.0)
 PKG_CHECK_MODULES_EXT(GTHREAD2, gthread-2.0)
 
 AC_SEARCH_LIBS([rtf_create_filter], [rtfilter], [], AC_MSG_ERROR([The rtfilter library must be installed.]))
+AC_SEARCH_LIBS([cos], [m])
 
 AC_ARG_ENABLE([debug],
 	AC_HELP_STRING([--enable-debug@<:@=ARG@:>@],[Enable debugging @<:@DEFAULT=no@:>@]),
