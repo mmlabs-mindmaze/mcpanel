@@ -66,7 +66,7 @@ gboolean check_redraw_scopes_cb(gpointer user_data)
 
 	gdk_threads_enter();
 	// Redraw all the scopes
-	g_mutex_lock(pan->data_mutex);
+	g_mutex_lock(&pan->data_mutex);
 
 	curr = pan->current_sample;
 	prev = pan->last_drawn_sample;
@@ -84,12 +84,12 @@ gboolean check_redraw_scopes_cb(gpointer user_data)
 		pan->last_drawn_sample = curr;
 	}
 
-	g_mutex_unlock(pan->data_mutex);
+	g_mutex_unlock(&pan->data_mutex);
 
 	// Run modal dialog
 	if (pan->dialog) {
 		pan->dlg_retval = gtk_dialog_run(pan->dialog);
-		g_mutex_unlock(pan->dlg_completion_mutex);
+		g_mutex_unlock(&pan->dlg_completion_mutex);
 	}
 	gdk_threads_leave();
 
@@ -168,10 +168,10 @@ gboolean blocking_funcall_cb(gpointer data)
 	gdk_threads_leave();
 
 	// Signal that it is done
-	g_mutex_lock(bcprm->mtx);
+	g_mutex_lock(&bcprm->mtx);
 	bcprm->done = 1;
-	g_cond_signal(bcprm->cond);
-	g_mutex_unlock(bcprm->mtx);
+	g_cond_signal(&bcprm->cond);
+	g_mutex_unlock(&bcprm->mtx);
 	
 	return FALSE;
 }
@@ -185,24 +185,24 @@ int run_func_in_guithread(mcpanel* pan, BCProc func, void* data)
 		// Init synchronization objects
 		// Warning: Assume that the creation will not fail
 		struct BlockingCallParam bcprm = {
-			.mtx = g_mutex_new(),
-			.cond = g_cond_new(),
 			.done = 0,
 			.data = data,
 			.func = func
 		};
+		g_mutex_init(&bcprm.mtx);
+		g_cond_init(&bcprm.cond);
 
 		// queue job into GTK main loop
 		// and wait for completion
-		g_mutex_lock(bcprm.mtx);
+		g_mutex_lock(&bcprm.mtx);
 		g_idle_add(blocking_funcall_cb, &bcprm);
 		while (!bcprm.done)
-			g_cond_wait(bcprm.cond, bcprm.mtx);
-		g_mutex_unlock(bcprm.mtx);
+			g_cond_wait(&bcprm.cond, &bcprm.mtx);
+		g_mutex_unlock(&bcprm.mtx);
 
 		// free sync objects
-		g_mutex_free(bcprm.mtx);
-		g_cond_free(bcprm.cond);
+		g_mutex_clear(&bcprm.mtx);
+		g_cond_clear(&bcprm.cond);
 
 		retcode = bcprm.retcode;
 	} else {
@@ -454,7 +454,7 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 	RegisterCustomDefinition();
 
 	pan->gui.is_destroyed = 1;
-	pan->gui.syncmtx = g_mutex_new();
+	g_mutex_init(&pan->gui.syncmtx);
 
 	// Load settings file
 	keyfile = g_key_file_new();
@@ -512,13 +512,13 @@ out:
 LOCAL_FN
 void destroy_panel_gui(mcpanel* pan)
 {
-	g_mutex_lock(pan->gui.syncmtx);
+	g_mutex_lock(&pan->gui.syncmtx);
 	if (!pan->gui.is_destroyed)
 		gtk_widget_destroy(GTK_WIDGET(pan->gui.window));
 	pan->gui.is_destroyed = 1;
-	g_mutex_unlock(pan->gui.syncmtx);
+	g_mutex_unlock(&pan->gui.syncmtx);
 
-	g_mutex_free(pan->gui.syncmtx);
+	g_mutex_clear(&pan->gui.syncmtx);
 	destroy_signal_tabs(pan);
 	g_free(pan->gui.buttons);
 }

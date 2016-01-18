@@ -148,7 +148,7 @@ int Connect(mcpanel* panel)
 	mcp_define_tab_input(panel, 1, NEEG, SAMPLING_RATE, eeg_lab);
 	mcp_define_tab_input(panel, 2, NEXG, SAMPLING_RATE, exg_lab);
 
-	thread_id = g_thread_create(reading_thread, panel, TRUE, NULL);
+	thread_id = g_thread_new(NULL, reading_thread, panel);
 
 	return 0;
 }

@@ -39,7 +39,7 @@ LOCAL_FN
 int initialize_signaltab(struct signaltab* tab, const struct tabconf* conf)
 {
         signaltab_fill_scale_combo(tab, conf->nscales, conf->sclabels, conf->scales);
-	tab->datlock = g_mutex_new();
+	g_mutex_init(&tab->datlock);
 	return 0;
 }
 
@@ -47,7 +47,7 @@ int initialize_signaltab(struct signaltab* tab, const struct tabconf* conf)
 LOCAL_FN 
 void signaltab_destroy(struct signaltab* tab)
 {
-	g_mutex_free(tab->datlock);
+	g_mutex_clear(&tab->datlock);
 	tab->destroy(tab);
 }
 
@@ -62,12 +62,12 @@ LOCAL_FN
 void signaltab_define_input(struct signaltab* tab, unsigned int fs,
                             unsigned int nch, const char** labels)
 {
-	g_mutex_lock(tab->datlock);
+	g_mutex_lock(&tab->datlock);
 	tab->fs = fs;
 	tab->nch = nch;
 
 	tab->define_input(tab, labels);		
-	g_mutex_unlock(tab->datlock);
+	g_mutex_unlock(&tab->datlock);
 }
 
 
@@ -75,9 +75,9 @@ LOCAL_FN
 void signatab_set_wndlength(struct signaltab* tab, float len)
 {
 	if (tab->set_wndlen) {
-		g_mutex_lock(tab->datlock);
+		g_mutex_lock(&tab->datlock);
 		tab->set_wndlen(tab, len);
-		g_mutex_unlock(tab->datlock);
+		g_mutex_unlock(&tab->datlock);
 	}
 }
 
@@ -85,9 +85,9 @@ void signatab_set_wndlength(struct signaltab* tab, float len)
 LOCAL_FN 
 void signaltab_update_plot(struct signaltab* tab)
 {
-	g_mutex_lock(tab->datlock);
+	g_mutex_lock(&tab->datlock);
 	tab->update_plot(tab);
-	g_mutex_unlock(tab->datlock);
+	g_mutex_unlock(&tab->datlock);
 }
 
 
@@ -95,9 +95,9 @@ LOCAL_FN
 void signaltab_add_samples(struct signaltab* tab, unsigned int ns,
                            const float* data)
 {
-	g_mutex_lock(tab->datlock);
+	g_mutex_lock(&tab->datlock);
 	tab->process_data(tab, ns, data);
-	g_mutex_unlock(tab->datlock);
+	g_mutex_unlock(&tab->datlock);
 }
 
 

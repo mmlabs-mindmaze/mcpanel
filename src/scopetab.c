@@ -293,9 +293,9 @@ void scopetab_reftype_changed_cb(GtkComboBox* combo, gpointer data)
 
 
 	// Update sigprocessing params
-	g_mutex_lock(sctab->tab.datlock);
+	g_mutex_lock(&sctab->tab.datlock);
 	sctab->ref = ref;
-	g_mutex_unlock(sctab->tab.datlock);
+	g_mutex_unlock(&sctab->tab.datlock);
 
 	if (neednewlabel)
 		update_selected_label(sctab);
@@ -309,9 +309,9 @@ void scopetab_refelec_changed_cb(GtkComboBox* combo, gpointer data)
 	unsigned int refelec = gtk_combo_box_get_active(combo);
 
 
-	g_mutex_lock(sctab->tab.datlock);
+	g_mutex_lock(&sctab->tab.datlock);
 	sctab->refelec = refelec;
-	g_mutex_unlock(sctab->tab.datlock);
+	g_mutex_unlock(&sctab->tab.datlock);
 }
 
 
@@ -323,7 +323,7 @@ void scopetab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
 	struct scopetab* sctab = user_data;
 	unsigned int num = gtk_tree_selection_count_selected_rows(selec);
 	
-	g_mutex_lock(sctab->tab.datlock);
+	g_mutex_lock(&sctab->tab.datlock);
 
 	// Prepare the channel selection structure to be passed
 	if (num != sctab->nselch) {
@@ -343,7 +343,7 @@ void scopetab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
 	g_list_foreach(list, (GFunc)gtk_tree_path_free, NULL);
 	g_list_free(list);
 
-	g_mutex_unlock(sctab->tab.datlock);
+	g_mutex_unlock(&sctab->tab.datlock);
 
 	update_selected_label(sctab);
 }
@@ -367,9 +367,9 @@ void scopetab_filter_button_cb(GtkButton* button, gpointer user_data)
 	}
 
 	// TODO lock mutex here
-	g_mutex_lock(sctab->tab.datlock);
+	g_mutex_lock(&sctab->tab.datlock);
 	init_filter(sctab, hp);
-	g_mutex_unlock(sctab->tab.datlock);
+	g_mutex_unlock(&sctab->tab.datlock);
 }
 
 
@@ -622,10 +622,10 @@ void scopetab_define_input(struct signaltab* tab, const char** labels)
 	g_strfreev(sctab->labels);
 	sctab->labels = g_strdupv((char**)labels);
 
-	g_mutex_unlock(sctab->tab.datlock);
+	g_mutex_unlock(&sctab->tab.datlock);
 	fill_treeview(GTK_TREE_VIEW(sctab->widgets[ELEC_TREEVIEW]), labels);
 	fill_combo(GTK_COMBO_BOX(sctab->widgets[ELECREF_COMBO]), labels);
-	g_mutex_lock(sctab->tab.datlock);
+	g_mutex_lock(&sctab->tab.datlock);
 
 	sctab->chunkns = (CHUNKLEN * sctab->tab.fs) + 1;
 	init_buffers(sctab);

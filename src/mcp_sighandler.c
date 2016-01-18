@@ -42,7 +42,7 @@ gboolean on_close_panel(GtkWidget *widget, GdkEvent *event, gpointer data)
 	mcpanel* pan = data;
 	int retval = 1;
 
-	g_mutex_lock(pan->gui.syncmtx);
+	g_mutex_lock(&pan->gui.syncmtx);
 	if (pan->cb.close_panel) {
 		gdk_threads_leave();
 		retval = pan->cb.close_panel(pan->cb.user_data);
@@ -50,7 +50,7 @@ gboolean on_close_panel(GtkWidget *widget, GdkEvent *event, gpointer data)
 	}
 	if (retval)
 		pan->gui.is_destroyed = 1;
-	g_mutex_unlock(pan->gui.syncmtx);
+	g_mutex_unlock(&pan->gui.syncmtx);
 
 	return (retval) ? FALSE : TRUE;
 }
@@ -146,7 +146,7 @@ void time_window_cb(GtkComboBox* combo, gpointer user_data)
 	float time_length;
 	mcpanel* pan = user_data;
 
-	g_mutex_lock(pan->data_mutex);
+	g_mutex_lock(&pan->data_mutex);
 	
 	// Get the value set
 	memset(&value, 0, sizeof(value));
@@ -157,7 +157,7 @@ void time_window_cb(GtkComboBox* combo, gpointer user_data)
 
 	set_data_length(pan, time_length);
 
-	g_mutex_unlock(pan->data_mutex);
+	g_mutex_unlock(&pan->data_mutex);
 }
 
 

@@ -30,11 +30,11 @@ typedef struct _Indicators {
 struct _mcpanel {
 
 	GThread* main_loop_thread;
-	GMutex* data_mutex;
+	GMutex data_mutex;
 
 	// modal dialog stuff
-	GMutex* dialog_mutex;
-	GMutex* dlg_completion_mutex;
+	GMutex dialog_mutex;
+	GMutex dlg_completion_mutex;
 	GtkDialog* dialog;
 	gint dlg_retval;
 

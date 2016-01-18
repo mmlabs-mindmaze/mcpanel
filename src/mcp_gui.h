@@ -65,7 +65,7 @@ struct custom_button {
 
 struct PanelGUI {
 	GtkWindow* window;
-	GMutex* syncmtx;
+	GMutex syncmtx;
 	int is_destroyed;
 	GObject* widgets[NUM_PANEL_WIDGETS_DEFINED];
 	GtkNotebook* notebook;
@@ -84,8 +84,8 @@ typedef int (*BCProc)(void* data);
 
 struct BlockingCallParam {
 	void* data;
-	GMutex* mtx;
-	GCond* cond;
+	GMutex mtx;
+	GCond cond;
 	int done;
 	int retcode;
 	BCProc func;

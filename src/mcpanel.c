@@ -143,7 +143,6 @@ int set_data_length(mcpanel* pan, float len)
 ///////////////////////////////////////////////////
 void mcp_init_lib(int *argc, char ***argv)
 {
-	g_thread_init(NULL);
 	gdk_threads_init();
 	gtk_init(argc, argv);
 }
@@ -157,7 +156,7 @@ mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
 
 	// Allocate memory for the structures
 	pan = g_malloc0(sizeof(*pan));
-	pan->data_mutex = g_mutex_new();
+	g_mutex_init(&pan->data_mutex);
 
 	// Set callbacks
 	if (cb) {
@@ -217,7 +216,7 @@ void mcp_run(mcpanel* pan, int nonblocking)
 		return;
 	}
 	
-	pan->main_loop_thread = g_thread_create(loop_thread, NULL, TRUE, NULL);
+	pan->main_loop_thread = g_thread_new(NULL, loop_thread, NULL);
 	return;
 }
 
@@ -235,7 +234,7 @@ void mcp_destroy(mcpanel* pan)
 	  && (pan->main_loop_thread != g_thread_self()))
 		g_thread_join(pan->main_loop_thread);
 
-	g_mutex_free(pan->data_mutex);
+	g_mutex_clear(&pan->data_mutex);
 	//destroy_dataproc(pan);
 	g_free(pan->cb.custom_button);
 	g_free(pan);

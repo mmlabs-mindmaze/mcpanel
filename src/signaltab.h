@@ -17,7 +17,7 @@ struct signaltab {
 	float scale;
 	int fs;
 	unsigned int nch;
-	GMutex* datlock;
+	GMutex datlock;
 	
 };
 

@@ -145,7 +145,7 @@ void bartab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
 	struct bartab* brtab = user_data;
 	unsigned int num = gtk_tree_selection_count_selected_rows(selec);
 	
-	g_mutex_lock(brtab->tab.datlock);
+	g_mutex_lock(&brtab->tab.datlock);
 
 	// Prepare the channel selection structure to be passed
 	if (num != brtab->nselch) {
@@ -168,7 +168,7 @@ void bartab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
 	g_list_foreach(list, (GFunc)gtk_tree_path_free, NULL);
 	g_list_free(list);
 
-	g_mutex_unlock(brtab->tab.datlock);
+	g_mutex_unlock(&brtab->tab.datlock);
 
 	update_selected_label(brtab);
 }
@@ -222,9 +222,9 @@ void bartab_filter_button_cb(GtkButton* button, gpointer user_data)
 	}
 
 	// TODO lock mutex here
-	g_mutex_lock(brtab->tab.datlock);
+	g_mutex_lock(&brtab->tab.datlock);
 	init_filter(brtab);
-	g_mutex_unlock(brtab->tab.datlock);
+	g_mutex_unlock(&brtab->tab.datlock);
 }
 
 
@@ -412,9 +412,9 @@ void bartab_define_input(struct signaltab* tab, const char** labels)
 	g_strfreev(brtab->labels);
 	brtab->labels = g_strdupv((char**)labels);
 
-	g_mutex_unlock(brtab->tab.datlock);
+	g_mutex_unlock(&brtab->tab.datlock);
 	fill_treeview(GTK_TREE_VIEW(brtab->widgets[ELEC_TREEVIEW]), labels);
-	g_mutex_lock(brtab->tab.datlock);
+	g_mutex_lock(&brtab->tab.datlock);
 
 	brtab->chunkns = (CHUNKLEN * brtab->tab.fs) + 1;
 	init_buffers(brtab);
