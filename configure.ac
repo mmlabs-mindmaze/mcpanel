@@ -61,8 +61,6 @@ AC_CHECK_FUNCS([nanosleep gettimeofday ftime _ftime])
 AC_CHECK_FUNC_FNARG([GetSystemTimeAsFileTime], [0], [#include <windows.h>])
 AC_REPLACE_FUNCS([clock_gettime clock_nanosleep])
 
-AX_DEFINE_DIR([DATADIR], [datadir], [read-only architecture-independent data path])
-
 AC_SUBST([CURRENT],[lib_current])
 AC_SUBST([REVISION],[lib_revision])
 AC_SUBST([AGE],[lib_age])

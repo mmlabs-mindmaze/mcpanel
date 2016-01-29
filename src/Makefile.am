@@ -1,11 +1,16 @@
 #AUTOMAKE_OPTIONS = subdir-objects
 
+eol=
+
 lib_LTLIBRARIES = libmcpanel.la
 include_HEADERS = mcpanel.h
 dist_pkgdata_DATA = led_gray.png led_green.png led_red.png led_blue.png \
                     default.ui
 
-AM_CPPFLAGS = $(GTK2_CPPFLAGS) $(GTHREAD2_CPPFLAGS)
+AM_CPPFLAGS = \
+	$(GTK2_CPPFLAGS) $(GTHREAD2_CPPFLAGS) \
+	-DPKGDATADIR=\"$(datadir)/$(PACKAGE_NAME)\" \
+	$(eol)
 AM_CFLAGS = $(GTK2_CFLAGS) $(GTHREAD2_CFLAGS)
 EXTRA_DIST = led.license
 

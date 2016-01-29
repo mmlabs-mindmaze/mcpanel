@@ -181,7 +181,7 @@ void gtk_led_class_init(GtkLedClass *klass)
 	prefix = getenv("MCPANEL_DATADIR");
 	for (i=0; i<NUM_COLORS_LED; i++) {
 		snprintf(path, sizeof(path)-1, "%s/%s",
-				prefix ? prefix : DATADIR"/"PACKAGE,
+				prefix ? prefix : PKGDATADIR,
 				led_image_path[i]);
 		pixbuf = gdk_pixbuf_new_from_file(path, NULL);
 		klass->icon_sets[i] = gtk_icon_set_new_from_pixbuf(pixbuf);
