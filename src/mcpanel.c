@@ -141,6 +141,7 @@ int set_data_length(mcpanel* pan, float len)
 //	API functions
 //
 ///////////////////////////////////////////////////
+API_EXPORTED
 void mcp_init_lib(int *argc, char ***argv)
 {
 	gdk_threads_init();
@@ -148,6 +149,7 @@ void mcp_init_lib(int *argc, char ***argv)
 }
 
 
+API_EXPORTED
 mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
                      unsigned int ntab, const struct panel_tabconf* tabconf)
 {
@@ -187,6 +189,7 @@ mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
 }
 
 
+API_EXPORTED
 void mcp_show(mcpanel* pan, int state)
 {
 	//if (pan->main_loop_thread != g_thread_self()) 
@@ -206,6 +209,7 @@ void mcp_show(mcpanel* pan, int state)
 }
 
 
+API_EXPORTED
 void mcp_run(mcpanel* pan, int nonblocking)
 {
 	if (!nonblocking) {
@@ -221,6 +225,7 @@ void mcp_run(mcpanel* pan, int nonblocking)
 }
 
 
+API_EXPORTED
 void mcp_destroy(mcpanel* pan)
 {
 	// Stop refreshing the scopes content
@@ -241,6 +246,7 @@ void mcp_destroy(mcpanel* pan)
 }
 
 
+API_EXPORTED
 void mcp_popup_message(mcpanel* pan, const char* message)
 {
 	struct DialogParam dlgprm = {
@@ -252,6 +258,7 @@ void mcp_popup_message(mcpanel* pan, const char* message)
 }
 
 
+API_EXPORTED
 char* mcp_open_filename_dialog(mcpanel* pan, const char* filefilters)
 {
 	struct DialogParam dlgprm = {
@@ -265,6 +272,7 @@ char* mcp_open_filename_dialog(mcpanel* pan, const char* filefilters)
 }
 
 
+API_EXPORTED
 int mcp_notify(mcpanel* pan, enum notification event)
 {
 	struct notification_param prm = {
@@ -276,6 +284,7 @@ int mcp_notify(mcpanel* pan, enum notification event)
 }
 
 
+API_EXPORTED
 int mcp_define_tab_input(mcpanel* pan, int tabid,
                               unsigned int nch, float fs, 
 			      const char** labels)
@@ -299,6 +308,7 @@ int mcp_define_tab_input(mcpanel* pan, int tabid,
 }
 
 
+API_EXPORTED
 void mcp_add_samples(mcpanel* pan, int tabid,
                          unsigned int ns, const float* data)
 {
@@ -306,6 +316,7 @@ void mcp_add_samples(mcpanel* pan, int tabid,
 }
 
 
+API_EXPORTED
 int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs)
 {
 	pan->nlines_tri = nline;
@@ -316,6 +327,7 @@ int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs)
 }
 
 
+API_EXPORTED
 void mcp_add_triggers(mcpanel* pan, unsigned int ns,
                           const uint32_t* trigg)
 {
@@ -333,6 +345,7 @@ void mcp_add_triggers(mcpanel* pan, unsigned int ns,
 }
 
 
+API_EXPORTED
 unsigned int mcp_register_callback(mcpanel* pan, int timeout,
                                 int (*func)(void*), void* data)
 {
@@ -347,12 +360,14 @@ unsigned int mcp_register_callback(mcpanel* pan, int timeout,
 }
 
 
+API_EXPORTED
 int mcp_unregister_callback(mcpanel* pan, unsigned int id)
 {
 	(void)pan;
 	return g_source_remove(id);
 }
 
+API_EXPORTED
 void mcp_connect_signal(mcpanel* pan, const char* signal, int (*callback)(void*), void* data)
 {
 	g_signal_connect_after(pan->gui.widgets[TOP_WINDOW],
