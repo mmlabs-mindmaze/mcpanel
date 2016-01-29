@@ -7,6 +7,10 @@ include_HEADERS = mcpanel.h
 dist_pkgdata_DATA = led_gray.png led_green.png led_red.png led_blue.png \
                     default.ui
 
+defexecdir = $(bindir)
+defexec_DATA =
+DISTCLEANFILES = $(defexec_DATA)
+
 AM_CPPFLAGS = \
 	$(GTK2_CPPFLAGS) $(GTHREAD2_CPPFLAGS) \
 	-DPKGDATADIR=\"$(datadir)/$(PACKAGE_NAME)\" \
@@ -47,3 +51,7 @@ libmcpanel_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined \
 			 
 #libmcpanel_la_LIBADD = $(top_builddir)/res/libres.a
 
+if HAVE_LD_OUTPUT_DEF
+libmcpanel_la_LDFLAGS += -Wl,--output-def,libmcpanel-0.def
+defexec_DATA += libmcpanel-0.def
+endif
