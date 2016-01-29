@@ -1,12 +1,12 @@
 eol=
 
 EXTRA_DIST=mcpanel.conf test.conf
-AM_CPPFLAGS =
+AM_CPPFLAGS = \
 	-I$(top_srcdir)/src \
 	$(GTHREAD2_CPPFLAGS) \
 	$(eol)
 AM_CFLAGS = \
-	$(GTHREAD2_CPPFLAGS) \
+	$(GTHREAD2_CFLAGS) \
 	$(eol)
 
 check_PROGRAMS = test-thread-panel test-signal-panel
