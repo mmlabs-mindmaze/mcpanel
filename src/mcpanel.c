@@ -41,6 +41,21 @@ struct notification_param {
 //	Internal functions
 //
 ///////////////////////////////////////////////////
+
+static GRecMutex mcpgdk_recursive_mutex;
+
+static
+void mcpgdk_rec_lock()
+{
+	g_rec_mutex_lock(&mcpgdk_recursive_mutex);
+}
+
+static
+void mcpgdk_rec_unlock()
+{
+	g_rec_mutex_unlock(&mcpgdk_recursive_mutex);
+}
+
 static
 gpointer loop_thread(gpointer user_data)
 {
@@ -144,8 +159,12 @@ int set_data_length(mcpanel* pan, float len)
 API_EXPORTED
 void mcp_init_lib(int *argc, char ***argv)
 {
+	gdk_threads_set_lock_functions(mcpgdk_rec_lock, mcpgdk_rec_unlock);
 	gdk_threads_init();
+
+	gdk_threads_enter();
 	gtk_init(argc, argv);
+	gdk_threads_leave();
 }
 
 
