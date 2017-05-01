@@ -223,7 +223,7 @@ void process_chunk(struct scopetab* sctab, unsigned int ns, const float* in)
 
 	// Do referencing
 	if (sctab->ref == REF_CAR)
-		reference_car(data, nch, infilt, nmax_ch, ns);
+		reference_car(data, nch, data, nch, ns);
 	else if (sctab->ref == REF_ELEC)
 		reference_elec(data, nch, infilt, nmax_ch, ns, sctab->refelec);
 	else if (sctab->ref == REF_BIPOLE)
