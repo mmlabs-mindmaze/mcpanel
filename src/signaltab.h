@@ -7,6 +7,7 @@
 struct signaltab {
 	GtkWidget* widget;
 	GtkComboBox* scale_combo;
+	GtkComboBox* notch_combo;
 	void (*process_data)(struct signaltab* tab, unsigned int ns,
 	                                                 const float* data);
 	void (*define_input)(struct signaltab* tab, const char** labels);
@@ -15,6 +16,7 @@ struct signaltab {
 	void (*set_wndlen)(struct signaltab* tab, float len);
 	
 	float scale;
+	float notch;
 	int fs;
 	unsigned int nch;
 	GMutex datlock;
