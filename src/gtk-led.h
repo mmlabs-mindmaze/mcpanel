@@ -70,6 +70,7 @@ GType gtk_led_get_type (void);
 
 GtkLed* gtk_led_new (void);
 void gtk_led_set_state(GtkLed* self, gboolean state);
+gboolean gtk_led_get_state(GtkLed* self);
 
 G_END_DECLS
 

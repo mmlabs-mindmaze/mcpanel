@@ -263,6 +263,11 @@ void gtk_led_set_state(GtkLed* self, gboolean state)
 	}
 }
 
+LOCAL_FN
+gboolean gtk_led_get_state(GtkLed* self)
+{
+	return self->state;
+}
 
 static
 void gtk_led_expose_event_callback(GtkLed* self, GdkEventExpose* event, gpointer data)
