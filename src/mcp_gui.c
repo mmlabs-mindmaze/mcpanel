@@ -500,11 +500,11 @@ int create_panel_gui(mcpanel* pan, const char* uifile, unsigned int ntab,
 	g_timeout_add(REFRESH_INTERVAL, check_redraw_scopes_cb, pan);
 
 	res = 1;
+	pan->builder = builder;
 	
 out:
 	g_key_file_free(keyfile);
 	g_free(uidef);
-	g_object_unref(builder);
 	return res;
 }
 
@@ -521,6 +521,7 @@ void destroy_panel_gui(mcpanel* pan)
 	g_mutex_clear(&pan->gui.syncmtx);
 	destroy_signal_tabs(pan);
 	g_free(pan->gui.buttons);
+	g_object_unref(pan->builder);
 }
 
 

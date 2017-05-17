@@ -54,6 +54,8 @@ struct _mcpanel {
 	unsigned int current_sample;
 	unsigned int last_drawn_sample;
 
+	//
+	GtkBuilder* builder;
 
 	// data
 	Indicators flags;
