@@ -55,6 +55,7 @@ enum scope_tab_widgets {
 enum reftype {
 	REF_NONE = 0,
 	REF_CAR,
+	REF_CARALL,
 	REF_ELEC,
 	REF_BIPOLE
 };
@@ -274,6 +275,8 @@ void process_chunk(struct scopetab* sctab, unsigned int ns, const float* in)
 	// Do referencing
 	if (sctab->ref == REF_CAR)
 		reference_car(data, nch, data, nch, ns);
+	else if (sctab->ref == REF_CARALL)
+		reference_car(data, nch, infilt, nmax_ch, ns);
 	else if (sctab->ref == REF_ELEC)
 		reference_elec(data, nch, infilt, nmax_ch, ns, sctab->refelec);
 	else if (sctab->ref == REF_BIPOLE)
