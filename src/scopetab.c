@@ -45,6 +45,7 @@ enum scope_tab_widgets {
 	LP_SPIN,
 	HP_CHECK,
 	HP_SPIN,
+	OFFSET_CHECK,
 	NOTCH_COMBO,
 	REFTYPE_COMBO,
 	ELECREF_COMBO,
@@ -75,6 +76,7 @@ const struct widget_name_entry scopetab_widgets_table[] = {
 	[LP_SPIN] = {"scopetab_lp_spin", "GtkSpinButton"},
 	[HP_CHECK] = {"scopetab_hp_check", "GtkCheckButton"},
 	[HP_SPIN] = {"scopetab_hp_spin", "GtkSpinButton"},
+	[OFFSET_CHECK] = {"scopetab_offset_check", "GtkCheckButton"},
 	[NOTCH_COMBO] = {"scopetab_notch_combo", "GtkComboBox"},
 	[REFTYPE_COMBO] = {"scopetab_reftype_combo", "GtkComboBox"},
 	[ELECREF_COMBO] = {"scopetab_elecref_combo", "GtkComboBox"},
@@ -100,10 +102,11 @@ struct scopetab {
 	hfilter filt[NBFILTER];
 	gdouble cutoff[NBFILTER];
 	gboolean filt_on[NBFILTER];
+	gboolean offset_on;
 	int reset_filter[NBFILTER];
 	enum reftype ref;
 	unsigned int refelec;
-	float *tmpbuff, *tmpbuff2, *data;
+	float *tmpbuff, *tmpbuff2, *data, *offsetval;
 	float wndlen;
 	unsigned int nselch, nslen, chunkns, curr;
 	unsigned int* selch;
@@ -136,10 +139,13 @@ void init_buffers(struct scopetab* sctab)
 	g_free(sctab->tmpbuff);
 	g_free(sctab->tmpbuff2);
 	g_free(sctab->data);
+	g_free(sctab->offsetval);
+
 
 	sctab->nslen = ns = sctab->wndlen * sctab->tab.fs;
 
 	sctab->data = g_malloc0(ns*nch*sizeof(*(sctab->data)));
+	sctab->offsetval = g_malloc0(nch*sizeof(*(sctab->offsetval)));
 	sctab->tmpbuff = g_malloc(chunkns*nch*sizeof(*(sctab->tmpbuff)));
 	sctab->tmpbuff2 = g_malloc(chunkns*nch*sizeof(*(sctab->tmpbuff2)));
 
@@ -267,10 +273,22 @@ void process_chunk(struct scopetab* sctab, unsigned int ns, const float* in)
 		}
 	}
 
+	// Offset data
+	if(!sctab->curr) //New frame
+	{
+		if(sctab->offset_on)
+			for (j=0; j<nch; j++)
+				sctab->offsetval[sel[j]] = infilt[sel[j]]; //sctab->offsetval[nch+j] = infilt[sel[j]];
+		else
+			for (j=0; j<nch; j++)
+				sctab->offsetval[sel[j]] = 0;
+	}
+
+
 	// Copy data of the selected channels
 	for (i=0; i<ns; i++) 
 		for (j=0; j<nch; j++) 
-			data[i*nch+j] = infilt[i*nmax_ch + sel[j]];
+			data[i*nch+j] = infilt[i*nmax_ch + sel[j]]- sctab->offsetval[ sel[j]];
 
 	// Do referencing
 	if (sctab->ref == REF_CAR)
@@ -419,10 +437,22 @@ void scopetab_filter_button_cb(GtkButton* button, gpointer user_data)
 		sctab->filt_on[hp] = s;
 	}
 
-	// TODO lock mutex here
 	g_mutex_lock(&sctab->tab.datlock);
 	init_filter(sctab, hp);
 	g_mutex_unlock(&sctab->tab.datlock);
+}
+
+
+static
+void scopetab_offset_button_cb(GtkButton* button, gpointer user_data)
+{
+	int s;
+
+	struct scopetab* sctab = user_data;
+
+	s = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
+	sctab->offset_on = s;
+
 }
 
 
@@ -545,6 +575,7 @@ void initialize_widgets(struct scopetab* sctab)
 	g_object_set(widg[LP_SPIN], "value", sctab->cutoff[0], NULL);
 	g_object_set(widg[HP_CHECK], "active", sctab->filt_on[1], NULL);
 	g_object_set(widg[HP_SPIN], "value", sctab->cutoff[1], NULL);
+	g_object_set(widg[OFFSET_CHECK], "active", sctab->offset_on, NULL);
 
 	// reference combos
 	gtk_combo_box_set_active(GTK_COMBO_BOX(widg[REFTYPE_COMBO]),
@@ -576,6 +607,8 @@ void connect_widgets_signals(struct scopetab* sctab)
 	                      G_CALLBACK(scopetab_filter_button_cb), sctab);
 	g_signal_connect_after(widgets[HP_CHECK], "toggled",
 	                      G_CALLBACK(scopetab_filter_button_cb), sctab);
+	g_signal_connect_after(widgets[OFFSET_CHECK], "toggled",
+	                      G_CALLBACK(scopetab_offset_button_cb), sctab);
 	g_signal_connect_after(widgets[LP_SPIN], "value-changed",
 	                      G_CALLBACK(scopetab_filter_button_cb), sctab);
 	g_signal_connect_after(widgets[HP_SPIN], "value-changed",
@@ -718,7 +751,7 @@ void scopetab_destroy(struct signaltab* tab)
 	g_free(sctab->data);
 	g_free(sctab->tmpbuff);
 	g_free(sctab->tmpbuff2);
-
+	g_free(sctab->offsetval);
 	g_free(sctab);
 }
 
