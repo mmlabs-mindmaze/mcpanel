@@ -199,7 +199,7 @@ scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
 	GdkPoint* points = self->points;
 	const gint* offsets = PLOT_AREA(self)->yticks;
 	const gint* xticks = PLOT_AREA(self)->xticks;
-	gint xmin, xmax, value, width, height;
+	gint xmin, xmax, value, height;
 	data_t scale = self->scale;
 	const data_t* data = self->data;
 	unsigned int i;
@@ -210,7 +210,6 @@ scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
 	nColors = PLOT_AREA(self)->nColors;
 	colors = PLOT_AREA(self)->colors;
 	grid_color = &(PLOT_AREA(self)->grid_color);
-	width = GTK_WIDGET(self)->allocation.width;
 	height = GTK_WIDGET(self)->allocation.height;
 	num_channels = self->num_channels;	
 
@@ -307,7 +306,7 @@ void scope_calculate_drawparameters(Scope* self)
 
 	// Set the ticks position
 	for (i=0; i<self->num_ticks; i++)
-		xticks[i] = (num_points > self->ticks[i]) ? self->points[self->ticks[i]].x : -1;
+		xticks[i] = (num_points > (unsigned int) self->ticks[i]) ? self->points[self->ticks[i]].x : -1;
 }
 
 

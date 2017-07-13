@@ -200,7 +200,7 @@ gboolean bargraph_expose_event_callback(Bargraph *self,
 static
 void bargraph_draw_samples(const Bargraph* self)
 {
-	guint i, iChannel, iColor, width, height, nColors, num_ticks;
+	guint i, iChannel, iColor, width, nColors, num_ticks;
 	gint ivalue, jvalue, halfwidth, Yorg, rectH;
 	GdkGC* plotgc = PLOT_AREA(self)->plotgc;
 	GdkWindow* window = GTK_WIDGET(self)->window;
@@ -214,8 +214,7 @@ void bargraph_draw_samples(const Bargraph* self)
 	num_ticks = PLOT_AREA(self)->num_yticks;
 
 
-	width = GTK_WIDGET(self)->allocation.width;
-	height = GTK_WIDGET(self)->allocation.height;
+	width = GTK_WIDGET(self)->allocation.width;	
 	
 	// draw grid
 	gdk_gc_set_foreground(plotgc, grid_color);
