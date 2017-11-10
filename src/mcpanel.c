@@ -28,7 +28,7 @@
 #include "mcp_gui.h"
 #include "mcp_shared.h"
 #include "signaltab.h"
-
+#include <string.h>
 
 
 struct notification_param {
@@ -36,11 +36,43 @@ struct notification_param {
 	mcpanel* pan;
 };
 
+
+
+// in mcpanel inmplementation
+struct mcp_widget {
+	int (*set_label)(struct mcp_widget* wid, const char* label);
+	int (*get_label)(struct mcp_widget* wid, char* label);
+	int (*set_state)(struct mcp_widget* wid, int state);
+	int (*get_state)(struct mcp_widget* wid, int* state);
+
+	GtkWidget* widget;
+	//struct node* next;
+};
+
+
+struct node {
+	struct mcp_widget* widget; // The pointer to alloc mem
+	//struct mcp_widget widget; // The widget struct
+	struct node* next; // pointer to next item
+};
+
+
+
+// Maintain First and Last
+struct nodeList {
+	struct node *first;
+	struct node *last;
+
+};
+
 ///////////////////////////////////////////////////
 //
 //	Internal functions
 //
 ///////////////////////////////////////////////////
+
+
+static void clean_list(struct nodeList *pList);
 
 static GRecMutex mcpgdk_recursive_mutex;
 
@@ -204,6 +236,11 @@ mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
 	get_initial_values(pan);
 	set_data_length(pan, pan->display_length);
 
+	// Init linked list
+	pan->pList = malloc( sizeof(struct nodeList) );
+	pan->pList->first = NULL;
+	pan->pList->last = NULL;
+
 	return pan;
 }
 
@@ -261,6 +298,7 @@ void mcp_destroy(mcpanel* pan)
 	g_mutex_clear(&pan->data_mutex);
 	//destroy_dataproc(pan);
 	g_free(pan->cb.custom_button);
+	clean_list(pan->pList);
 	g_free(pan);
 }
 
@@ -392,3 +430,268 @@ void mcp_connect_signal(mcpanel* pan, const char* signal, int (*callback)(void*)
 	g_signal_connect_after(pan->gui.widgets[TOP_WINDOW],
 	                       signal, G_CALLBACK(callback), data);
 }
+
+
+// === Set Label ===
+API_EXPORTED
+int mcp_widget_set_label(struct mcp_widget* wid, const char* label)
+{
+	int ret = 0;
+	gdk_threads_enter();
+	ret = wid->set_label(wid, label);
+	gdk_threads_leave();
+
+	return ret;
+}
+
+static
+int mcp_entry_set_label(struct mcp_widget* wid, const char* label)
+{
+	gtk_label_set_text(GTK_LABEL(wid->widget), label);
+	return 0;
+}
+
+static
+int mcp_combo_set_label(struct mcp_widget* wid, const char* label)
+{
+	int num;
+	sscanf (label,"%d",&num);
+	gtk_combo_box_set_active (GTK_COMBO_BOX(wid->widget), num);
+
+	return 0;
+}
+
+// === Get Label ===
+API_EXPORTED
+int mcp_widget_get_label(struct mcp_widget* wid, char* label)
+{
+	int ret = 0;
+	gdk_threads_enter();
+	ret = wid->get_label(wid, label);
+	gdk_threads_leave();
+	return ret;
+}
+
+static
+int mcp_entry_get_label(struct mcp_widget* wid, char* label)
+{
+	const gchar *label2 = gtk_label_get_text(GTK_LABEL(wid->widget));
+	strcpy(label, label2);
+	return 0;
+}
+
+static
+int mcp_button_get_label(struct mcp_widget* wid, char* label)
+{
+	const gchar *label2 = gtk_button_get_label(GTK_BUTTON(wid->widget));
+	strcpy(label, label2);
+	return 0;
+}
+
+static
+int mcp_combo_get_label(struct mcp_widget* wid, char* label)
+{
+	GtkTreeModel* model;
+	GtkTreeIter iter;
+	GValue value;
+	GtkComboBox* combo;
+
+	// Get the display length
+	combo = GTK_COMBO_BOX(wid->widget);
+	memset(&value, 0, sizeof(value));
+	model = gtk_combo_box_get_model(combo);
+	gtk_combo_box_get_active_iter(combo, &iter);
+	gtk_tree_model_get_value(model, &iter, 0, &value);
+	const gchar *label2 = g_value_get_string(&value);
+	strcpy(label, label2);
+
+	g_value_unset(&value);
+
+	return 0;
+}
+
+
+// === Set State ===
+API_EXPORTED
+int mcp_widget_set_state(struct mcp_widget* wid, int state)
+{
+	int ret = 0;
+	gdk_threads_enter();
+	ret = wid->set_state(wid, state);
+	gdk_threads_leave();
+	return ret;
+}
+
+// Set state for basic widgets
+static
+int mcp_common_set_state(struct mcp_widget* wid, int state)
+{
+	gtk_widget_set_sensitive(wid->widget, state);
+	return 0;
+}
+
+// Set state for custom (LED) widgets
+static
+int mcp_led_set_state(struct mcp_widget* wid, int state)
+{
+	gtk_led_set_state(GTK_LED(wid->widget), state);
+	return 0;
+}
+
+// === Get state ===
+API_EXPORTED
+int mcp_widget_get_state(struct mcp_widget* wid,  int* state)
+{
+	int ret = 0;
+	gdk_threads_enter();
+	ret = wid->get_state(wid, state);
+	gdk_threads_leave();
+
+	return ret;
+}
+
+static
+int mcp_common_get_state(struct mcp_widget* wid, int* state)
+{
+	*state = gtk_widget_get_sensitive(wid->widget);
+	return 0;
+}
+
+static
+int mcp_led_get_state(struct mcp_widget* wid, int* state)
+{
+	*state = gtk_led_get_state(GTK_LED(wid->widget));
+	return 0;
+}
+
+
+/**
+ * append_init_widget() - adds the widget to the linked list and initializes it
+ * @arg1: the chained list.
+ * @arg2: the widget to be added to the chained list.
+ *
+ * This function appends the widget @arg2 to the chained list @arg1.
+ * This function evaluates the type of the input widget and
+ * initalizes the callbacks accordingly.
+ *
+ * Return: the function returns 0 is the execution was a SUCCESS,
+ * or -1 otherwise.
+ */
+static
+int append_init_widget(struct nodeList *pList, GObject* get_obj)
+{
+	struct node *cell = calloc( 1, sizeof(struct node) ); // Create a new item
+	if ( cell == NULL )
+		return -1;
+
+	struct mcp_widget* mcp_widget_s = malloc(sizeof(*mcp_widget_s));
+	mcp_widget_s->widget = GTK_WIDGET(get_obj);
+
+	// Associate fct according to widget type
+	mcp_widget_s->set_state = &mcp_common_set_state;
+	mcp_widget_s->get_state = &mcp_common_get_state;
+	if ( g_type_is_a (G_OBJECT_TYPE(mcp_widget_s->widget), g_type_from_name("GtkEntry")) ) {
+			mcp_widget_s->set_label = &mcp_entry_set_label;
+			mcp_widget_s->get_label = &mcp_entry_get_label;
+
+	} else if ( g_type_is_a(G_OBJECT_TYPE(mcp_widget_s->widget), g_type_from_name("GtkButton")) ) {
+			mcp_widget_s->set_label = &mcp_entry_set_label;
+			mcp_widget_s->get_label = &mcp_button_get_label;
+
+	} else if ( g_type_is_a(G_OBJECT_TYPE(mcp_widget_s->widget), g_type_from_name("GtkLabel")) ) {
+			mcp_widget_s->set_label = &mcp_entry_set_label;
+			mcp_widget_s->get_label = &mcp_entry_get_label;
+
+	} else if ( g_type_is_a(G_OBJECT_TYPE(mcp_widget_s->widget), g_type_from_name("GtkComboBox")) ) {
+			mcp_widget_s->set_label = &mcp_combo_set_label;
+			mcp_widget_s->get_label = &mcp_combo_get_label;
+
+	} else if ( g_type_is_a(G_OBJECT_TYPE(mcp_widget_s->widget), g_type_from_name("GtkLed")) ) {
+			mcp_widget_s->set_label = NULL;
+			mcp_widget_s->get_label = NULL;
+			mcp_widget_s->set_state = &mcp_led_set_state;
+			mcp_widget_s->get_state = &mcp_led_get_state;
+	}else {
+		fprintf(stderr, "Error: type not identified!");
+		return -1;
+	}
+
+	cell->widget = mcp_widget_s;
+	cell->next = NULL;
+
+	if ( pList->first == NULL ) {
+		pList->first = cell;
+		pList->last = cell;
+	} else {
+		pList->last->next = cell;
+		pList->last = cell;
+	}
+	return 0;
+}
+
+static
+void clean_list(struct nodeList *pList)
+{
+	struct node *cell;
+	struct node *nextcell;
+	for (cell = pList->first; cell != NULL; cell = nextcell)
+	{
+		nextcell = cell->next;
+		free (cell->widget);
+		free (cell);
+	}
+	pList->first = pList->last = NULL;
+}
+
+
+/**
+ * mcp_get_widget() - returns the pointer to the widget with input ID (if it exists)
+ * @arg1: the structure containing the builder and the pointer to linked list.
+ * @arg2: the id of the widget (its name)
+ *
+ * This function searches through the chained list if a widget
+ * with the input id @arg2 already exists.
+ *
+ * Return: the function returns the pointer to the widget if it exists.
+ * Otherwise NULL if the widget is not found.
+ *
+ */
+API_EXPORTED
+struct mcp_widget* mcp_get_widget(mcpanel* pan, const char* identifier)
+{
+	// Retrieve info about the widget
+	GObject* get_obj = gtk_builder_get_object(pan->builder, identifier);
+	if ( !get_obj ) {
+		fprintf(stderr, "Warning: widget %s -> name not recognized\n", identifier);
+		return NULL;
+	}
+
+	// Check that the linked list is initialized
+	if ( pan->pList->first == NULL ) {
+		if ( append_init_widget(pan->pList, get_obj) ) {
+			fprintf(stderr, "Could not append Widget\n");
+			return NULL;
+		}
+		return pan->pList->last->widget;
+	}
+
+	// Retrieve widget if already in the linked list
+	struct node *cell;
+	cell = pan->pList->first;
+	while (cell->next != NULL) {
+		if ( cell->widget->widget == GTK_WIDGET(get_obj) )
+			return cell->widget;
+
+		cell = cell->next;
+	}
+
+	// Widget was not found in list, append it to the linked list
+	if ( append_init_widget(pan->pList, get_obj) ) {
+		fprintf(stderr, "could not add widget to linked chain\n");
+		return NULL;
+	}
+
+	return pan->pList->last->widget;
+
+}
+

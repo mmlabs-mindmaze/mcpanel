@@ -64,6 +64,9 @@ struct _mcpanel {
 	// callbacks
 	struct PanelCb cb;
 	struct PanelGUI gui;
+
+	// Linked list
+	struct nodeList* pList;
 };
 
 LOCAL_FN int set_data_length(mcpanel* pan, float len);

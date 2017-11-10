@@ -97,4 +97,12 @@ int mcp_unregister_callback(mcpanel* pan, unsigned int id);
 void mcp_connect_signal(mcpanel* pan, const char* signal,
                         int (*callback)(void*), void* data);
 
+struct mcp_widget;
+struct mcp_widget* mcp_get_widget(mcpanel* pan, const char* identifier);
+
+int mcp_widget_set_label(struct mcp_widget* wid, const char* label);
+int mcp_widget_get_label(struct mcp_widget* wid, char* label);
+int mcp_widget_set_state(struct mcp_widget* wid, int state);
+int mcp_widget_get_state(struct mcp_widget* wid, int* state);
+
 #endif /*MCPANEL_H*/
