@@ -123,7 +123,7 @@ gboolean start_recording_cb(GtkButton* button, gpointer data)
 		if (pan->cb.stop_recording) {
 			// Pause recording before
 			if (pan->recording)
-				pause_recording_cb(GTK_BUTTON(pan->gui.widgets[PAUSE_RECORDING_BUTTON]), pan->cb.user_data);
+				pause_recording_cb(GTK_BUTTON(pan->gui.widgets[PAUSE_RECORDING_BUTTON]), pan);
 
 			gdk_threads_leave();
 			retval = pan->cb.stop_recording(pan->cb.user_data);
