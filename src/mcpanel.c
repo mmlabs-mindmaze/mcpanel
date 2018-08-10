@@ -379,6 +379,14 @@ void mcp_add_samples(mcpanel* pan, int tabid,
 
 
 API_EXPORTED
+void mcp_add_events(mcpanel* pan, int tabid,
+                    unsigned int ns, const uint32_t* eventdata)
+{
+	signaltab_add_events(pan->tabs[tabid], ns, eventdata);
+}
+
+
+API_EXPORTED
 int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs)
 {
 	g_mutex_lock(&pan->data_mutex);

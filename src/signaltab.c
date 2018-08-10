@@ -101,6 +101,16 @@ void signaltab_add_samples(struct signaltab* tab, unsigned int ns,
 }
 
 
+LOCAL_FN
+void signaltab_add_events(struct signaltab* tab, unsigned int ns,
+                          const uint32_t* eventdata)
+{
+	g_mutex_lock(&tab->datlock);
+	tab->process_events(tab, ns, eventdata);
+	g_mutex_unlock(&tab->datlock);
+}
+
+
 LOCAL_FN 
 struct signaltab* create_signaltab(const struct tabconf* conf)
 {

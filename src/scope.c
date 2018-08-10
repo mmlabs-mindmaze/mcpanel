@@ -22,6 +22,7 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <memory.h>
+#include <stdio.h>
 #include "scope.h"
 
 enum {
@@ -120,6 +121,7 @@ scope_init (Scope *self)
 	self->phys_scale = (data_t)1;
 	self->current_pointer = 0; 
 	self->data = NULL;
+	self->eventdata = NULL;
 	self->ticks = NULL;
 	self->points = NULL;
 
@@ -199,13 +201,14 @@ scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
 	GdkPoint* points = self->points;
 	const gint* offsets = PLOT_AREA(self)->yticks;
 	const gint* xticks = PLOT_AREA(self)->xticks;
-	gint xmin, xmax, value, height;
+	gint xmin, xmax, value, height, evwidth, evheight;
 	data_t scale = self->scale;
 	const data_t* data = self->data;
 	unsigned int i;
 	const GdkColor *grid_color, *colors;
 	GdkWindow* window = GTK_WIDGET(self)->window;
 	GdkGC* plotgc = PLOT_AREA(self)->plotgc;
+	char eventcode[4];
 
 	nColors = PLOT_AREA(self)->nColors;
 	colors = PLOT_AREA(self)->colors;
@@ -276,6 +279,35 @@ scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
 			0,
 			points[self->current_pointer].x,
 			height - 1);
+
+	// Draw events
+	PangoLayout* layout = gtk_widget_create_pango_layout(GTK_WIDGET(self), NULL);
+	PangoContext* context = gtk_widget_get_pango_context(GTK_WIDGET(self));
+	PangoFontDescription* desc = pango_font_description_copy_static(pango_context_get_font_description(context));
+	pango_font_description_set_size(desc, 10 * PANGO_SCALE);
+	pango_layout_set_font_description(layout, desc);
+
+	for (iSample = first; iSample <= last; iSample++) {
+		if(self->eventdata[iSample] != 0){
+			iColor = self->eventdata[iSample] % nColors;
+			gdk_gc_set_foreground(plotgc, colors + iColor);
+			// Vertical Line
+			gdk_draw_line(window,
+				plotgc,
+				points[iSample].x,
+				0,
+				points[iSample].x,
+				height - 1);
+			// Event code text
+			sprintf(eventcode, "%d", self->eventdata[iSample]);
+			pango_layout_set_text(layout, eventcode, -1);
+			pango_layout_get_pixel_size(layout, &evwidth, &evheight);
+			gdk_draw_layout(window, plotgc, points[iSample].x - evwidth / 2, height - evheight - 2, layout);
+		}
+	}
+
+	g_object_unref(layout);
+	pango_font_description_free(desc);
 }
 
 
@@ -382,6 +414,17 @@ void scope_set_data(Scope* self, data_t* data, guint num_points, guint num_ch)
 	if (GTK_WIDGET_DRAWABLE(self))
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
+
+
+LOCAL_FN
+void scope_set_events(Scope* self, guint* eventdata)
+{
+	if (self == NULL)
+		return;
+
+	self->eventdata = eventdata;
+}
+
 
 
 LOCAL_FN

@@ -91,6 +91,8 @@ void mcp_add_samples(mcpanel* pan, int tabid,
                          unsigned int ns, const float* data);
 int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs);
 void mcp_add_triggers(mcpanel* pan, unsigned int ns, const uint32_t* trigg);
+void mcp_add_events(mcpanel* pan, int tabid,
+                    unsigned int ns, const uint32_t* eventdata);
 unsigned int mcp_register_callback(mcpanel* pan, int timeout,
                                    int (*func)(void*), void* data);
 int mcp_unregister_callback(mcpanel* pan, unsigned int id);

@@ -54,6 +54,7 @@ typedef struct {
 	guint num_points;
 	GdkPoint* points;
 	const data_t* data;
+	const guint* eventdata;
 } Scope;
 
 typedef struct {
@@ -65,6 +66,7 @@ GType scope_get_type (void);
 Scope* scope_new (void);
 void scope_update_data(Scope* self, guint pointer);
 void scope_set_data(Scope* self, data_t* data, guint num_points, guint num_ch);
+void scope_set_events(Scope* self, guint* eventdata);
 void scope_set_ticks(Scope* self, guint num_ticks, guint* ticks);
 
 G_END_DECLS

@@ -2,14 +2,19 @@
 #define SIGNALTAB_H
 
 #include <gtk/gtk.h>
+#include <stdint.h>
 
 // For the implementation of signaltab children
 struct signaltab {
 	GtkWidget* widget;
 	GtkComboBox* scale_combo;
 	GtkComboBox* notch_combo;
+	GtkComboBox* trigchn_combo;
+
 	void (*process_data)(struct signaltab* tab, unsigned int ns,
 	                                                 const float* data);
+	void(*process_events)(struct signaltab* tab, unsigned int nevents,
+	                      const uint32_t* events);
 	void (*define_input)(struct signaltab* tab, const char** labels);
 	void (*update_plot)(struct signaltab* tab);
 	void (*destroy)(struct signaltab* tab);
@@ -17,6 +22,7 @@ struct signaltab {
 	
 	float scale;
 	float notch;
+	float trig;
 	int fs;
 	unsigned int nch;
 	GMutex datlock;
@@ -46,6 +52,9 @@ LOCAL_FN void signaltab_define_input(struct signaltab* tab, unsigned int fs,
 LOCAL_FN void signatab_set_wndlength(struct signaltab* tab, float len);
 LOCAL_FN void signaltab_add_samples(struct signaltab* tab, unsigned int ns,
                                                     const float* data);
+LOCAL_FN void signaltab_add_events(struct signaltab* tab, unsigned int ns,
+                                   const uint32_t* eventdata);
+
 LOCAL_FN struct signaltab* create_signaltab(const struct tabconf* conf);
 
 #endif //SIGNALTAB_H
