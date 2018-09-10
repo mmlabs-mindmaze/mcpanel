@@ -213,9 +213,8 @@ void bargraph_draw_samples(const Bargraph* self)
 	nColors = PLOT_AREA(self)->nColors;
 	num_ticks = PLOT_AREA(self)->num_yticks;
 
+	width = GTK_WIDGET(self)->allocation.width;
 
-	width = GTK_WIDGET(self)->allocation.width;	
-	
 	// draw grid
 	gdk_gc_set_foreground(plotgc, grid_color);
 	for (i=0; i<num_ticks; i++) {
@@ -227,7 +226,7 @@ void bargraph_draw_samples(const Bargraph* self)
 				ticks_pos[i]);
 	}
 
-	
+
 	// Draw the channels data
 	if (self->num_channels) {
 		halfwidth = (gint)(0.5f* self->bar_ratio * (gfloat)width / (gfloat)self->num_channels);
@@ -239,9 +238,9 @@ void bargraph_draw_samples(const Bargraph* self)
 				val = self->max;
 			if (val < self->min)
 				val = self->min;
-				
-			// (positive y points to bottom in the window basis) 
-			jvalue = self->offset - (values[iChannel] * self->scale);
+
+			// (positive y points to bottom in the window basis)
+			jvalue = self->offset - (val * self->scale);
 			ivalue = chann_pos[iChannel];
 			Yorg = MIN(jvalue, self->offset);
 			rectH = MAX(jvalue, self->offset) - Yorg;
