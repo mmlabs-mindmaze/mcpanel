@@ -324,12 +324,6 @@ void scope_update_data(Scope* self, guint pointer)
 	if (!self || !self->num_points)
 		return;
 
-
-	//window = GTK_WIDGET(self)->window;
-
-	first = self->current_pointer ? self->current_pointer -1 : 0;
-	last = pointer;
-
 	if (GTK_WIDGET_DRAWABLE(self)) {
 		points  = self->points;
 
