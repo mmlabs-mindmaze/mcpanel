@@ -433,6 +433,10 @@ void bartab_process_data(struct signaltab* tab, unsigned int ns,
 	unsigned int nch = brtab->nselch;
 	unsigned int nmax_ch = brtab->tab.nch;
 
+	/* do not process: bartab init is not finished yet */
+	if (brtab->data == NULL)
+		return;
+
 	// Apply filters
 	if (brtab->filt != NULL) {
 		if (brtab->reset_filter) {
