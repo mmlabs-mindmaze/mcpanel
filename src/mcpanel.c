@@ -149,7 +149,10 @@ void process_tri(mcpanel* pan, unsigned int ns, const uint32_t* tri)
 {
 	unsigned int i;
 	uint32_t *dst;
-	
+
+	if (pan->num_samples == 0)
+		return;
+
 	dst = pan->triggers + pan->current_sample;
 
 	pan->flags.cms_in_range = 1;
