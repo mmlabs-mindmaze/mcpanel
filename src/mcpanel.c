@@ -588,6 +588,10 @@ int append_init_widget(struct nodeList *pList, GObject* get_obj)
 		return -1;
 
 	struct mcp_widget* mcp_widget_s = malloc(sizeof(*mcp_widget_s));
+	if (mcp_widget_s == NULL) {
+		free(cell);
+		return -1;
+	}
 	mcp_widget_s->widget = GTK_WIDGET(get_obj);
 
 	// Associate fct according to widget type
@@ -615,6 +619,8 @@ int append_init_widget(struct nodeList *pList, GObject* get_obj)
 			mcp_widget_s->set_state = &mcp_led_set_state;
 			mcp_widget_s->get_state = &mcp_led_get_state;
 	}else {
+		free(mcp_widget_s);
+		free(cell);
 		fprintf(stderr, "Error: type not identified!");
 		return -1;
 	}
