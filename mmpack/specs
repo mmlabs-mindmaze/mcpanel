@@ -1,0 +1,11 @@
+general:
+    name: mcpanel
+    version: 0.1
+    maintainer: Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
+    url: ssh://intranet.mindmaze.ch:29418/mcpanel
+    description: |
+      This package provides a library written in C implementing a set of widgets
+      designed to view in realtime multichannels signals. Despite it has been
+      initially design to view signals coming from a BIOSEMI Activetwo system,
+      it is totally system agnostic and any user of other system might find it
+      useful.
