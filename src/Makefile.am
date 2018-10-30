@@ -54,4 +54,6 @@ libmcpanel_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined \
 if HAVE_LD_OUTPUT_DEF
 libmcpanel_la_LDFLAGS += -Wl,--output-def,libmcpanel-0.def
 defexec_DATA += libmcpanel-0.def
+
+$(defexec_DATA): libmcpanel.la
 endif
