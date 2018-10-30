@@ -22,4 +22,7 @@ LOCAL_FN void mcpi_key_get_dval(GKeyFile* keyfile, const char* group, const char
 LOCAL_FN void mcpi_key_get_bval(GKeyFile* keyfile, const char* group, const char* key, gboolean* val);
 LOCAL_FN void mcpi_key_set_combo(GKeyFile* keyfile, const char* group, const char* key, GtkComboBox* combo);
 
+LOCAL_FN void fill_treeview(GtkTreeView* treeview, const char** labels);
+LOCAL_FN void fill_combo(GtkComboBox* combo, const char** labels);
+
 #endif /*MISC_H*/

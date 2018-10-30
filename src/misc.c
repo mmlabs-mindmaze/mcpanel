@@ -89,3 +89,48 @@ void mcpi_key_set_combo(GKeyFile* keyfile, const char* group, const char* key, G
 		gtk_combo_box_set_active_iter(combo, &iter);
 }
 
+
+/*************************************************************************
+ *                                                                       *
+ *                         widget model setup                            *
+ *                                                                       *
+ *************************************************************************/
+LOCAL_FN
+void fill_treeview(GtkTreeView* treeview, const char** labels)
+{
+	GtkListStore* list;
+	unsigned int i = 0;
+	GtkTreeIter iter;
+	GtkTreeSelection* selec;
+
+	list = GTK_LIST_STORE(gtk_tree_view_get_model(treeview));
+	gtk_list_store_clear(list);
+
+	while (labels[i] != NULL) {
+		gtk_list_store_append(list, &iter);
+		gtk_list_store_set(list, &iter, 0, labels[i++], -1);
+	}
+
+	// Select initially all items
+	selec = gtk_tree_view_get_selection(treeview);
+	gtk_tree_selection_select_all(selec);
+}
+
+
+LOCAL_FN
+void fill_combo(GtkComboBox* combo, const char** labels)
+{
+	GtkListStore* list;
+	int i = 0;
+	GtkTreeIter iter;
+
+	list = GTK_LIST_STORE(gtk_combo_box_get_model(combo));
+	gtk_list_store_clear(list);
+
+	while (labels[i] != NULL) {
+		gtk_list_store_append(list, &iter);
+		gtk_list_store_set(list, &iter, 0, labels[i++], -1);
+	}
+
+	gtk_combo_box_set_active (combo, 0);
+}
