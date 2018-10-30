@@ -46,7 +46,10 @@ struct _mcpanel {
 	gboolean fileopened;
 	gboolean recording;
 
-	//
+	// settings to interpret and display triggers
+	char** trigg_labels;
+	unsigned int trigg_selch;
+	unsigned int trigg_nch;
 	unsigned int fs;
 	unsigned int nlines_tri;
 	unsigned int num_samples;
@@ -60,6 +63,7 @@ struct _mcpanel {
 	// data
 	Indicators flags;
 	uint32_t *triggers;
+	uint32_t *selected_trigger;
 
 	// callbacks
 	struct PanelCb cb;

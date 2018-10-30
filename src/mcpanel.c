@@ -27,6 +27,7 @@
 #include "mcpanel.h"
 #include "mcp_gui.h"
 #include "mcp_shared.h"
+#include "misc.h"
 #include "signaltab.h"
 #include <string.h>
 
@@ -128,11 +129,14 @@ void set_trigg_wndlength(mcpanel* pan)
 	unsigned int num_samples;
 	uint32_t *triggers;
 	float len = pan->display_length;
+	unsigned int trigg_nch = pan->trigg_nch;
 
 	num_samples = pan->fs * len;
 	g_free(pan->triggers);
-	pan->triggers = g_malloc0(num_samples * sizeof(*triggers));
-	binary_scope_set_data(pan->gui.tri_scope, pan->triggers, 
+	g_free(pan->selected_trigger);
+	pan->selected_trigger = g_malloc0(num_samples * sizeof(*triggers));
+	pan->triggers = g_malloc0(trigg_nch * num_samples * sizeof(*triggers));
+	binary_scope_set_data(pan->gui.tri_scope, pan->selected_trigger,
 	                      num_samples, pan->nlines_tri);
 	
 	pan->last_drawn_sample = pan->current_sample = 0;
@@ -148,22 +152,29 @@ static
 void process_tri(mcpanel* pan, unsigned int ns, const uint32_t* tri)
 {
 	unsigned int i;
-	uint32_t *dst;
+	uint32_t *dst, *sel_dst;
+	unsigned int nch, selch;
 
 	if (pan->num_samples == 0)
 		return;
 
-	dst = pan->triggers + pan->current_sample;
+	selch = pan->trigg_selch;
+	nch = pan->trigg_nch;
+	dst = pan->triggers + nch*pan->current_sample;
+	sel_dst = pan->selected_trigger + pan->current_sample;
 
 	pan->flags.cms_in_range = 1;
 	pan->flags.low_battery = 0;
 
 	// Copy data and set the states of the system
-	for (i=0; i<ns; i++) {
-		dst[i] = tri[i];
-		if ((CMS_IN_RANGE & tri[i]) == 0)
+	memcpy(dst, tri, nch*ns*sizeof(*tri));
+	for (i = 0; i < ns; i++) {
+		// Copy selected triggers
+		sel_dst[i] = tri[i*nch + selch];
+
+		if ((CMS_IN_RANGE & tri[i*nch]) == 0)
 			pan->flags.cms_in_range = 0;
-		if (LOW_BATTERY & tri[i])
+		if (LOW_BATTERY & tri[i*nch])
 			pan->flags.low_battery = 1;
 	}
 
@@ -304,6 +315,7 @@ void mcp_destroy(mcpanel* pan)
 	//destroy_dataproc(pan);
 	g_free(pan->cb.custom_button);
 	clean_list(pan->pList);
+	g_strfreev(pan->trigg_labels);
 	g_free(pan);
 }
 
@@ -387,17 +399,36 @@ void mcp_add_events(mcpanel* pan, int tabid,
 
 
 API_EXPORTED
-int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs)
+int mcp_define_trigg_input(mcpanel* pan, unsigned int nline,
+                           unsigned int trigg_nch, float fs,
+                           const char** labels)
 {
-	g_mutex_lock(&pan->data_mutex);
+	gdk_threads_enter();
+	g_strfreev(pan->trigg_labels);
+	pan->trigg_labels = g_strdupv((char**)labels);
 
+	fill_combo(GTK_COMBO_BOX(pan->gui.widgets[TRIGCHN_COMBO]),
+	           (const char**)pan->trigg_labels);
+	gdk_threads_leave();
+
+	g_mutex_lock(&pan->data_mutex);
 	pan->nlines_tri = nline;
 	pan->fs = fs;
+	pan->trigg_nch = trigg_nch;
 
 	set_trigg_wndlength(pan);
-
 	g_mutex_unlock(&pan->data_mutex);
+
 	return 0;
+}
+
+
+API_EXPORTED
+int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs)
+{
+	const char* labels[] = {"Triggers", NULL};
+
+	return mcp_define_trigg_input(pan, nline, 1, fs, labels);
 }
 
 
@@ -721,6 +752,4 @@ struct mcp_widget* mcp_get_widget(mcpanel* pan, const char* identifier)
 	}
 
 	return pan->pList->last->widget;
-
 }
-

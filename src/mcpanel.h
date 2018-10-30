@@ -90,6 +90,9 @@ int mcp_define_tab_input(mcpanel* pan, int tabid,
 void mcp_add_samples(mcpanel* pan, int tabid,
                          unsigned int ns, const float* data);
 int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs);
+int mcp_define_trigg_input(mcpanel* pan, unsigned int nline,
+                           unsigned int trigg_nch, float fs,
+                           const char** labels);
 void mcp_add_triggers(mcpanel* pan, unsigned int ns, const uint32_t* trigg);
 void mcp_add_events(mcpanel* pan, int tabid,
                     unsigned int ns, const uint32_t* eventdata);

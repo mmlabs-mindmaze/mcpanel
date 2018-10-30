@@ -51,7 +51,8 @@ const LinkWidgetName widget_name_table[] = {
 	{RECORDING_LED, "recording_led", "GtkLed"},  
 	{START_RECORDING_BUTTON, "start_recording_button", "GtkButton"},
 	{PAUSE_RECORDING_BUTTON, "pause_recording_button", "GtkButton"},
-	{FILE_LENGTH_LABEL, "file_length_label", "GtkLabel"}
+	{FILE_LENGTH_LABEL, "file_length_label", "GtkLabel"},
+	{TRIGCHN_COMBO, "trigchn_combo", "GtkComboBox"},
 };
 
 #define NUM_PANEL_WIDGETS_REGISTERED (sizeof(widget_name_table)/sizeof(widget_name_table[0]))

@@ -157,6 +157,31 @@ void time_window_cb(GtkComboBox* combo, gpointer user_data)
 }
 
 
+static
+void trigg_selch_cb(GtkComboBox* combo, gpointer user_data)
+{
+	mcpanel* pan = user_data;
+	unsigned int i;
+	uint32_t *tri, *sel_tri;
+	unsigned int nch, selch;
+
+	selch = gtk_combo_box_get_active(combo);
+
+	g_mutex_lock(&pan->data_mutex);
+
+	pan->trigg_selch = selch;
+	nch = pan->trigg_nch;
+	tri = pan->triggers + nch*pan->current_sample;
+	sel_tri = pan->selected_trigger + pan->current_sample;
+
+	// Copy data and selected triggers
+	for (i = 0; i < pan->num_samples; i++)
+		sel_tri[i] = tri[i*nch + selch];
+
+	g_mutex_unlock(&pan->data_mutex);
+}
+
+
 LOCAL_FN
 void connect_panel_signals(mcpanel* pan)
 {
@@ -167,9 +192,10 @@ void connect_panel_signals(mcpanel* pan)
 	g_signal_connect(pan->gui.widgets[PAUSE_RECORDING_BUTTON],
 	                 "clicked", (GCallback)pause_recording_cb, pan);
 
-
 	g_signal_connect_after(pan->gui.widgets[TIME_WINDOW_COMBO],
 	                       "changed", (GCallback)time_window_cb, pan);
+	g_signal_connect_after(pan->gui.widgets[TRIGCHN_COMBO],
+	                       "changed", (GCallback)trigg_selch_cb, pan);
 
 	g_signal_connect(pan->gui.window, "delete-event",
 	                 (GCallback)on_close_panel, pan);
