@@ -181,8 +181,10 @@ int set_data_length(mcpanel* pan, float len)
 	for (i=0; i<pan->ntab; i++)
 		signatab_set_wndlength(pan->tabs[i], len);
 
+	g_mutex_lock(&pan->data_mutex);
 	set_trigg_wndlength(pan);
-	
+	g_mutex_unlock(&pan->data_mutex);
+
 	return 1;
 }
 
@@ -379,10 +381,14 @@ void mcp_add_samples(mcpanel* pan, int tabid,
 API_EXPORTED
 int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs)
 {
+	g_mutex_lock(&pan->data_mutex);
+
 	pan->nlines_tri = nline;
 	pan->fs = fs;
-	 
+
 	set_trigg_wndlength(pan);
+
+	g_mutex_unlock(&pan->data_mutex);
 	return 0;
 }
 
@@ -392,7 +398,11 @@ void mcp_add_triggers(mcpanel* pan, unsigned int ns,
                           const uint32_t* trigg)
 {
 	unsigned int ns_w = 0;
-	unsigned int pointer = pan->current_sample;
+	unsigned int pointer;
+
+	g_mutex_lock(&pan->data_mutex);
+
+	pointer = pan->current_sample;
 
 	// if we need to wrap, first add the tail
 	if (ns+pointer > pan->num_samples) {
@@ -402,6 +412,8 @@ void mcp_add_triggers(mcpanel* pan, unsigned int ns,
 		ns -= ns_w;
 	}
 	process_tri(pan, ns, trigg);
+
+	g_mutex_unlock(&pan->data_mutex);
 }
 
 

@@ -146,8 +146,6 @@ void time_window_cb(GtkComboBox* combo, gpointer user_data)
 	float time_length;
 	mcpanel* pan = user_data;
 
-	g_mutex_lock(&pan->data_mutex);
-	
 	// Get the value set
 	memset(&value, 0, sizeof(value));
 	model = gtk_combo_box_get_model(combo);
@@ -156,8 +154,6 @@ void time_window_cb(GtkComboBox* combo, gpointer user_data)
 	time_length = g_value_get_float(&value);
 
 	set_data_length(pan, time_length);
-
-	g_mutex_unlock(&pan->data_mutex);
 }
 
 
