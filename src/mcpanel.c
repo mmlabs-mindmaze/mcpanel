@@ -403,9 +403,15 @@ int mcp_define_trigg_input(mcpanel* pan, unsigned int nline,
                            unsigned int trigg_nch, float fs,
                            const char** labels)
 {
+	char* newlabels[trigg_nch+1];
+
+	// Ensure labels array supplied to g_strdupv() is NULL terminated
+	memcpy(newlabels, labels, trigg_nch*sizeof(*labels));
+	newlabels[trigg_nch] = NULL;
+
 	gdk_threads_enter();
 	g_strfreev(pan->trigg_labels);
-	pan->trigg_labels = g_strdupv((char**)labels);
+	pan->trigg_labels = g_strdupv(newlabels);
 
 	fill_combo(GTK_COMBO_BOX(pan->gui.widgets[TRIGCHN_COMBO]),
 	           (const char**)pan->trigg_labels);
@@ -426,7 +432,7 @@ int mcp_define_trigg_input(mcpanel* pan, unsigned int nline,
 API_EXPORTED
 int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs)
 {
-	const char* labels[] = {"Triggers", NULL};
+	const char* labels[] = {"Triggers"};
 
 	return mcp_define_trigg_input(pan, nline, 1, fs, labels);
 }
