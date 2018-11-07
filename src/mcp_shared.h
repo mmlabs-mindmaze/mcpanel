@@ -48,7 +48,7 @@ struct _mcpanel {
 
 	// settings to interpret and display triggers
 	char** trigg_labels;
-	unsigned int trigg_selch;
+	int trigg_selch;
 	unsigned int trigg_nch;
 	unsigned int fs;
 	unsigned int nlines_tri;

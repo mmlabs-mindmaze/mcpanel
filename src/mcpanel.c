@@ -153,9 +153,10 @@ void process_tri(mcpanel* pan, unsigned int ns, const uint32_t* tri)
 {
 	unsigned int i;
 	uint32_t *dst, *sel_dst;
-	unsigned int nch, selch;
+	unsigned int nch;
+	int selch;
 
-	if (pan->num_samples == 0)
+	if (pan->num_samples == 0 || pan->trigg_selch == -1)
 		return;
 
 	selch = pan->trigg_selch;
@@ -242,6 +243,7 @@ mcpanel* mcp_create(const char* uifilename, const struct PanelCb* cb,
 	
 	// Needed initializations
 	pan->display_length = 1.0f;
+	pan->trigg_selch = -1;
 
 	// Create the panel widgets according to the ui definition files
 	if (!create_panel_gui(pan, uifilename, ntab, tabconf, confname)) {

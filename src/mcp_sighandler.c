@@ -163,9 +163,12 @@ void trigg_selch_cb(GtkComboBox* combo, gpointer user_data)
 	mcpanel* pan = user_data;
 	unsigned int i;
 	uint32_t *tri, *sel_tri;
-	unsigned int nch, selch;
+	unsigned int nch;
+	int selch;
 
 	selch = gtk_combo_box_get_active(combo);
+	if (selch == -1)
+		return;
 
 	g_mutex_lock(&pan->data_mutex);
 

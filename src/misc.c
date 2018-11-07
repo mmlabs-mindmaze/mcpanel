@@ -132,5 +132,6 @@ void fill_combo(GtkComboBox* combo, const char** labels)
 		gtk_list_store_set(list, &iter, 0, labels[i++], -1);
 	}
 
-	gtk_combo_box_set_active (combo, 0);
+	// Select no item if list empty, otherwise, select the first one
+	gtk_combo_box_set_active (combo, (i == 0) ? -1 : 0);
 }
