@@ -56,6 +56,14 @@ struct panel_tabconf tabconf[] = {
 };
 #define NTAB	(sizeof(tabconf)/sizeof(tabconf[0]))
 
+static
+int rand_lim(int min, int max)
+{
+	float width = max - min;
+
+	return ((int)((width/RAND_MAX) * rand())) + min;
+}
+
 void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 {
 	int i, j;
@@ -88,6 +96,8 @@ gpointer reading_thread(gpointer arg)
 	mcpanel* panel = arg;
 	struct timespec curr;
 	unsigned int isample = 0;
+	struct mcp_event evt = {0};
+	unsigned int next_event = 30*NSAMPLES;
 
 	eeg = calloc(NEEG*NSAMPLES, sizeof(*eeg));
 	exg = calloc(NEXG*NSAMPLES, sizeof(*exg));
@@ -105,6 +115,13 @@ gpointer reading_thread(gpointer arg)
 		mcp_add_samples(panel, 2, NSAMPLES, exg);
 		mcp_add_triggers(panel, NSAMPLES, tri);
 		isample += NSAMPLES;
+
+		if (isample >= next_event) {
+			evt.type = (evt.type+1) % 8;
+			evt.pos = next_event + rand_lim(-SAMPLING_RATE, SAMPLING_RATE);
+			mcp_add_events(panel, 0, 1, &evt);
+			next_event += 2*SAMPLING_RATE;
+		}
 
 		if (recording) {
 			recsamples += NSAMPLES;

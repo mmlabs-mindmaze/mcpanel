@@ -107,11 +107,12 @@ struct scopetab {
 	enum reftype ref;
 	unsigned int refelec;
 	float *tmpbuff, *tmpbuff2, *data, *offsetval;
-	uint32_t *eventdata;
 	float wndlen;
-	unsigned int nselch, nslen, chunkns, curr, eventcurr;
+	unsigned int nselch, nslen, chunkns, curr;
 	unsigned int* selch;
 	char** labels;
+
+	int ns_total;
 
 	Scope* scope;
 	GObject* widgets[NUM_SCOPETAB_WIDGETS];
@@ -142,9 +143,6 @@ void init_buffers(struct scopetab* sctab)
 	g_free(sctab->data);
 	g_free(sctab->offsetval);
 
-	g_free(sctab->eventdata);
-
-
 	sctab->nslen = ns = sctab->wndlen * sctab->tab.fs;
 
 	sctab->data = g_malloc0(ns*nch*sizeof(*(sctab->data)));
@@ -152,13 +150,8 @@ void init_buffers(struct scopetab* sctab)
 	sctab->tmpbuff = g_malloc(chunkns*nch*sizeof(*(sctab->tmpbuff)));
 	sctab->tmpbuff2 = g_malloc(chunkns*nch*sizeof(*(sctab->tmpbuff2)));
 
-	sctab->eventdata = g_malloc0(ns * sizeof(*(sctab->eventdata)));
-
 	sctab->curr = 0;
 	scope_set_data(sctab->scope, sctab->data, ns, sctab->nselch);
-
-	sctab->eventcurr = 0;
-	scope_set_events(sctab->scope, sctab->eventdata);
 }
 
 static
@@ -311,22 +304,7 @@ void process_chunk(struct scopetab* sctab, unsigned int ns, const float* in)
 
 	// copy data to the destination buffer
 	sctab->curr = (sctab->curr + ns) % sctab->nslen;
-}
-
-
-static
-void process_event_chunk(struct scopetab* sctab, unsigned int ns, const uint32_t* in)
-{
-	unsigned int i;
-	uint32_t* restrict eventdata;
-	eventdata = sctab->eventdata + sctab->eventcurr;
-
-	// Copy data of the selected channels
-	for (i = 0; i < ns; i++)
-		eventdata[i] = in[i];
-
-	// copy data to the destination buffer
-	sctab->eventcurr = (sctab->eventcurr + ns) % sctab->nslen;
+	sctab->ns_total += ns;
 }
 
 /**************************************************************************
@@ -734,7 +712,6 @@ void scopetab_destroy(struct signaltab* tab)
 	g_free(sctab->tmpbuff);
 	g_free(sctab->tmpbuff2);
 	g_free(sctab->offsetval);
-	g_free(sctab->eventdata);
 	g_free(sctab);
 }
 
@@ -753,6 +730,8 @@ void scopetab_define_input(struct signaltab* tab, const char** labels)
 	g_mutex_lock(&sctab->tab.datlock);
 
 	sctab->chunkns = (CHUNKLEN * sctab->tab.fs) + 1;
+	sctab->ns_total = 0;
+	scope_reset_events(sctab->scope);
 	init_buffers(sctab);
 	init_filter(sctab, 0);
 	init_filter(sctab, 1);
@@ -787,27 +766,12 @@ void scopetab_process_data(struct signaltab* tab, unsigned int ns,
 
 
 static
-void scopetab_process_events(struct signaltab* tab, unsigned int ns,
-	const uint32_t* in)
+void scopetab_process_events(struct signaltab* tab, int nevent,
+                             const struct mcp_event* events)
 {
 	struct scopetab* sctab = get_scopetab(tab);
-	unsigned int chunkns = sctab->chunkns;
-	unsigned int nslen = sctab->nslen;
-	unsigned int nsproc;
 
-	if (nslen == 0)
-		return;
-
-	while (ns) {
-		nsproc = (ns > chunkns) ? chunkns : ns;
-		if (sctab->eventcurr + nsproc > nslen)
-			nsproc = nslen - sctab->eventcurr;
-
-		process_event_chunk(sctab, nsproc, in);
-
-		in += nsproc;
-		ns -= nsproc;
-	}
+	scope_add_events(sctab->scope, nevent, events);
 }
 
 
@@ -816,7 +780,7 @@ void scopetab_update_plot(struct signaltab* tab)
 {
 	struct scopetab* sctab = get_scopetab(tab);
 
-	scope_update_data(sctab->scope, sctab->curr);
+	scope_update_data(sctab->scope, sctab->curr, sctab->ns_total);
 }
 
 

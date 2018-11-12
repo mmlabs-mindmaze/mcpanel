@@ -21,8 +21,10 @@
 
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
+#include <glib.h>
 #include <memory.h>
 #include <stdio.h>
+#include "mcpanel.h"
 #include "scope.h"
 
 enum {
@@ -30,8 +32,14 @@ enum {
 	SCALE_PROP
 };
 
+struct scope_event {
+	int pos;
+	uint32_t type;
+	int drawn_once;
+};
+
 static void scope_calculate_drawparameters(Scope* self);
-static void scope_draw_samples(const Scope* self, unsigned int first, unsigned int last);
+static void scope_draw_samples(Scope* self, unsigned int first, unsigned int last);
 static gboolean scope_expose_event_callback(Scope *self, GdkEventExpose *event, gpointer data);
 static gboolean scope_configure_event_callback(Scope *self, GdkEventConfigure *event, gpointer data);
 
@@ -78,11 +86,14 @@ static void
 scope_finalize (GObject *object)
 {
 	Scope* self = SCOPE(object);
+
+	g_mutex_clear(&self->mtx);
 	
 	// Free allocted structures
 	g_free(self->ticks);
 	g_free(self->points);
-	
+	g_free(self->events);
+
 	// Call parent finalize function
 	if (G_OBJECT_CLASS (scope_parent_class)->finalize)
 		G_OBJECT_CLASS (scope_parent_class)->finalize (object);
@@ -121,9 +132,12 @@ scope_init (Scope *self)
 	self->phys_scale = (data_t)1;
 	self->current_pointer = 0; 
 	self->data = NULL;
-	self->eventdata = NULL;
 	self->ticks = NULL;
 	self->points = NULL;
+	self->nevent = 0;
+	self->nevent_max = 0;
+	self->events = NULL;
+	g_mutex_init(&self->mtx);
 
 	plot_area_set_ticks(PLOT_AREA(self), self->num_ticks, self->num_channels);
 
@@ -193,22 +207,71 @@ scope_expose_event_callback (Scope *self,
 }
 
 
+static
+void scope_draw_events(Scope* self)
+{
+	int i, x, slen, evwidth, evheight;
+	struct scope_event* events;
+	PangoLayout* layout;
+	PangoContext* context;
+	PangoFontDescription* desc;
+	char eventcode[11];
+	GdkPoint* points = self->points;
+	GdkWindow* window = GTK_WIDGET(self)->window;
+	GdkGC* plotgc = PLOT_AREA(self)->plotgc;
+	const GdkColor *colors = PLOT_AREA(self)->colors;
+	int num_colors = PLOT_AREA(self)->nColors;
+	int height = GTK_WIDGET(self)->allocation.height;
+	GdkRectangle rect = {0, 0, GTK_WIDGET(self)->allocation.width, GTK_WIDGET(self)->allocation.height};
+
+	g_mutex_lock(&self->mtx);
+
+	events = self->events;
+	if (!self->num_displayed_event)
+		goto exit;
+
+	// Setup pango context for small fonts
+	layout = gtk_widget_create_pango_layout(GTK_WIDGET(self), NULL);
+	context = gtk_widget_get_pango_context(GTK_WIDGET(self));
+	desc = pango_font_description_copy_static(pango_context_get_font_description(context));
+	pango_font_description_set_size(desc, 6 * PANGO_SCALE);
+	pango_layout_set_font_description(layout, desc);
+	gdk_gc_set_clip_rectangle(plotgc, &rect);
+
+	for (i = 0; i < self->num_displayed_event; i++) {
+		// Event code text
+		slen = sprintf(eventcode, "0x%x", events[i].type);
+		pango_layout_set_text(layout, eventcode, slen);
+		pango_layout_get_pixel_size(layout, &evwidth, &evheight);
+
+		x = points[(events[i].pos - self->ns_offset) % self->num_points].x;
+		gdk_gc_set_foreground(plotgc, colors + events[i].type % num_colors);
+		gdk_draw_line(window, plotgc, x, 0, x, height - evheight);
+		gdk_draw_layout(window, plotgc, x - evwidth / 2, height - evheight - 2, layout);
+	}
+
+	g_object_unref(layout);
+	pango_font_description_free(desc);
+
+exit:
+	g_mutex_unlock(&self->mtx);
+}
+
 
 static void
-scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
+scope_draw_samples(Scope* self, unsigned int first, unsigned int last)
 {
 	unsigned int iChannel, iSample, iColor, num_channels, nColors;
 	GdkPoint* points = self->points;
 	const gint* offsets = PLOT_AREA(self)->yticks;
 	const gint* xticks = PLOT_AREA(self)->xticks;
-	gint xmin, xmax, value, height, evwidth, evheight;
+	gint xmin, xmax, value, height;
 	data_t scale = self->scale;
 	const data_t* data = self->data;
 	unsigned int i;
 	const GdkColor *grid_color, *colors;
 	GdkWindow* window = GTK_WIDGET(self)->window;
 	GdkGC* plotgc = PLOT_AREA(self)->plotgc;
-	char eventcode[4];
 
 	nColors = PLOT_AREA(self)->nColors;
 	colors = PLOT_AREA(self)->colors;
@@ -280,34 +343,32 @@ scope_draw_samples(const Scope* self, unsigned int first, unsigned int last)
 			points[self->current_pointer].x,
 			height - 1);
 
-	// Draw events
-	PangoLayout* layout = gtk_widget_create_pango_layout(GTK_WIDGET(self), NULL);
-	PangoContext* context = gtk_widget_get_pango_context(GTK_WIDGET(self));
-	PangoFontDescription* desc = pango_font_description_copy_static(pango_context_get_font_description(context));
-	pango_font_description_set_size(desc, 10 * PANGO_SCALE);
+	scope_draw_events(self);
+}
+
+
+static
+void scope_calculate_evt_label_width(Scope* self)
+{
+	int evwidth, evheight;
+	PangoLayout* layout;
+	PangoContext* context;
+	PangoFontDescription* desc;
+
+	// Setup pango context for small fonts
+	layout = gtk_widget_create_pango_layout(GTK_WIDGET(self), NULL);
+	context = gtk_widget_get_pango_context(GTK_WIDGET(self));
+	desc = pango_font_description_copy_static(pango_context_get_font_description(context));
+	pango_font_description_set_size(desc, 6 * PANGO_SCALE);
 	pango_layout_set_font_description(layout, desc);
 
-	for (iSample = first; iSample <= last; iSample++) {
-		if(self->eventdata[iSample] != 0){
-			iColor = self->eventdata[iSample] % nColors;
-			gdk_gc_set_foreground(plotgc, colors + iColor);
-			// Vertical Line
-			gdk_draw_line(window,
-				plotgc,
-				points[iSample].x,
-				0,
-				points[iSample].x,
-				height - 1);
-			// Event code text
-			sprintf(eventcode, "%d", self->eventdata[iSample]);
-			pango_layout_set_text(layout, eventcode, -1);
-			pango_layout_get_pixel_size(layout, &evwidth, &evheight);
-			gdk_draw_layout(window, plotgc, points[iSample].x - evwidth / 2, height - evheight - 2, layout);
-		}
-	}
+	pango_layout_set_text(layout, "0xFFFFFFFF", -1);
+	pango_layout_get_pixel_size(layout, &evwidth, &evheight);
 
 	g_object_unref(layout);
 	pango_font_description_free(desc);
+
+	self->evt_label_width = evwidth;
 }
 
 
@@ -339,12 +400,75 @@ void scope_calculate_drawparameters(Scope* self)
 	// Set the ticks position
 	for (i=0; i<self->num_ticks; i++)
 		xticks[i] = (num_points > (unsigned int) self->ticks[i]) ? self->points[self->ticks[i]].x : -1;
+
+	scope_calculate_evt_label_width(self);
 }
 
 
+static
+void scope_queue_event_draw(Scope* self, const struct scope_event* evt)
+{
+	GdkRectangle rect;
+	int x;
+
+	if (!GTK_WIDGET_DRAWABLE(self))
+		return;
+
+	x = self->points[(evt->pos - self->ns_offset) % self->num_points].x;
+
+	rect.x = x - self->evt_label_width/2;
+	rect.y = 0;
+	rect.width = self->evt_label_width;
+	rect.height = GTK_WIDGET(self)->allocation.height;
+
+	gdk_window_invalidate_rect(gtk_widget_get_window(GTK_WIDGET(self)),
+	                           &rect, FALSE);
+}
+
+
+static
+void scope_update_events(Scope* self, int ns_total)
+{
+	int i, first, discard_lim;
+	struct scope_event* events = self->events;
+
+	g_mutex_lock(&self->mtx);
+	self->ns_total = ns_total;
+	self->ns_offset = (ns_total - self->current_pointer) % self->num_points;
+
+	// Find the index of first event not outdated
+	discard_lim = ns_total - self->num_points;
+	for (first = 0; first < self->nevent; first++) {
+		if (events[first].pos > discard_lim) {
+			break;
+		}
+	}
+
+	// Remove events before first
+	if (first > 0) {
+		self->nevent -= first;
+		memmove(events, events + first, self->nevent * sizeof(*events));
+	}
+
+	// Find the number of event that can be displayed
+	for (i = 0; i < self->nevent; i++) {
+		if (events[i].pos > ns_total)
+			break;
+
+		// queue a draw if it is new
+		if (!events[i].drawn_once) {
+			scope_queue_event_draw(self, &events[i]);
+			events[i].drawn_once = 1;
+		}
+	}
+	self->num_displayed_event = i;
+
+	g_mutex_unlock(&self->mtx);
+}
+
 
 LOCAL_FN
-void scope_update_data(Scope* self, guint pointer)
+void scope_update_data(Scope* self, guint pointer, int ns_total)
 {
 	int first, last;
 	GdkRectangle rect[2];
@@ -381,7 +505,9 @@ void scope_update_data(Scope* self, guint pointer)
 					     region, FALSE);
 		gdk_region_destroy(region);
 	}
+
 	self->current_pointer = pointer;
+	scope_update_events(self, ns_total);
 }
 
 
@@ -417,12 +543,62 @@ void scope_set_data(Scope* self, data_t* data, guint num_points, guint num_ch)
 
 
 LOCAL_FN
-void scope_set_events(Scope* self, guint* eventdata)
+void scope_add_events(Scope* self, int nevent, const struct mcp_event* added_events)
+{
+	int i, insert_at;
+	struct scope_event evt;
+	struct scope_event* events;
+
+	if (self == NULL)
+		return;
+
+	g_mutex_lock(&self->mtx);
+
+	// Realloc if necessary
+	if (nevent + self->nevent > self->nevent_max) {
+		self->nevent_max = nevent + self->nevent;
+		self->events = g_realloc(self->events, self->nevent_max*sizeof(*events));
+	}
+
+	// Add event while respecting chronological order
+	events = self->events;
+	for (i = 0; i < nevent; i++) {
+		evt.pos = added_events[i].pos;
+		evt.type = added_events[i].type;
+		evt.drawn_once = 0;
+
+		// Discard event that are already outdated
+		if (evt.pos < self->ns_total - (int)self->num_points)
+			continue;
+
+		for (insert_at = 0; insert_at < self->nevent; insert_at++) {
+			if (events[insert_at].pos > evt.pos)
+				break;
+		}
+
+		// Insert evt at the position found
+		memmove(events+insert_at+1, events+insert_at,
+		        (self->nevent - insert_at)*sizeof(*events));
+		events[insert_at] = evt;
+		self->nevent++;
+		if (evt.pos < self->ns_total)
+			self->num_displayed_event++;
+	}
+
+	g_mutex_unlock(&self->mtx);
+}
+
+
+LOCAL_FN
+void scope_reset_events(Scope* self)
 {
 	if (self == NULL)
 		return;
 
-	self->eventdata = eventdata;
+	g_mutex_lock(&self->mtx);
+	self->nevent = 0;
+	self->ns_total = 0;
+	g_mutex_unlock(&self->mtx);
 }
 
 

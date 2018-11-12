@@ -35,6 +35,19 @@ struct panel_button {
 	int id;
 };
 
+
+/**
+ * struct mcp_event - data describing an event
+ * @pos:        timestamp expressed in number of sample since acquisition
+ *              start. An acquisition is considered restarted for a tab
+ *              when mcp_define_tab_input() is called.
+ * @type:       event type code
+ */
+struct mcp_event {
+	int pos;
+	uint32_t type;
+};
+
 struct PanelCb {
 	/* function supplied by the user */
 	SystemConnectionFunc system_connection;
@@ -94,8 +107,8 @@ int mcp_define_trigg_input(mcpanel* pan, unsigned int nline,
                            unsigned int trigg_nch, float fs,
                            const char** labels);
 void mcp_add_triggers(mcpanel* pan, unsigned int ns, const uint32_t* trigg);
-void mcp_add_events(mcpanel* pan, int tabid,
-                    unsigned int ns, const uint32_t* eventdata);
+void mcp_add_events(mcpanel* pan, int tabid, int nevent,
+                    const struct mcp_event* events);
 unsigned int mcp_register_callback(mcpanel* pan, int timeout,
                                    int (*func)(void*), void* data);
 int mcp_unregister_callback(mcpanel* pan, unsigned int id);

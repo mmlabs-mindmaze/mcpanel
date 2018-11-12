@@ -393,10 +393,10 @@ void mcp_add_samples(mcpanel* pan, int tabid,
 
 
 API_EXPORTED
-void mcp_add_events(mcpanel* pan, int tabid,
-                    unsigned int ns, const uint32_t* eventdata)
+void mcp_add_events(mcpanel* pan, int tabid, int nevent,
+                    const struct mcp_event* events)
 {
-	signaltab_add_events(pan->tabs[tabid], ns, eventdata);
+	signaltab_add_events(pan->tabs[tabid], nevent, events);
 }
 
 

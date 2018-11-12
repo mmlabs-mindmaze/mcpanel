@@ -19,8 +19,10 @@
 #define _SCOPE
 
 #include <glib-object.h>
+#include <glib.h>
 #include "plot-area.h"
 #include "plottk-types.h"
+#include "mcpanel.h"
 
 
 G_BEGIN_DECLS
@@ -54,7 +56,15 @@ typedef struct {
 	guint num_points;
 	GdkPoint* points;
 	const data_t* data;
-	const guint* eventdata;
+	int evt_label_width;
+
+	GMutex mtx;
+	int ns_total;
+	int ns_offset;
+	int nevent;
+	int num_displayed_event;
+	int nevent_max;
+	struct scope_event* events;
 } Scope;
 
 typedef struct {
@@ -64,9 +74,10 @@ typedef struct {
 GType scope_get_type (void);
 
 Scope* scope_new (void);
-void scope_update_data(Scope* self, guint pointer);
+void scope_update_data(Scope* self, guint pointer, int ns_total);
 void scope_set_data(Scope* self, data_t* data, guint num_points, guint num_ch);
-void scope_set_events(Scope* self, guint* eventdata);
+void scope_add_events(Scope* self, int nevent, const struct mcp_event* added_events);
+void scope_reset_events(Scope* self);
 void scope_set_ticks(Scope* self, guint num_ticks, guint* ticks);
 
 G_END_DECLS
