@@ -412,20 +412,23 @@ int mcp_define_trigg_input(mcpanel* pan, unsigned int nline,
 	newlabels[trigg_nch] = NULL;
 
 	gdk_threads_enter();
-	g_strfreev(pan->trigg_labels);
-	pan->trigg_labels = g_strdupv(newlabels);
 
-	fill_combo(GTK_COMBO_BOX(pan->gui.widgets[TRIGCHN_COMBO]),
-	           (const char**)pan->trigg_labels);
-	gdk_threads_leave();
-
+	// update trigger data buffers
 	g_mutex_lock(&pan->data_mutex);
 	pan->nlines_tri = nline;
 	pan->fs = fs;
 	pan->trigg_nch = trigg_nch;
-
+	pan->trigg_selch = -1;
 	set_trigg_wndlength(pan);
 	g_mutex_unlock(&pan->data_mutex);
+
+	// Update combo labels
+	g_strfreev(pan->trigg_labels);
+	pan->trigg_labels = g_strdupv(newlabels);
+	fill_combo(GTK_COMBO_BOX(pan->gui.widgets[TRIGCHN_COMBO]),
+	           (const char**)pan->trigg_labels);
+
+	gdk_threads_leave();
 
 	return 0;
 }
