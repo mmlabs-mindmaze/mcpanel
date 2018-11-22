@@ -12,6 +12,35 @@
     <property name="step_increment">0.10000000000000001</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkAdjustment" id="numpoint_adjustment">
+    <property name="upper">99999</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">100</property>
+  </object>
+  <object class="GtkAdjustment" id="fmax_adjustment">
+    <property name="lower">-1</property>
+    <property name="upper">99999</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">100</property>
+  </object>
+  <object class="GtkAdjustment" id="fmin_adjustment">
+    <property name="lower">-1</property>
+    <property name="upper">99999</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">100</property>
+  </object>
+  <object class="GtkAdjustment" id="vmin_adjustment">
+    <property name="lower">-99999</property>
+    <property name="upper">99999</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">100</property>
+  </object>
+  <object class="GtkAdjustment" id="vmax_adjustment">
+    <property name="lower">-99999</property>
+    <property name="upper">99999</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">100</property>
+  </object>
   <object class="GtkListStore" id="reftype_model">
     <columns>
       <!-- column-name gchararray -->
@@ -223,6 +252,25 @@
       <column type="gchararray"/>
     </columns>
     <data>
+    </data>
+  </object>
+  <object class="GtkListStore" id="dftscale_unit_model">
+    <columns>
+      <column type="gchararray"/>
+      <column type="gint"/>
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0">linear</col>
+        <col id="1">0</col>
+        <col id="2"></col>
+      </row>
+      <row>
+        <col id="0">decibel</col>
+        <col id="1">1</col>
+        <col id="2">dB</col>
+      </row>
     </data>
   </object>
 
@@ -716,6 +764,220 @@ removal</property>
     </child>
   </object>
 
+  <object class="GtkAlignment" id="spectrumtab_template">
+    <property name="visible">True</property>
+    <property name="top_padding">5</property>
+    <property name="bottom_padding">5</property>
+    <property name="left_padding">5</property>
+    <property name="right_padding">5</property>
+    <child>
+      <object class="GtkHBox" id="sp-hbox2">
+        <property name="visible">True</property>
+        <property name="spacing">4</property>
+        <child>
+          <object class="GtkVBox" id="sp-vbox8">
+            <property name="width_request">100</property>
+            <property name="visible">True</property>
+            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+            <property name="spacing">3</property>
+            <child>
+              <object class="GtkFrame" id="sp-frame1">
+                <property name="visible">True</property>
+                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">etched-out</property>
+                <child>
+                  <object class="GtkVBox" id="sp-scale-vbox">
+                    <child>
+                      <object class="GtkComboBox" id="spectrumtab_scale_combo">
+                        <property name="visible">True</property>
+                        <property name="model">scale_model</property>
+                        <child>
+                          <object class="GtkCellRendererText" id="spectrumtab_scale_renderer"/>
+                          <attributes>
+                            <attribute name="text">0</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkComboBox" id="spectrumtab_dftscale_combo">
+                        <property name="visible">True</property>
+                        <property name="model">dftscale_unit_model</property>
+                        <child>
+                          <object class="GtkCellRendererText" id="sp_dftscale_unit_renderer"/>
+                          <attributes>
+                            <attribute name="text">0</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="sp-vlims-label">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Limits</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="spectrumtab_vmin">
+                        <property name="visible">True</property>
+                        <property name="adjustment">vmin_adjustment</property>
+                        <property name="digits">3</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="spectrumtab_vmax">
+                        <property name="visible">True</property>
+                        <property name="adjustment">vmax_adjustment</property>
+                        <property name="digits">3</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="sp-label11">
+                    <property name="visible">True</property>
+                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                    <property name="label" translatable="yes">Scale</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="sp-frame2">
+                <property name="visible">True</property>
+                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">etched-out</property>
+                <child>
+                  <object class="GtkVBox" id="sp-dft-vbox">
+                    <child>
+                      <object class="GtkLabel" id="sp-numpoint-label">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Points</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="spectrumtab_numpoint_spin">
+                        <property name="visible">True</property>
+                        <property name="width_chars">7</property>
+                        <property name="adjustment">numpoint_adjustment</property>
+                        <property name="digits">0</property>
+                        <property name="numeric">True</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="sp-freqlims-label">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Frequency lim</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="spectrumtab_freqmin">
+                        <property name="visible">True</property>
+                        <property name="adjustment">fmin_adjustment</property>
+                        <property name="digits">1</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="spectrumtab_freqmax">
+                        <property name="visible">True</property>
+                        <property name="adjustment">fmax_adjustment</property>
+                        <property name="digits">1</property>
+                      </object>
+                    </child>
+		  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="sp-label12">
+                    <property name="visible">True</property>
+                    <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                    <property name="label" translatable="yes">Spectrum</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFrame" id="sp-frame3">
+                <property name="visible">True</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">etched-out</property>
+                <child>
+                  <object class="GtkScrolledWindow" id="sp-scrolledwindow1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="hscrollbar_policy">automatic</property>
+                    <property name="shadow_type">in</property>
+                    <child>
+                      <object class="GtkTreeView" id="spectrumtab_treeview">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="headers_visible">False</property>
+                        <property name="level_indentation">3</property>
+                        <property name="model">channel_model</property>
+                        <child>
+                          <object class="GtkTreeViewColumn" id="spectrumtab_channel_column">
+		            <property name="title">Channels</property>
+		            <child>
+		              <object class="GtkCellRendererText" id="spectrumtab_channel_renderer"/>
+                              <attributes>
+                                <attribute name="text">0</attribute>
+                              </attributes>
+                            </child>
+		          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="sp-label7">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Electrodes</property>
+                    <property name="use_markup">True</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="position">3</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="LabelizedPlot" id="spectrumtab_axes">
+            <property name="left-padding">50</property>
+            <child>
+              <object class="Plotgraph" id="spectrumtab_graph">
+                <property name="background">white</property>
+                <property name="ymin-value">0.0</property>
+                <property name="ymax-value">1.0</property>
+                <property name="channel-colors">blue;red;green;orange;brown;magenta;cyan</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="position">2</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
 
   <object class="GtkWindow" id="topwindow">
     <signal name="destroy" handler="gtk_main_quit"/>

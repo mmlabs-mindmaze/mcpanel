@@ -110,16 +110,13 @@ void signaltab_add_events(struct signaltab* tab, int nevent,
 }
 
 
-LOCAL_FN 
+LOCAL_FN
 struct signaltab* create_signaltab(const struct tabconf* conf)
 {
-	struct signaltab* tab;
-	if (conf->type == TABTYPE_SCOPE)
-		tab = create_tab_scope(conf);
-	else if(conf->type == TABTYPE_BARGRAPH)
-		tab = create_tab_bargraph(conf);
-	else
-		tab = NULL;
-
-	return tab;
+	switch (conf->type) {
+	case TABTYPE_SCOPE:     return create_tab_scope(conf);;
+	case TABTYPE_BARGRAPH:  return create_tab_bargraph(conf);
+	case TABTYPE_SPECTRUM:  return create_tab_spectrum(conf);
+	default: return NULL;
+	}
 }

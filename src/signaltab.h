@@ -43,6 +43,7 @@ struct tabconf {
 LOCAL_FN int initialize_signaltab(struct signaltab* tab, const struct tabconf* conf);
 LOCAL_FN struct signaltab* create_tab_scope(const struct tabconf* conf);
 LOCAL_FN struct signaltab* create_tab_bargraph(const struct tabconf* conf);
+LOCAL_FN struct signaltab* create_tab_spectrum(const struct tabconf* conf);
 
 
 // For the user of signal tab

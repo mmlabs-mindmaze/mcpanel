@@ -29,6 +29,7 @@ libmcpanel_la_SOURCES = mcpanel.c		\
 			 signaltab.h		\
 			 signaltab.c		\
 			 scopetab.c		\
+			 spectrumtab.c		\
 			 bartab.c		\
 			 bargraph.c		\
 			 bargraph.h		\
@@ -45,6 +46,8 @@ libmcpanel_la_SOURCES = mcpanel.c		\
 			 plottk-types.h		\
 			 scope.c		\
 			 scope.h		\
+			 spectrum.c		\
+			 spectrum.h		\
 			 misc.h misc.c
 
 libmcpanel_la_LIBADD = $(GTK2_LIBS) $(GTHREAD2_LIBS)

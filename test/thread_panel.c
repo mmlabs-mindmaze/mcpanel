@@ -48,11 +48,12 @@ const char* bar_sclabels[BAR_NSCALES] = {"25 mV", "50 mV"};
 const float bar_scales[BAR_NSCALES] = {25.0e3, 50.0e3};
 
 struct panel_tabconf tabconf[] = {
-	[0] = {.type = TABTYPE_SCOPE, .name = "EEG"},
-	[1] = {.type = TABTYPE_BARGRAPH, .name = "EEG offsets",
-	       .nscales = BAR_NSCALES, .sclabels = bar_sclabels,
-	       .scales = bar_scales},
-	[2] = {.type = TABTYPE_SCOPE, .name = "Sensors"},
+	{.type = TABTYPE_SCOPE, .name = "EEG"},
+	{.type = TABTYPE_BARGRAPH, .name = "EEG offsets",
+	 .nscales = BAR_NSCALES, .sclabels = bar_sclabels,
+	 .scales = bar_scales},
+	{.type = TABTYPE_SPECTRUM, .name = "EEG Spectrum"},
+	{.type = TABTYPE_SCOPE, .name = "Sensors"},
 };
 #define NTAB	(sizeof(tabconf)/sizeof(tabconf[0]))
 
@@ -72,7 +73,7 @@ void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 
 	for (i=0; i<nsamples; i++) {
 		for (j=0; j<NEEG; j++)
-			eeg[i*NEEG+j] = i;
+			eeg[i*NEEG+j] = i + (j%2)*rand_lim(-20, 20);
 		for (j=0; j<NEXG; j++)
 			exg[i*NEXG+j] = j*i;
 		for (j=0; j<NTRI; j++)
@@ -112,7 +113,8 @@ gpointer reading_thread(gpointer arg)
 		set_signals(eeg, exg, tri, NSAMPLES);
 		mcp_add_samples(panel, 0, NSAMPLES, eeg);
 		mcp_add_samples(panel, 1, NSAMPLES, eeg);
-		mcp_add_samples(panel, 2, NSAMPLES, exg);
+		mcp_add_samples(panel, 2, NSAMPLES, eeg);
+		mcp_add_samples(panel, 3, NSAMPLES, exg);
 		mcp_add_triggers(panel, NSAMPLES, tri);
 		isample += NSAMPLES;
 
@@ -167,7 +169,8 @@ int Connect(mcpanel* panel)
 	mcp_define_trigg_input(panel, 16, NTRI, SAMPLING_RATE, tri_lab);
 	mcp_define_tab_input(panel, 0, NEEG, SAMPLING_RATE, eeg_lab);
 	mcp_define_tab_input(panel, 1, NEEG, SAMPLING_RATE, eeg_lab);
-	mcp_define_tab_input(panel, 2, NEXG, SAMPLING_RATE, exg_lab);
+	mcp_define_tab_input(panel, 2, NEEG, SAMPLING_RATE, eeg_lab);
+	mcp_define_tab_input(panel, 3, NEXG, SAMPLING_RATE, exg_lab);
 
 	thread_id = g_thread_new(NULL, reading_thread, panel);
 

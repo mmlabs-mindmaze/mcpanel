@@ -77,7 +77,8 @@ enum notification {
 
 enum tabtype {
 	TABTYPE_SCOPE,
-	TABTYPE_BARGRAPH
+	TABTYPE_BARGRAPH,
+	TABTYPE_SPECTRUM,
 };
 
 struct panel_tabconf {
