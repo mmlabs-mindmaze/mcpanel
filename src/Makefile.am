@@ -40,6 +40,8 @@ libmcpanel_la_SOURCES = mcpanel.c		\
 			 labelized-plot.h	\
 			 plot-area.c		\
 			 plot-area.h		\
+			 plotgraph.c		\
+			 plotgraph.h		\
 			 plottk-types.h		\
 			 scope.c		\
 			 scope.h		\

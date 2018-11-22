@@ -27,6 +27,7 @@
 #include "mcp_shared.h"
 #include "mcp_sighandler.h"
 #include "mcp_gui.h"
+#include "plotgraph.h"
 #include "signaltab.h"
 #include "misc.h"
 
@@ -348,6 +349,7 @@ int RegisterCustomDefinition(void)
 	type = TYPE_BARGRAPH;
 	type = TYPE_LABELIZED_PLOT;
 	type = GTK_TYPE_LED;
+	type = TYPE_PLOTGRAPH;
 
 	return type;
 }
