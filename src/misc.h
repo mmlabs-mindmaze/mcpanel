@@ -19,6 +19,7 @@
 #include <glib.h>
 
 LOCAL_FN void mcpi_key_get_dval(GKeyFile* keyfile, const char* group, const char* key, gdouble* val);
+LOCAL_FN void mcpi_key_get_ival(GKeyFile* keyfile, const char* group, const char* key, gint* val);
 LOCAL_FN void mcpi_key_get_bval(GKeyFile* keyfile, const char* group, const char* key, gboolean* val);
 LOCAL_FN void mcpi_key_set_combo(GKeyFile* keyfile, const char* group, const char* key, GtkComboBox* combo);
 
