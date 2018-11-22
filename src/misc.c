@@ -127,9 +127,13 @@ void fill_treeview(GtkTreeView* treeview, const char** labels)
 		gtk_list_store_set(list, &iter, 0, labels[i++], -1);
 	}
 
-	// Select initially all items
+	// Select initially all items if multiple selection is possible. If
+	// not, no item is selected by default because list_store has been
+	// cleared (ie gtk_tree_selection_count_selected_rows() on the tree
+	// selection will return 0).
 	selec = gtk_tree_view_get_selection(treeview);
-	gtk_tree_selection_select_all(selec);
+	if (gtk_tree_selection_get_mode(selec) == GTK_SELECTION_MULTIPLE)
+		gtk_tree_selection_select_all(selec);
 }
 
 
