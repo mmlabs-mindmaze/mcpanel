@@ -174,8 +174,8 @@ void trigg_selch_cb(GtkComboBox* combo, gpointer user_data)
 
 	pan->trigg_selch = selch;
 	nch = pan->trigg_nch;
-	tri = pan->triggers + nch*pan->current_sample;
-	sel_tri = pan->selected_trigger + pan->current_sample;
+	tri = pan->triggers;
+	sel_tri = pan->selected_trigger;
 
 	// Copy data and selected triggers
 	for (i = 0; i < pan->num_samples; i++)

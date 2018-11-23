@@ -458,7 +458,7 @@ void mcp_add_triggers(mcpanel* pan, unsigned int ns,
 	if (ns+pointer > pan->num_samples) {
 		ns_w = pan->num_samples - pointer;
 		process_tri(pan, ns_w, trigg);
-		trigg += ns_w;
+		trigg += ns_w * pan->trigg_nch;
 		ns -= ns_w;
 	}
 	process_tri(pan, ns, trigg);

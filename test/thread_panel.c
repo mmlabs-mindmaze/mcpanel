@@ -17,6 +17,7 @@
 #define NEXG	8
 #define SAMPLING_RATE	2048
 #define NSAMPLES	((unsigned int)(SAMPLING_RATE*0.03))
+#define NTRI    3
 
 GThread* thread_id;
 volatile int run_eeg = 0;
@@ -66,11 +67,13 @@ void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 			eeg[i*NEEG+j] = i;
 		for (j=0; j<NEXG; j++)
 			exg[i*NEXG+j] = j*i;
-		tri[i] = triggers;
+		for (j=0; j<NTRI; j++)
+			tri[i*NTRI+j] = triggers << j;
+
 		if ((isample/SAMPLING_RATE) % 2)
-			tri[i] |= 0x100000;
+			tri[i*NTRI] |= 0x100000;
 		if (!((isample/SAMPLING_RATE) % 3))
-			tri[i] |= 0x400000;
+			tri[i*NTRI] |= 0x400000;
 		isample++;
 	}
 
@@ -88,7 +91,7 @@ gpointer reading_thread(gpointer arg)
 
 	eeg = calloc(NEEG*NSAMPLES, sizeof(*eeg));
 	exg = calloc(NEXG*NSAMPLES, sizeof(*exg));
-	tri = calloc(NSAMPLES, sizeof(*tri));
+	tri = calloc(NTRI*NSAMPLES, sizeof(*tri));
 
 
 	curr.tv_sec = 0;
@@ -142,8 +145,9 @@ int SetupRecording(void* user_data)
 int Connect(mcpanel* panel)
 {
 	run_eeg = 1;
+	const char* tri_lab[] = {"tri1", "tri2", "trigger:3"};
 
-	mcp_define_triggers(panel, 16, SAMPLING_RATE);
+	mcp_define_trigg_input(panel, 16, NTRI, SAMPLING_RATE, tri_lab);
 	mcp_define_tab_input(panel, 0, NEEG, SAMPLING_RATE, eeg_lab);
 	mcp_define_tab_input(panel, 1, NEEG, SAMPLING_RATE, eeg_lab);
 	mcp_define_tab_input(panel, 2, NEXG, SAMPLING_RATE, exg_lab);
