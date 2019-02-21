@@ -9,3 +9,5 @@ general:
       initially design to view signals coming from a BIOSEMI Activetwo system,
       it is totally system agnostic and any user of other system might find it
       useful.
+    build-depends:
+      - rtfilter-devel
