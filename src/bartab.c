@@ -5,7 +5,7 @@
 #include <gtk/gtk.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <rtf_common.h>
+#include <rtfilter.h>
 #include "bargraph.h"
 #include "signaltab.h"
 #include "misc.h"
