@@ -67,6 +67,7 @@ typedef struct {
 } GtkLedClass;
 
 GType gtk_led_get_type (void);
+GType led_color_get_type(void);
 
 GtkLed* gtk_led_new (void);
 void gtk_led_set_state(GtkLed* self, gboolean state);

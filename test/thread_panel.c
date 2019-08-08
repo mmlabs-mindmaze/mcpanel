@@ -65,6 +65,7 @@ int rand_lim(int min, int max)
 	return ((int)((width/RAND_MAX) * rand())) + min;
 }
 
+static
 void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 {
 	int i, j;
@@ -90,6 +91,7 @@ void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 }
 
 #define UPDATE_DELAY	((NSAMPLES*1000)/SAMPLING_RATE)
+static
 gpointer reading_thread(gpointer arg)
 {
 	float *eeg, *exg;
@@ -146,6 +148,7 @@ gpointer reading_thread(gpointer arg)
 	return 0;
 }
 
+static
 int SetupRecording(void* user_data)
 {
 	mcpanel* panel = user_data;
@@ -161,6 +164,7 @@ int SetupRecording(void* user_data)
 	return retval;
 }
 
+static
 int Connect(mcpanel* panel)
 {
 	run_eeg = 1;
@@ -177,6 +181,7 @@ int Connect(mcpanel* panel)
 	return 0;
 }
 
+static
 int Disconnect(mcpanel* panel)
 {
 	(void)panel;
@@ -186,7 +191,7 @@ int Disconnect(mcpanel* panel)
 	return 0;
 }
 
-
+static
 int SystemConnection(int start, void* user_data)
 {
 	mcpanel* panel = user_data;
@@ -200,12 +205,14 @@ int SystemConnection(int start, void* user_data)
 	return (retval < 0) ? 0 : 1;
 }
 
+static
 int StopRecording(void* user_data)
 {
 	(void)user_data;
 	return 1;
 }
 
+static
 int ToggleRecording(int start, void* user_data)
 {
 	(void)user_data;
@@ -214,7 +221,7 @@ int ToggleRecording(int start, void* user_data)
 	return 1;
 }
 
-
+static
 int ClosePanel(void* user_data)
 {
 	mcpanel* panel = user_data;
