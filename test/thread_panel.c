@@ -16,7 +16,7 @@
 #define EXGSET	STD
 #define NEXG	8
 #define SAMPLING_RATE	2048
-#define NSAMPLES	((unsigned int)(SAMPLING_RATE*0.03))
+#define NSAMPLES	(SAMPLING_RATE / 33)
 #define NTRI    3
 
 GThread* thread_id;
