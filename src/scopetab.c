@@ -186,8 +186,8 @@ void init_filter(struct scopetab* sctab, int hp)
 }
 
 static
-void reference_car(float* restrict data, unsigned int nch,
-                   const float* restrict fullset,
+void reference_car(float* data, unsigned int nch,
+                   const float* fullset,
                    unsigned int nch_full, unsigned int ns)
 {
 	unsigned int i, j;
