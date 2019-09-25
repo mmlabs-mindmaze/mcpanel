@@ -2,14 +2,12 @@
 # include <config.h>
 #endif
 
+#include <mmtime.h>
 #include <stdio.h>
 #include <mcpanel.h>
 #include <stdlib.h>
 #include <time.h>
 #include <glib.h>
-#if !HAVE_DECL_CLOCK_NANOSLEEP
-#include "../lib/clock_nanosleep.h"
-#endif
 
 #define EEGSET	AB
 #define NEEG	64
@@ -23,12 +21,6 @@ GThread* thread_id;
 volatile int run_eeg = 0;
 volatile int recording = 0;
 volatile int recsamples = 0;
-
-#define increase_timespec(timeout, delay)	do {			\
-	unsigned int nsec_duration = (delay) + (timeout).tv_nsec;	\
-	(timeout).tv_sec += nsec_duration/1000000000;			\
-	(timeout).tv_nsec = nsec_duration%1000000000;			\
-} while (0)
 
 const char* eeg_lab[NEEG] = {"Fp1","AF7","AF3","F1","F3","F5","F7","FT7",
 			"FC5","FC3","FC1","C1","C3","C5","T7","TP7",
@@ -97,7 +89,6 @@ gpointer reading_thread(gpointer arg)
 	float *eeg, *exg;
 	uint32_t *tri;
 	mcpanel* panel = arg;
-	struct timespec curr;
 	unsigned int isample = 0;
 	struct mcp_event evt = {0};
 	unsigned int next_event = 30*NSAMPLES;
@@ -106,12 +97,8 @@ gpointer reading_thread(gpointer arg)
 	exg = calloc(NEXG*NSAMPLES, sizeof(*exg));
 	tri = calloc(NTRI*NSAMPLES, sizeof(*tri));
 
-
-	curr.tv_sec = 0;
-	curr.tv_nsec = UPDATE_DELAY*1000000;
-
 	while(run_eeg) {
-		clock_nanosleep(CLOCK_REALTIME, 0, &curr, NULL);
+		mm_relative_sleep_ms(UPDATE_DELAY);
 		set_signals(eeg, exg, tri, NSAMPLES);
 		mcp_add_samples(panel, 0, NSAMPLES, eeg);
 		mcp_add_samples(panel, 1, NSAMPLES, eeg);

@@ -16,7 +16,6 @@ m4_define([lib_age],0)
 AC_INIT(mcpanel,[lib_current.lib_revision],nicolas.bourdaud@gmail.com)
 AC_CONFIG_SRCDIR([src/mcpanel.c])
 AC_CONFIG_AUX_DIR([build-aux])
-AC_CONFIG_LIBOBJ_DIR([lib])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config/config.h])
 
@@ -37,6 +36,7 @@ AC_DEF_API_EXPORT_ATTRS
 
 PKG_CHECK_MODULES_EXT(GTK2, gtk+-2.0)
 PKG_CHECK_MODULES_EXT(GTHREAD2, gthread-2.0)
+MM_CHECK_LIB([mm_relative_sleep_ms], [mmlib], MMLIB, [], [AC_MSG_WARN([The tests will not be executed -> mmlib is required for the tests.])])
 
 AC_SEARCH_LIBS([rtf_create_filter], [rtfilter], [], AC_MSG_ERROR([The rtfilter library must be installed.]))
 AC_SEARCH_LIBS([cos], [m])
@@ -66,6 +66,6 @@ AC_SUBST([CURRENT],[lib_current])
 AC_SUBST([REVISION],[lib_revision])
 AC_SUBST([AGE],[lib_age])
 
-AC_CONFIG_FILES([Makefile lib/Makefile src/Makefile test/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile test/Makefile])
 AC_OUTPUT
 
