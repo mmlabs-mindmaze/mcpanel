@@ -55,12 +55,11 @@ struct panel_tabconf tabconf[] = {
 	[2] = {.type = TABTYPE_SCOPE, .name = "Sensors"},
 };
 #define NTAB	(sizeof(tabconf)/sizeof(tabconf[0]))
-
+static
 void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 {
 	int i, j;
 	static uint32_t triggers;
-	static int isample = 0;
 
 	for (i=0; i<nsamples; i++) {
 		for (j=0; j<NEEG; j++)
@@ -79,6 +78,7 @@ void set_signals(float* eeg, float* exg, uint32_t* tri, int nsamples)
 }
 
 #define UPDATE_DELAY	((NSAMPLES*1000)/SAMPLING_RATE)
+static
 gboolean iteration_func(gpointer data)
 {
 	mcpanel *panel = data;
@@ -108,6 +108,7 @@ gboolean iteration_func(gpointer data)
 	return TRUE;
 }
 
+static
 int SetupRecording(void* user_data)
 {
 	mcpanel* panel = user_data;
@@ -123,6 +124,7 @@ int SetupRecording(void* user_data)
 	return retval;
 }
 
+static
 int Connect(mcpanel* panel)
 {
 	run_eeg = 1;
@@ -140,6 +142,7 @@ int Connect(mcpanel* panel)
 	return 0;
 }
 
+static
 int Disconnect(mcpanel* panel)
 {
 	run_eeg = 0;
@@ -152,7 +155,7 @@ int Disconnect(mcpanel* panel)
 	return 0;
 }
 
-
+static
 int SystemConnection(int start, void* user_data)
 {
 	mcpanel* panel = user_data;
@@ -166,12 +169,14 @@ int SystemConnection(int start, void* user_data)
 	return (retval < 0) ? 0 : 1;
 }
 
+static
 int StopRecording(void* user_data)
 {
 	(void)user_data;
 	return 1;
 }
 
+static
 int ToggleRecording(int start, void* user_data)
 {
 	(void)user_data;
@@ -180,7 +185,7 @@ int ToggleRecording(int start, void* user_data)
 	return 1;
 }
 
-
+static
 int ClosePanel(void* user_data)
 {
 	mcpanel* panel = user_data;

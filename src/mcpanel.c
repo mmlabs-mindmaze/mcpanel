@@ -78,13 +78,13 @@ static void clean_list(struct nodeList *pList);
 static GRecMutex mcpgdk_recursive_mutex;
 
 static
-void mcpgdk_rec_lock()
+void mcpgdk_rec_lock(void)
 {
 	g_rec_mutex_lock(&mcpgdk_recursive_mutex);
 }
 
 static
-void mcpgdk_rec_unlock()
+void mcpgdk_rec_unlock(void)
 {
 	g_rec_mutex_unlock(&mcpgdk_recursive_mutex);
 }
