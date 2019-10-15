@@ -4,7 +4,7 @@ project('mcpanel', 'c',
             'warning_level=1',
         ],
         license : 'LGPL-3.0',
-        meson_version: '>= 0.47'
+        meson_version: '>= 0.49'
 )
 
 # follow semantic versionning (https://semver.org)
