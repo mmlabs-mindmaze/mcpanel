@@ -88,7 +88,7 @@ gtk2 = dependency('gtk+-2.0', required : true)
 gthread2 = dependency('gthread-2.0', required : true)
 rtfilter = cc.find_library('rtfilter', required : true)
 
-mcpanel = shared_library('libmcpanel',
+mcpanel = shared_library('mcpanel',
         mcpanel_sources,
         install : true,
         version : version,
