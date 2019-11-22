@@ -139,3 +139,13 @@ if get_option('tests')
                 ],
         )
 endif
+
+
+# test public headers for most warnings and C++ compatibility
+run_target('api-compat-test',
+        command : [
+            'bash',
+            files('devtools/api-compat-test.sh'),
+            mcpanel_headers,
+        ]
+)
