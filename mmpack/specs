@@ -11,4 +11,5 @@ general:
       useful.
     build-system: meson
     build-depends:
+      - mmlib-devel
       - rtfilter-devel
