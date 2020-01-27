@@ -1,6 +1,6 @@
 general:
     name: mcpanel
-    version: 0.1
+    version: 1.0
     maintainer: Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
     url: ssh://intranet.mindmaze.ch:29418/mcpanel
     licenses: [ GPL-3 ]
