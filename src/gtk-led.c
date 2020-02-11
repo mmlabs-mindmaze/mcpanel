@@ -98,14 +98,11 @@ static
 void gtk_led_size_request (GtkWidget * widget,
                           GtkRequisition * requisition)
 {
-	//GtkLedClass* klass = gtk_type_class(GTK_TYPE_LED);
 	g_return_if_fail (widget != NULL);
 	g_return_if_fail (GTK_IS_LED (widget));
 	g_return_if_fail (requisition != NULL);
 
 	gtk_icon_size_lookup(GTK_LED(widget)->size, &(requisition->width), &(requisition->height));
-	//requisition->width = gdk_pixbuf_get_width(klass->on_pixbuf)+2;
-	//requisition->height = gdk_pixbuf_get_height(klass->on_pixbuf)+2;
 }
 
 
@@ -271,7 +268,7 @@ void gtk_led_expose_event_callback(GtkLed* self, GdkEventExpose* event, gpointer
 	GdkPixbuf* pixbuf;
 	GtkIconSet* iconset;
 	GtkWidget* widget = GTK_WIDGET(self);
-	GtkLedClass* klass = gtk_type_class(GTK_TYPE_LED);
+	GtkLedClass* klass = g_type_class_ref(GTK_TYPE_LED);
 	(void)data;
 	(void)event;
 
