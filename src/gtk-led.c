@@ -139,8 +139,7 @@ void gtk_led_realize(GtkWidget * widget)
 	g_return_if_fail (widget != NULL);
 	g_return_if_fail (GTK_IS_LED (widget));
 
-
-	GTK_WIDGET_SET_FLAGS (widget, GTK_REALIZED);
+	gtk_widget_set_realized (widget, TRUE);
 
 	attributes.window_type = GDK_WINDOW_CHILD;
 	attributes.x = widget->allocation.x;
