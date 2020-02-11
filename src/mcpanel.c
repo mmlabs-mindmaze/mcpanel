@@ -278,7 +278,7 @@ void mcp_show(mcpanel* pan, int state)
 	if (state)
 		gtk_widget_show_all(GTK_WIDGET(pan->gui.window));
 	else
-		gtk_widget_hide_all(GTK_WIDGET(pan->gui.window));
+		gtk_widget_hide(GTK_WIDGET(pan->gui.window));
 	gdk_threads_leave();
 }
 
