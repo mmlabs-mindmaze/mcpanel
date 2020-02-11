@@ -168,7 +168,7 @@ void binary_scope_draw_samples(const BinaryScope* self, unsigned int first,
 	guint32 channelMask;
 	int bScanning;
 	GdkGC* plotgc = PLOT_AREA(self)->plotgc;
-	GdkGC* stategc = GTK_WIDGET(self)->style->fg_gc[GTK_WIDGET_STATE (self)];
+	GdkGC* stategc = GTK_WIDGET(self)->style->fg_gc[gtk_widget_get_state(GTK_WIDGET(self))];
 	GdkWindow* window = GTK_WIDGET(self)->window;
 
 	const GdkColor* grid_color = &(PLOT_AREA(self)->grid_color);

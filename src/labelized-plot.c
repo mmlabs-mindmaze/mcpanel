@@ -192,7 +192,7 @@ gboolean labelized_plot_expose_event_callback(LabelizedPlot *self,
 	gint width, height;
 	gchar** labels;
 	const gint* offsets;
-	GdkGC* gc = GTK_WIDGET(self)->style->fg_gc[GTK_WIDGET_STATE(self)];
+	GdkGC* gc = GTK_WIDGET(self)->style->fg_gc[gtk_widget_get_state(GTK_WIDGET(self))];
 	GdkWindow* window = GTK_WIDGET(self)->window;
 	GtkAllocation child_alloc;
 
@@ -255,7 +255,7 @@ gboolean labelized_plot_expose_event_callback(LabelizedPlot *self,
 
 	gtk_paint_shadow (GTK_WIDGET(self)->style,
 					  window,
-					  GTK_WIDGET_STATE(self),
+					  gtk_widget_get_state(GTK_WIDGET(self)),
 					  GTK_SHADOW_ETCHED_IN,
 					  NULL,
 					  GTK_WIDGET(self),

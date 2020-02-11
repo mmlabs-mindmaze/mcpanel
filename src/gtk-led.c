@@ -280,13 +280,13 @@ void gtk_led_expose_event_callback(GtkLed* self, GdkEventExpose* event, gpointer
 	pixbuf = gtk_icon_set_render_icon(iconset,
 					widget->style,
 					GTK_TEXT_DIR_NONE,
-					GTK_WIDGET_STATE(self),
+					gtk_widget_get_state(GTK_WIDGET(self)),
 					self->size,
 					widget,
 					NULL);
 
 	gdk_draw_pixbuf(widget->window,
-			widget->style->fg_gc[GTK_WIDGET_STATE(self)], //NULL,
+			widget->style->fg_gc[gtk_widget_get_state(GTK_WIDGET(self))], //NULL,
 			pixbuf,
 			0,
 			0,

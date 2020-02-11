@@ -337,7 +337,7 @@ scope_draw_samples(Scope* self, unsigned int first, unsigned int last)
 
 	// Draw the scanline
 	gdk_draw_line(window,
-			GTK_WIDGET(self)->style->fg_gc[GTK_WIDGET_STATE(self)],
+			GTK_WIDGET(self)->style->fg_gc[gtk_widget_get_state(GTK_WIDGET(self))],
 			points[self->current_pointer].x,
 			0,
 			points[self->current_pointer].x,
