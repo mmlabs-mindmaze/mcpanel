@@ -87,7 +87,7 @@ labelized_plot_set_property (GObject *object, guint property_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
 
-	if (GTK_WIDGET_DRAWABLE(self))
+	if (gtk_widget_is_drawable(GTK_WIDGET(self)))
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
 
