@@ -76,7 +76,7 @@ scope_set_property (GObject *object, guint property_id,
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
 	}
 
-	if (GTK_WIDGET_DRAWABLE(self)) {
+	if (gtk_widget_is_drawable(GTK_WIDGET(self))) {
 		scope_calculate_drawparameters(self);
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 	}
@@ -411,7 +411,7 @@ void scope_queue_event_draw(Scope* self, const struct scope_event* evt)
 	GdkRectangle rect;
 	int x;
 
-	if (!GTK_WIDGET_DRAWABLE(self))
+	if (!gtk_widget_is_drawable(GTK_WIDGET(self)))
 		return;
 
 	x = self->points[(evt->pos - self->ns_offset) % self->num_points].x;
@@ -480,7 +480,7 @@ void scope_update_data(Scope* self, guint pointer, int ns_total)
 	if (!self || !self->num_points)
 		return;
 
-	if (GTK_WIDGET_DRAWABLE(self)) {
+	if (gtk_widget_is_drawable(GTK_WIDGET(self))) {
 		points  = self->points;
 
 		// Set the region that should be redrawn 
@@ -537,7 +537,7 @@ void scope_set_data(Scope* self, data_t* data, guint num_points, guint num_ch)
 	if (has_changed) {
 		scope_calculate_drawparameters(self);
 	}
-	if (GTK_WIDGET_DRAWABLE(self))
+	if (gtk_widget_is_drawable(GTK_WIDGET(self)))
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
 

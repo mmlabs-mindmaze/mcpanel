@@ -285,7 +285,7 @@ void binary_scope_update_data(BinaryScope* self, guint pointer)
 //	if (points == NULL)
 //		return;
 
-	if (GTK_WIDGET_DRAWABLE(self)) {
+	if (gtk_widget_is_drawable(GTK_WIDGET(self))) {
 		// Set the region that should be redrawn 
 		rect.y = 0;
 		rect.height = GTK_WIDGET(self)->allocation.height;
@@ -334,7 +334,7 @@ void binary_scope_set_data(BinaryScope* self, guint32* data, guint num_points, g
 	if (has_changed)
 		binary_scope_calculate_drawparameters(self);
 
-	if (GTK_WIDGET_DRAWABLE(self))
+	if (gtk_widget_is_drawable(GTK_WIDGET(self)))
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 }
 
