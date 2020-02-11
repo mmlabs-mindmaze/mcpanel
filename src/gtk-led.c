@@ -23,9 +23,6 @@
 #include <gtk/gtk.h>
 #include "gtk-led.h"
 
-#include <gdk-pixbuf/gdk-pixbuf.h>
-//#include "led-images.h"
-
 static const char* const led_image_path[NUM_COLORS_LED] = {
 	[GRAY_LED] = "led_gray.png",
 	[RED_LED] = "led_red.png",

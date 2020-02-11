@@ -21,7 +21,6 @@
 
 #include <glib.h>
 #include <glib-object.h>
-#include <gtk/gtkalignment.h>
 
 
 G_BEGIN_DECLS
