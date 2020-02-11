@@ -213,14 +213,14 @@ static
 void plot_area_set_color(PlotArea* self, const gchar* colorstr, GdkColor* color)
 {
 	GdkColormap* colormap = NULL;
-	if (GTK_WIDGET_REALIZED(self)) {
+	if (gtk_widget_get_realized(GTK_WIDGET(self))) {
 		colormap = gtk_widget_get_colormap(GTK_WIDGET(self));
 		gdk_colormap_free_colors(colormap, color, 1);
 	}
 
 	gdk_color_parse(colorstr, color);
 
-	if (GTK_WIDGET_REALIZED(self))
+	if (gtk_widget_get_realized(GTK_WIDGET(self)))
 		gdk_colormap_alloc_color(colormap, color, FALSE, TRUE);
 }
 
@@ -233,7 +233,7 @@ void plot_area_set_channel_colors(PlotArea* self, const gchar* colorstr)
 	unsigned int i;
 	GdkColor default_color = {0, 0, 0, 0xFFFF}; // blue
 
-	if (GTK_WIDGET_REALIZED(self)) {
+	if (gtk_widget_get_realized(GTK_WIDGET(self))) {
 		colormap = gtk_widget_get_colormap(GTK_WIDGET(self));
 		gdk_colormap_free_colors(colormap, self->colors, self->nColors);
 	}
@@ -249,7 +249,7 @@ void plot_area_set_channel_colors(PlotArea* self, const gchar* colorstr)
 	g_strfreev(splitstr);
 
 
-	if (GTK_WIDGET_REALIZED(self)) {
+	if (gtk_widget_get_realized(GTK_WIDGET(self))) {
 		for (i=0; i<self->nColors; i++)
 			gdk_colormap_alloc_color(colormap, self->colors+i, FALSE, TRUE);
 	}	
