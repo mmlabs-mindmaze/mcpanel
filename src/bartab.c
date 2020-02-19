@@ -399,6 +399,15 @@ void bartab_define_input(struct signaltab* tab, const char** labels)
 	init_filter(brtab);
 }
 
+static
+void bartab_select_channels(struct signaltab* tab, int nch,
+                            int const * indices)
+{
+	struct bartab* brtab = get_bartab(tab);
+	GtkTreeView* treeview = GTK_TREE_VIEW(brtab->widgets[ELEC_TREEVIEW]);
+	select_channels(treeview, nch, indices);
+}
+
 
 static
 void bartab_process_data(struct signaltab* tab, unsigned int ns,
@@ -480,6 +489,7 @@ struct signaltab* create_tab_bargraph(const struct tabconf* conf)
 	// Initialilize the parent class
 	brtab->tab.destroy = bartab_destroy;
 	brtab->tab.define_input = bartab_define_input;
+	brtab->tab.select_channels = bartab_select_channels;
 	brtab->tab.process_data = bartab_process_data;
 	brtab->tab.update_plot = bartab_update_plot;
 	brtab->tab.set_wndlen = NULL;
