@@ -25,5 +25,6 @@ LOCAL_FN void mcpi_key_set_combo(GKeyFile* keyfile, const char* group, const cha
 
 LOCAL_FN void fill_treeview(GtkTreeView* treeview, const char** labels);
 LOCAL_FN void fill_combo(GtkComboBox* combo, const char** labels);
+LOCAL_FN void select_channels(GtkTreeView* treeview, int nch, int const * indices);
 
 #endif /*MISC_H*/

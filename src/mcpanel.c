@@ -385,6 +385,23 @@ int mcp_define_tab_input(mcpanel* pan, int tabid,
 
 
 API_EXPORTED
+int mcp_select_tab_channels(mcpanel* panel, int tabid,
+                            int nch, int const * indices)
+{
+	struct signaltab* tab;
+
+	if (tabid < 0 || tabid > (int) panel->ntab)
+		return -1;
+
+	tab = panel->tabs[tabid];
+	if (tab->select_channels != NULL)
+		tab->select_channels(tab, nch, indices);
+
+	return 0;
+}
+
+
+API_EXPORTED
 void mcp_add_samples(mcpanel* pan, int tabid,
                          unsigned int ns, const float* data)
 {

@@ -739,6 +739,15 @@ void scopetab_define_input(struct signaltab* tab, const char** labels)
 
 
 static
+void scopetab_select_channels(struct signaltab* tab, int nch,
+                              int const * indices)
+{
+	struct scopetab* sctab = get_scopetab(tab);
+	GtkTreeView* treeview = GTK_TREE_VIEW(sctab->widgets[ELEC_TREEVIEW]);
+	select_channels(treeview, nch, indices);
+}
+
+static
 void scopetab_process_data(struct signaltab* tab, unsigned int ns,
                            const float* in)
 {
@@ -825,6 +834,7 @@ struct signaltab* create_tab_scope(const struct tabconf* conf)
 	
 	sctab->tab.destroy = scopetab_destroy;
 	sctab->tab.define_input = scopetab_define_input;
+	sctab->tab.select_channels = scopetab_select_channels;
 	sctab->tab.process_data = scopetab_process_data;
 	sctab->tab.process_events = scopetab_process_events;
 	sctab->tab.update_plot = scopetab_update_plot;
