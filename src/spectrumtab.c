@@ -650,6 +650,28 @@ void spectrumtab_define_input(struct signaltab* tab, const char** labels)
 
 
 static
+void spectrumtab_select_channels(struct signaltab* tab, int nch,
+                              int const * chann_index)
+{
+	int i;
+	char ** labels;
+	char const ** newlabels;
+
+	labels = get_spectrumtab(tab)->labels;
+	newlabels = g_malloc0((nch+1)*sizeof(*labels));
+
+	for (i = 0 ; i < nch ; i++)
+		newlabels[i] = labels[chann_index[i]];
+
+	g_mutex_lock(&tab->datlock);
+	tab->define_input(tab, newlabels);
+	g_mutex_unlock(&tab->datlock);
+
+	g_free(newlabels);
+}
+
+
+static
 void spectrumtab_process_data(struct signaltab* tab, unsigned int ns,
                               const float* in)
 {
@@ -731,6 +753,7 @@ struct signaltab* create_tab_spectrum(const struct tabconf* conf)
 
 	sptab->tab.destroy = spectrumtab_destroy;
 	sptab->tab.define_input = spectrumtab_define_input;
+	sptab->tab.select_channels = spectrumtab_select_channels;
 	sptab->tab.process_data = spectrumtab_process_data;
 	sptab->tab.process_events = NULL;
 	sptab->tab.update_plot = spectrumtab_update_plot;

@@ -739,6 +739,28 @@ void scopetab_define_input(struct signaltab* tab, const char** labels)
 
 
 static
+void scopetab_select_channels(struct signaltab* tab, int nch,
+                              int const * chann_index)
+{
+	int i;
+	char ** labels;
+	char const ** newlabels;
+
+	labels = get_scopetab(tab)->labels;
+	newlabels = g_malloc0((nch+1)*sizeof(*labels));
+
+	for (i = 0 ; i < nch ; i++)
+		newlabels[i] = labels[chann_index[i]];
+
+	g_mutex_lock(&tab->datlock);
+	tab->define_input(tab, newlabels);
+	g_mutex_unlock(&tab->datlock);
+
+	g_free(newlabels);
+}
+
+
+static
 void scopetab_process_data(struct signaltab* tab, unsigned int ns,
                            const float* in)
 {
@@ -825,6 +847,7 @@ struct signaltab* create_tab_scope(const struct tabconf* conf)
 	
 	sctab->tab.destroy = scopetab_destroy;
 	sctab->tab.define_input = scopetab_define_input;
+	sctab->tab.select_channels = scopetab_select_channels;
 	sctab->tab.process_data = scopetab_process_data;
 	sctab->tab.process_events = scopetab_process_events;
 	sctab->tab.update_plot = scopetab_update_plot;
