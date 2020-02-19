@@ -21,6 +21,7 @@ struct signaltab {
 	void (*update_plot)(struct signaltab* tab);
 	void (*destroy)(struct signaltab* tab);
 	void (*set_wndlen)(struct signaltab* tab, float len);
+	void (*select_channels)(struct signaltab* tab, int nch, int const * chann_index);
 	
 	float scale;
 	float notch;
