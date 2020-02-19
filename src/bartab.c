@@ -401,6 +401,29 @@ void bartab_define_input(struct signaltab* tab, const char** labels)
 
 
 static
+void bartab_select_channels(struct signaltab* tab, int nch,
+                              int const * chann_index)
+{
+	int i;
+	char ** labels;
+	char ** newlabels;
+	struct bartab* brtab = get_bartab(tab);
+
+	labels = brtab->labels;
+	newlabels = g_malloc0((nch+1)*sizeof(*labels));
+
+	for (i = 0 ; i < nch ; i++)
+		newlabels[i] = g_strdup(labels[chann_index[i]]);
+
+	g_mutex_lock(&tab->datlock);
+	tab->define_input(tab, (const char **) newlabels);
+	g_mutex_unlock(&tab->datlock);
+
+	g_strfreev(newlabels);
+}
+
+
+static
 void bartab_process_data(struct signaltab* tab, unsigned int ns,
                            const float* in)
 {
@@ -480,6 +503,7 @@ struct signaltab* create_tab_bargraph(const struct tabconf* conf)
 	// Initialilize the parent class
 	brtab->tab.destroy = bartab_destroy;
 	brtab->tab.define_input = bartab_define_input;
+	brtab->tab.select_channels = bartab_select_channels;
 	brtab->tab.process_data = bartab_process_data;
 	brtab->tab.update_plot = bartab_update_plot;
 	brtab->tab.set_wndlen = NULL;
