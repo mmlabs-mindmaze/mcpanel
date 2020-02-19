@@ -155,3 +155,22 @@ void fill_combo(GtkComboBox* combo, const char** labels)
 	// Select no item if list empty, otherwise, select the first one
 	gtk_combo_box_set_active (combo, (i == 0) ? -1 : 0);
 }
+
+
+LOCAL_FN
+void select_channels(GtkTreeSelection* selection, int nch, int const * indices)
+{
+	int i;
+	GtkTreePath *path;
+
+	g_return_if_fail (indices != NULL && nch != 0);
+
+	path = gtk_tree_path_new ();
+	for (i = 0 ; i < nch ; i++)
+		gtk_tree_path_append_index(path, indices[i]);
+
+	gtk_tree_selection_unselect_all(selection);
+	gtk_tree_selection_select_path(selection, path);
+
+	gtk_tree_path_free (path);
+}
