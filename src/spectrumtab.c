@@ -650,6 +650,28 @@ void spectrumtab_define_input(struct signaltab* tab, const char** labels)
 
 
 static
+void spectrumtab_select_channels(struct signaltab* tab, int nch,
+                              int const * indices)
+{
+	int i;
+	GtkTreePath *path;
+	struct spectrumtab* sptab = get_spectrumtab(tab);
+	GtkTreeView* treeview = GTK_TREE_VIEW(sptab->widgets[ELEC_TREEVIEW]);
+	GtkTreeSelection* selection = gtk_tree_view_get_selection(treeview);
+
+	g_return_if_fail (indices != NULL && nch != 0);
+
+	path = gtk_tree_path_new ();
+	for (i = 0 ; i < nch ; i++)
+		gtk_tree_path_append_index(path, indices[i]);
+
+	gtk_tree_selection_unselect_all(selection);
+	gtk_tree_selection_select_path(selection, path);
+
+	gtk_tree_path_free (path);
+}
+
+static
 void spectrumtab_process_data(struct signaltab* tab, unsigned int ns,
                               const float* in)
 {
@@ -731,6 +753,7 @@ struct signaltab* create_tab_spectrum(const struct tabconf* conf)
 
 	sptab->tab.destroy = spectrumtab_destroy;
 	sptab->tab.define_input = spectrumtab_define_input;
+	sptab->tab.select_channels = spectrumtab_select_channels;
 	sptab->tab.process_data = spectrumtab_process_data;
 	sptab->tab.process_events = NULL;
 	sptab->tab.update_plot = spectrumtab_update_plot;
