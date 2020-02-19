@@ -101,6 +101,8 @@ int mcp_notify(mcpanel* panel, enum notification event);
 int mcp_define_tab_input(mcpanel* pan, int tabid,
                               unsigned int nch, float fs, 
 			      const char** labels);
+int mcp_select_tab_channels(mcpanel* panel, int tabid,
+                            int nch, int const * indices);
 void mcp_add_samples(mcpanel* pan, int tabid,
                          unsigned int ns, const float* data);
 int mcp_define_triggers(mcpanel* pan, unsigned int nline, float fs);
