@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d67dcdc3_dc1b5d0d",
+        "filename": "src/bartab.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 421,
+      "author": {
+        "id": 1017133
+      },
+      "writtenOn": "2020-02-21T13:51:16Z",
+      "side": 1,
+      "message": "Could you move this in a new function in misc.c?",
+      "range": {
+        "startLine": 410,
+        "startChar": 1,
+        "endLine": 421,
+        "endChar": 27
+      },
+      "revId": "767eaf18d53551f3fc64208dd4b6c0379cb3ce17",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24b7f530_98fe10d6",
+        "filename": "src/spectrumtab.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 672,
+      "author": {
+        "id": 1017133
+      },
+      "writtenOn": "2020-02-21T13:51:16Z",
+      "side": 1,
+      "message": "It does not makes sense to implement this for spectrumtab: it can display only one channel at a time, and no channel  are displayed by default",
+      "range": {
+        "startLine": 653,
+        "startChar": 0,
+        "endLine": 672,
+        "endChar": 1
+      },
+      "revId": "767eaf18d53551f3fc64208dd4b6c0379cb3ce17",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
