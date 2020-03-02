@@ -7,13 +7,13 @@
 # - If any interfaces have been removed since the last public release, then
 # set age to 0.
 
-m4_define([lib_current],1)
+m4_define([lib_current],2)
 m4_define([lib_revision],0)
-m4_define([lib_age],1)
+m4_define([lib_age],2)
 
 
 # Setup Automake
-AC_INIT(mcpanel,[1.0],nicolas.bourdaud@gmail.com)
+AC_INIT(mcpanel,[1.1],nicolas.bourdaud@gmail.com)
 AC_CONFIG_SRCDIR([src/mcpanel.c])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])

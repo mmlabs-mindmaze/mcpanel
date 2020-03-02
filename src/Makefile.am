@@ -52,7 +52,8 @@ libmcpanel_la_SOURCES = mcpanel.c		\
 
 libmcpanel_la_LIBADD = $(GTK2_LIBS) $(GTHREAD2_LIBS)
 libmcpanel_la_LDFLAGS = $(AM_LDFLAGS) -no-undefined \
-	$(GTK2_LDFLAGS) $(GTHREAD2_LDFLAGS)
+	$(GTK2_LDFLAGS) $(GTHREAD2_LDFLAGS) \
+	-version-info $(CURRENT):$(REVISION):$(AGE)
 			 
 #libmcpanel_la_LIBADD = $(top_builddir)/res/libres.a
 

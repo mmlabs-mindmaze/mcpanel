@@ -1,5 +1,5 @@
 project('mcpanel', 'c',
-        version : '1.0',
+        version : '1.1',
         default_options : [
             'warning_level=1',
         ],
@@ -12,7 +12,7 @@ project('mcpanel', 'c',
 # * MINOR version when you add functionality in a backwards-compatible manner
 # * PATCH version when you make backwards-compatible bug fixes.
 major = '0'
-minor = '1'
+minor = '2'
 patch = '0'
 version = major + '.' + minor + '.' + patch
 
