@@ -23,6 +23,14 @@ compiling the package.
 Compilation
 ===========
 
-This library is organized as a GNU package and can be compiled and
-installed in the same way (see INSTALL file for further information).
+This library can be compiled either using meson or the autotools toolchain.
 
+Using meson:
+  meson <builddir> [--prefix=<installdir>]
+  ninja -C <builddir> install
+
+Using autotools:
+  mkdir build && cd build
+  ../autogen.sh
+  ../configure [--prefix=<installdir>]
+  make install
