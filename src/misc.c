@@ -164,7 +164,9 @@ void select_channels(GtkTreeView* treeview, int nch, int const * indices)
 	GtkTreePath *path;
 	GtkTreeSelection* selection = gtk_tree_view_get_selection(treeview);
 
-	g_return_if_fail (indices != NULL && nch != 0);
+	/* may happen if all channels are unselected */
+	if (indices == NULL || nch == 0)
+		return;
 
 	gtk_tree_selection_unselect_all(selection);
 
