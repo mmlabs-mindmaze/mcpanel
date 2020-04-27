@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ac8fe14_df8cb953",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1017133
+      },
+      "writtenOn": "2020-04-27T14:20:44Z",
+      "side": 1,
+      "message": "The issue is in another repository, hence it should be:\nFixes: mmlabs-mindmaze/eegview#6",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 9
+      },
+      "revId": "f6f62ce1ca7ea91ee89737885d8f25e20408ea2b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
