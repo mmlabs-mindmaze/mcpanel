@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  MindMaze
+    Copyright (C) 2018, 2020  MindMaze
     Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -629,6 +629,8 @@ void spectrumtab_define_input(struct signaltab* tab, const char** labels)
 
 	sptab->selch = -1;
 	fnyquist = sptab->tab.fs / 2.0f;
+
+	spectrum_reset(&sptab->spectrum);
 
 	g_mutex_unlock(&sptab->tab.datlock);
 	fill_treeview(GTK_TREE_VIEW(sptab->widgets[ELEC_TREEVIEW]), labels);
