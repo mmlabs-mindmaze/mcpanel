@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2018  MindMaze
+    Copyright (C) 2018, 2020  MindMaze
     Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -107,6 +107,26 @@ void spectrum_reinit(struct spectrum* sp, int num_point)
 {
 	spectrum_deinit(sp);
 	spectrum_init(sp, num_point);
+}
+
+
+/**
+ * spectrum_reset() - reset a spectrum estimator
+ * @sp:         pointer to initialized spectrum estimator struct
+ *
+ * This function does not change any resource allocation associated with the
+ * spectrum estimator @sp.
+ */
+LOCAL_FN
+void spectrum_reset(struct spectrum* sp)
+{
+	int i;
+
+	for (i = 0; i < sp->num_point; i++)
+		sp->input_ringbuffer[i] = 0.0f;
+
+	for (i = 0; i < sp->wlen; i++)
+		sp->dft[i] = 0.0f;
 }
 
 
