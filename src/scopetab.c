@@ -41,8 +41,10 @@ enum scope_tab_widgets {
 	AXES,
 	SCALE_COMBO,
 	LP_CHECK,
+	LP_ORDER,
 	LP_SPIN,
 	HP_CHECK,
+	HP_ORDER,
 	HP_SPIN,
 	OFFSET_CHECK,
 	NOTCH_COMBO,
@@ -72,8 +74,10 @@ const struct widget_name_entry scopetab_widgets_table[] = {
 	[AXES] = {"scopetab_axes", "LabelizedPlot"},
 	[SCALE_COMBO] = {"scopetab_scale_combo", "GtkComboBox"},
 	[LP_CHECK] = {"scopetab_lp_check", "GtkCheckButton"},
+	[LP_ORDER] = {"scopetab_lp_order", "GtkComboBox"},
 	[LP_SPIN] = {"scopetab_lp_spin", "GtkSpinButton"},
 	[HP_CHECK] = {"scopetab_hp_check", "GtkCheckButton"},
+	[HP_ORDER] = {"scopetab_hp_order", "GtkComboBox"},
 	[HP_SPIN] = {"scopetab_hp_spin", "GtkSpinButton"},
 	[OFFSET_CHECK] = {"scopetab_offset_check", "GtkCheckButton"},
 	[NOTCH_COMBO] = {"scopetab_notch_combo", "GtkComboBox"},
@@ -90,6 +94,7 @@ char* object_list[] = {
 	"reftype_model",
 	"refelec_model",
 	"channel_model",
+	"order_model",
 	"scale_model",
 	"notch_filter_model",
 	NULL
@@ -103,6 +108,7 @@ struct scopetab {
 	gboolean filt_on[NBFILTER];
 	gboolean offset_on;
 	int reset_filter[NBFILTER];
+	int order[NBFILTER];
 	enum reftype ref;
 	unsigned int refelec;
 	float *tmpbuff, *tmpbuff2, *data, *offsetval;
@@ -444,6 +450,15 @@ void scopetab_filter_button_cb(GtkButton* button, gpointer user_data)
 
 
 static
+void scopetab_order_changed_cb(GtkEntry* entry, gpointer user_data)
+{
+	struct scopetab* sctab = user_data;
+	int hp = (entry == (void*)sctab->widgets[HP_ORDER]) ? 1 : 0;
+	const char* text = gtk_entry_get_text(entry);
+}
+
+
+static
 void scopetab_offset_button_cb(GtkButton* button, gpointer user_data)
 {
 	int s;
@@ -622,6 +637,10 @@ void connect_widgets_signals(struct scopetab* sctab)
 	                 G_CALLBACK(scopetab_scale_changed_cb), sctab);
 	g_signal_connect(widgets[NOTCH_COMBO], "changed",
 	                 G_CALLBACK(scopetab_notch_changed_cb), sctab);
+	g_signal_connect(widgets[HP_ORDER], "changed",
+	                 G_CALLBACK(scopetab_order_changed_cb), sctab);
+	g_signal_connect(widgets[LP_ORDER], "changed",
+	                 G_CALLBACK(scopetab_order_changed_cb), sctab);
 }
 
 
