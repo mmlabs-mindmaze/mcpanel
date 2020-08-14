@@ -17,6 +17,12 @@
     <property name="step_increment">1</property>
     <property name="page_increment">100</property>
   </object>
+  <object class="GtkAdjustment" id="order_adjustment">
+    <property name="upper">8</property>
+    <property name="lower">2</property>
+    <property name="step_increment">2</property>
+    <property name="page_increment">2</property>
+  </object>
   <object class="GtkAdjustment" id="fmax_adjustment">
     <property name="lower">-1</property>
     <property name="upper">99999</property>
@@ -375,15 +381,39 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkSpinButton" id="scopetab_hp_spin">
+                      <object class="GtkHBox" id="hbox_hp_filter">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                        <property name="invisible_char">•</property>
-                        <property name="width_chars">7</property>
-                        <property name="adjustment">highpass_adjustment</property>
-                        <property name="digits">3</property>
-                        <property name="numeric">True</property>
+                        <child>
+                          <object class="GtkSpinButton" id="scopetab_hp_order_spin">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                            <property name="invisible_char">•</property>
+                            <property name="width_chars">1</property>
+                            <property name="adjustment">order_adjustment</property>
+                            <property name="digits">0</property>
+                            <property name="numeric">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="scopetab_hp_spin">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                            <property name="invisible_char">•</property>
+                            <property name="width_chars">7</property>
+                            <property name="adjustment">highpass_adjustment</property>
+                            <property name="digits">3</property>
+                            <property name="numeric">True</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="position">3</property>
