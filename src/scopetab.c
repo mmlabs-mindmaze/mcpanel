@@ -28,6 +28,7 @@ enum filter_id {
 struct filter {
 	int modified;
 	int enabled;
+	int order;
 	double cutoff;
 	hfilter filt;
 	int need_reset;
@@ -40,8 +41,10 @@ enum scope_tab_widgets {
 	AXES,
 	SCALE_COMBO,
 	LP_CHECK,
+	LP_ORDER,
 	LP_SPIN,
 	HP_CHECK,
+	HP_ORDER,
 	HP_SPIN,
 	OFFSET_CHECK,
 	NOTCH_COMBO,
@@ -71,8 +74,10 @@ const struct widget_name_entry scopetab_widgets_table[] = {
 	[AXES] = {"scopetab_axes", "LabelizedPlot"},
 	[SCALE_COMBO] = {"scopetab_scale_combo", "GtkComboBox"},
 	[LP_CHECK] = {"scopetab_lp_check", "GtkCheckButton"},
+	[LP_ORDER] = {"scopetab_lp_order", "GtkComboBox"},
 	[LP_SPIN] = {"scopetab_lp_spin", "GtkSpinButton"},
 	[HP_CHECK] = {"scopetab_hp_check", "GtkCheckButton"},
+	[HP_ORDER] = {"scopetab_hp_order", "GtkComboBox"},
 	[HP_SPIN] = {"scopetab_hp_spin", "GtkSpinButton"},
 	[OFFSET_CHECK] = {"scopetab_offset_check", "GtkCheckButton"},
 	[NOTCH_COMBO] = {"scopetab_notch_combo", "GtkComboBox"},
@@ -89,6 +94,7 @@ char* object_list[] = {
 	"reftype_model",
 	"refelec_model",
 	"channel_model",
+	"order_model",
 	"scale_model",
 	"notch_filter_model",
 	NULL
@@ -156,6 +162,7 @@ void filter_init(struct filter* filter, int id, double fs, int nch)
 {
 	hfilter filt = NULL;
 	double fc = filter->cutoff / fs;
+	int order = filter->order;
 
 	// Destroy any possibly created filter
 	rtf_destroy_filter(filter->filt);
@@ -166,11 +173,11 @@ void filter_init(struct filter* filter, int id, double fs, int nch)
 
 	switch (id) {
 	case LOWPASS:
-		filt = rtf_create_butterworth(nch, RTF_FLOAT, fc, 2, 0);
+		filt = rtf_create_butterworth(nch, RTF_FLOAT, fc, order, 0);
 		break;
 
 	case HIGHPASS:
-		filt = rtf_create_butterworth(nch, RTF_FLOAT, fc, 2, 1);
+		filt = rtf_create_butterworth(nch, RTF_FLOAT, fc, order, 1);
 		break;
 
 	case NOTCH50:
@@ -212,6 +219,17 @@ void filter_set_cutoff(struct filter* filter, double freq)
 		return;
 
 	filter->cutoff = freq;
+	filter->modified = 1;
+}
+
+
+static
+void filter_set_order(struct filter* filter, int order)
+{
+	if (filter->order == order)
+		return;
+
+	filter->order = order;
 	filter->modified = 1;
 }
 
@@ -493,6 +511,17 @@ void scopetab_filter_checkbutton_cb(GtkToggleButton* button, struct filter* filt
 
 
 static
+void scopetab_filter_ordercombo_cb(GtkComboBox* combo, struct filter* filter)
+{
+	GValue value = G_VALUE_INIT;
+
+	combo_get_selected_value(combo, 1, &value);
+	filter_set_order(filter, g_value_get_int(&value));
+	g_value_unset(&value);
+}
+
+
+static
 void scopetab_filter_changed_cb(GtkWidget* widget, struct scopetab* sctab)
 {
 	(void)widget;
@@ -564,6 +593,8 @@ void setup_initial_values(struct scopetab* sctab, const struct tabconf* cf)
 
 	scopetab_filter_freqbutton_cb(GTK_SPIN_BUTTON(widg[LP_CHECK]), &sctab->filters[LOWPASS]);
 	scopetab_filter_freqbutton_cb(GTK_SPIN_BUTTON(widg[HP_CHECK]), &sctab->filters[HIGHPASS]);
+	scopetab_filter_ordercombo_cb(GTK_COMBO_BOX(widg[LP_ORDER]), &sctab->filters[LOWPASS]);
+	scopetab_filter_ordercombo_cb(GTK_COMBO_BOX(widg[HP_ORDER]), &sctab->filters[HIGHPASS]);
 	scopetab_filter_checkbutton_cb(GTK_TOGGLE_BUTTON(widg[LP_SPIN]), &sctab->filters[LOWPASS]);
 	scopetab_filter_checkbutton_cb(GTK_TOGGLE_BUTTON(widg[HP_SPIN]), &sctab->filters[HIGHPASS]);
 	scopetab_notch_changed_cb(GTK_COMBO_BOX(widg[NOTCH_COMBO]), sctab);
@@ -575,9 +606,11 @@ void setup_initial_values(struct scopetab* sctab, const struct tabconf* cf)
 
 	mcpi_key_get_bval(cf->keyfile, cf->group, "lp-filter-on", &sctab->filters[LOWPASS].enabled);
 	mcpi_key_get_dval(cf->keyfile, cf->group, "lp-filter-cutoff", &sctab->filters[LOWPASS].cutoff);
+	mcpi_key_get_ival(cf->keyfile, cf->group, "lp-filter-order", &sctab->filters[LOWPASS].order);
 	mcpi_key_get_bval(cf->keyfile, cf->group, "hp-filter-on", &sctab->filters[HIGHPASS].enabled);
 	mcpi_key_get_dval(cf->keyfile, cf->group, "hp-filter-cutoff", &sctab->filters[HIGHPASS].cutoff);
-	mcpi_key_set_combo(cf->keyfile, cf->group, "scale", 
+	mcpi_key_get_ival(cf->keyfile, cf->group, "hp-filter-order", &sctab->filters[HIGHPASS].order);
+	mcpi_key_set_combo(cf->keyfile, cf->group, "scale",
 	                   GTK_COMBO_BOX(widg[SCALE_COMBO]));
 	mcpi_key_set_combo(cf->keyfile, cf->group, "notch",
 	                   GTK_COMBO_BOX(widg[NOTCH_COMBO]));
@@ -605,6 +638,7 @@ void setup_initial_values(struct scopetab* sctab, const struct tabconf* cf)
 static
 void initialize_widgets(struct scopetab* sctab)
 {
+	GValue value = G_VALUE_INIT;
 	GObject** widg = sctab->widgets;
 
 	g_object_set(widg[LP_CHECK], "active", sctab->filters[LOWPASS].enabled, NULL);
@@ -612,6 +646,13 @@ void initialize_widgets(struct scopetab* sctab)
 	g_object_set(widg[HP_CHECK], "active", sctab->filters[HIGHPASS].enabled, NULL);
 	g_object_set(widg[HP_SPIN], "value", sctab->filters[HIGHPASS].cutoff, NULL);
 	g_object_set(widg[OFFSET_CHECK], "active", sctab->offset_on, NULL);
+
+	g_value_init(&value, G_TYPE_INT);
+	g_value_set_int(&value, sctab->filters[LOWPASS].order);
+	combo_select_value(GTK_COMBO_BOX(widg[LP_ORDER]), 1, &value);
+	g_value_set_int(&value, sctab->filters[HIGHPASS].order);
+	combo_select_value(GTK_COMBO_BOX(widg[HP_ORDER]), 1, &value);
+	g_value_unset(&value);
 
 	// reference combos
 	gtk_combo_box_set_active(GTK_COMBO_BOX(widg[REFTYPE_COMBO]),
@@ -679,6 +720,17 @@ void connect_widgets_signals(struct scopetab* sctab)
 	                 G_CALLBACK(scopetab_notch_changed_cb), sctab);
 	g_signal_connect_after(widgets[NOTCH_COMBO], "changed",
 	                      G_CALLBACK(scopetab_filter_changed_cb), sctab);
+
+
+	// filter order combo
+	g_signal_connect(widgets[LP_ORDER], "changed",
+	                 G_CALLBACK(scopetab_filter_ordercombo_cb), lp_filter);
+	g_signal_connect(widgets[HP_ORDER], "changed",
+	                 G_CALLBACK(scopetab_filter_ordercombo_cb), hp_filter);
+	g_signal_connect(widgets[LP_ORDER], "changed",
+	                 G_CALLBACK(scopetab_filter_changed_cb), sctab);
+	g_signal_connect(widgets[HP_ORDER], "changed",
+	                 G_CALLBACK(scopetab_filter_changed_cb), sctab);
 }
 
 
