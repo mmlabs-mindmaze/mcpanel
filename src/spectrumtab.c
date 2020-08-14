@@ -261,7 +261,7 @@ void sprectrumtab_set_dft_numpoint(struct spectrumtab* sptab, int num_point)
 	sptab->dft_numpoint = num_point;
 	sptab->nfreq_disp = (num_point+1) / 2;
 	data = g_malloc(sptab->nfreq_disp*sizeof(*data));
-	spectrum_reset(&sptab->spectrum, num_point);
+	spectrum_reinit(&sptab->spectrum, num_point);
 	sptab->spectrum_data = data;
 
 	g_mutex_unlock(&sptab->tab.datlock);

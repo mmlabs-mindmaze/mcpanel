@@ -95,7 +95,7 @@ void spectrum_deinit(struct spectrum* sp)
 
 
 /**
- * spectrum_reset() - reset an initialized spectrum estimator
+ * spectrum_reinit() - reinitialize an initialized spectrum estimator
  * @sp:         pointer to initialized spectrum estimator struct
  * @num_point:  number of point to estimate the DFT
  *
@@ -103,7 +103,7 @@ void spectrum_deinit(struct spectrum* sp)
  * estimator pointed by @sp.
  */
 LOCAL_FN
-void spectrum_reset(struct spectrum* sp, int num_point)
+void spectrum_reinit(struct spectrum* sp, int num_point)
 {
 	spectrum_deinit(sp);
 	spectrum_init(sp, num_point);

@@ -30,7 +30,7 @@ struct spectrum {
 };
 
 void spectrum_init(struct spectrum* sp, int num_point);
-void spectrum_reset(struct spectrum* sp, int num_point);
+void spectrum_reinit(struct spectrum* sp, int num_point);
 void spectrum_deinit(struct spectrum* sp);
 void spectrum_update(struct spectrum* sp, int ns, const float* data);
 void spectrum_get(struct spectrum* sp, int nfreq, float* amplitude);
