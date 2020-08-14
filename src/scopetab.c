@@ -28,6 +28,7 @@ enum filter_id {
 struct filter {
 	int modified;
 	int enabled;
+	int order;
 	double cutoff;
 	hfilter filt;
 	int need_reset;
@@ -40,8 +41,10 @@ enum scope_tab_widgets {
 	AXES,
 	SCALE_COMBO,
 	LP_CHECK,
+	LP_ORDER,
 	LP_SPIN,
 	HP_CHECK,
+	HP_ORDER,
 	HP_SPIN,
 	OFFSET_CHECK,
 	NOTCH_COMBO,
@@ -71,8 +74,10 @@ const struct widget_name_entry scopetab_widgets_table[] = {
 	[AXES] = {"scopetab_axes", "LabelizedPlot"},
 	[SCALE_COMBO] = {"scopetab_scale_combo", "GtkComboBox"},
 	[LP_CHECK] = {"scopetab_lp_check", "GtkCheckButton"},
+	[LP_ORDER] = {"scopetab_lp_order", "GtkComboBox"},
 	[LP_SPIN] = {"scopetab_lp_spin", "GtkSpinButton"},
 	[HP_CHECK] = {"scopetab_hp_check", "GtkCheckButton"},
+	[HP_ORDER] = {"scopetab_hp_order", "GtkComboBox"},
 	[HP_SPIN] = {"scopetab_hp_spin", "GtkSpinButton"},
 	[OFFSET_CHECK] = {"scopetab_offset_check", "GtkCheckButton"},
 	[NOTCH_COMBO] = {"scopetab_notch_combo", "GtkComboBox"},
@@ -89,6 +94,7 @@ char* object_list[] = {
 	"reftype_model",
 	"refelec_model",
 	"channel_model",
+	"order_model",
 	"scale_model",
 	"notch_filter_model",
 	NULL
@@ -212,6 +218,17 @@ void filter_set_cutoff(struct filter* filter, double freq)
 		return;
 
 	filter->cutoff = freq;
+	filter->modified = 1;
+}
+
+
+static
+void filter_set_order(struct filter* filter, int order)
+{
+	if (filter->order == order)
+		return;
+
+	filter->order = order;
 	filter->modified = 1;
 }
 
@@ -493,6 +510,17 @@ void scopetab_filter_checkbutton_cb(GtkToggleButton* button, struct filter* filt
 
 
 static
+void scopetab_filter_ordercombo_cb(GtkComboBox* combo, struct filter* filter)
+{
+	GValue value = G_VALUE_INIT;
+
+	combo_get_selected_value(combo, 1, &value);
+	filter_set_order(filter, g_value_get_int(&value));
+	g_value_unset(&value);
+}
+
+
+static
 void scopetab_filter_changed_cb(GtkWidget* widget, struct scopetab* sctab)
 {
 	(void)widget;
@@ -679,6 +707,17 @@ void connect_widgets_signals(struct scopetab* sctab)
 	                 G_CALLBACK(scopetab_notch_changed_cb), sctab);
 	g_signal_connect_after(widgets[NOTCH_COMBO], "changed",
 	                      G_CALLBACK(scopetab_filter_changed_cb), sctab);
+
+
+	// filter order combo
+	g_signal_connect(widgets[LP_ORDER], "changed",
+	                 G_CALLBACK(scopetab_filter_ordercombo_cb), lp_filter);
+	g_signal_connect(widgets[HP_ORDER], "changed",
+	                 G_CALLBACK(scopetab_filter_ordercombo_cb), hp_filter);
+	g_signal_connect(widgets[LP_ORDER], "changed",
+	                 G_CALLBACK(scopetab_filter_changed_cb), sctab);
+	g_signal_connect(widgets[HP_ORDER], "changed",
+	                 G_CALLBACK(scopetab_filter_changed_cb), sctab);
 }
 
 
