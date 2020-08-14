@@ -30,6 +30,7 @@
 #define LABEL_MAXLEN  31
 
 enum dftscale_type {
+	DFTSCALE_NODISPLAY = -1,
 	DFTSCALE_LINEAR = 0,
 	DFTSCALE_DECIBEL,
 };
@@ -101,6 +102,7 @@ struct spectrumtab {
 	enum dftscale_type dftscale_type;
 	int dft_numpoint;
 	int nfreq_disp;
+	int delayed_display_numpoint;
 	float* spectrum_data;
 	struct spectrum spectrum;
 
@@ -226,6 +228,7 @@ void sprectrumtab_set_selch(struct spectrumtab* sptab, int selch)
 {
 	g_mutex_lock(&sptab->tab.datlock);
 	sptab->selch = selch;
+	sptab->delayed_display_numpoint = sptab->dft_numpoint;
 	g_mutex_unlock(&sptab->tab.datlock);
 }
 
@@ -259,6 +262,7 @@ void sprectrumtab_set_dft_numpoint(struct spectrumtab* sptab, int num_point)
 	g_mutex_lock(&sptab->tab.datlock);
 
 	sptab->dft_numpoint = num_point;
+	sptab->delayed_display_numpoint = num_point;
 	sptab->nfreq_disp = (num_point+1) / 2;
 	data = g_malloc(sptab->nfreq_disp*sizeof(*data));
 	spectrum_reinit(&sptab->spectrum, num_point);
@@ -655,7 +659,7 @@ static
 void spectrumtab_process_data(struct signaltab* tab, unsigned int ns,
                               const float* in)
 {
-	int i;
+	int i, num_delayed;
 	struct spectrumtab* sptab = get_spectrumtab(tab);
 	int selch = sptab->selch;
 	int nch = sptab->tab.nch;
@@ -667,6 +671,13 @@ void spectrumtab_process_data(struct signaltab* tab, unsigned int ns,
 	for (i = 0; i < (int)ns; i++)
 		selected_in[i] = in[i*nch + selch];
 
+	// Update the number of point that need to be waited before display
+	num_delayed = sptab->delayed_display_numpoint;
+	if (num_delayed) {
+		num_delayed -= (int)ns > num_delayed ? num_delayed : (int)ns;
+		sptab->delayed_display_numpoint = num_delayed;
+	}
+
 	spectrum_update(&sptab->spectrum, ns, selected_in);
 }
 
@@ -677,11 +688,15 @@ void spectrumtab_update_plot(struct signaltab* tab)
 	struct spectrumtab* sptab = get_spectrumtab(tab);
 	int nf = sptab->nfreq_disp;
 	float* d = sptab->spectrum_data;
+	int scale_type = sptab->dftscale_type;
 	int i;
+
+	if (sptab->delayed_display_numpoint)
+		scale_type = DFTSCALE_NODISPLAY;
 
 	spectrum_get(&sptab->spectrum, nf, d);
 
-	switch (sptab->dftscale_type) {
+	switch (scale_type) {
 	case DFTSCALE_LINEAR:
 		for (i = 0; i < nf; i++)
 			d[i] /= sptab->scale;
@@ -692,6 +707,7 @@ void spectrumtab_update_plot(struct signaltab* tab)
 			d[i] = linear_to_db(d[i] / sptab->scale);
 		break;
 
+	case DFTSCALE_NODISPLAY:
 	default:
 		memset(d, 0, nf * sizeof(*d));
 		break;
