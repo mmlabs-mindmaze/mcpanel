@@ -287,7 +287,7 @@
         <property name="spacing">4</property>
         <child>
           <object class="GtkVBox" id="vbox8">
-            <property name="width_request">100</property>
+            <property name="width_request">110</property>
             <property name="visible">True</property>
             <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
             <property name="spacing">3</property>
@@ -347,15 +347,33 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkSpinButton" id="scopetab_lp_spin">
+                      <object class="GtkHBox" id="hbox_lp_filter">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                        <property name="invisible_char">•</property>
-                        <property name="width_chars">7</property>
-                        <property name="adjustment">lowpass_adjustment</property>
-                        <property name="digits">3</property>
-                        <property name="numeric">True</property>
+                        <child>
+                          <object class="GtkEntry" id="scopetab_lp_order">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="width_chars">1</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="scopetab_lp_spin">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                            <property name="width_chars">7</property>
+                            <property name="adjustment">lowpass_adjustment</property>
+                            <property name="digits">1</property>
+                            <property name="numeric">True</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="position">1</property>
@@ -375,15 +393,33 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkSpinButton" id="scopetab_hp_spin">
+                      <object class="GtkHBox" id="hbox_hp_filter">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                        <property name="invisible_char">•</property>
-                        <property name="width_chars">7</property>
-                        <property name="adjustment">highpass_adjustment</property>
-                        <property name="digits">3</property>
-                        <property name="numeric">True</property>
+                        <child>
+                          <object class="GtkEntry" id="scopetab_hp_order">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="width_chars">1</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="scopetab_hp_spin">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                            <property name="width_chars">7</property>
+                            <property name="adjustment">highpass_adjustment</property>
+                            <property name="digits">1</property>
+                            <property name="numeric">True</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="position">3</property>
@@ -587,7 +623,7 @@ removal</property>
         <property name="visible">True</property>
         <child>
           <object class="GtkVBox" id="vbox7">
-            <property name="width_request">100</property>
+            <property name="width_request">110</property>
             <property name="visible">True</property>
             <child>
               <object class="GtkFrame" id="frame9">
@@ -776,7 +812,7 @@ removal</property>
         <property name="spacing">4</property>
         <child>
           <object class="GtkVBox" id="sp-vbox8">
-            <property name="width_request">100</property>
+            <property name="width_request">110</property>
             <property name="visible">True</property>
             <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
             <property name="spacing">3</property>
