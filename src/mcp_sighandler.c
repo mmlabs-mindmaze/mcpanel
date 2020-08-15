@@ -22,6 +22,7 @@
 #include "mcp_shared.h"
 #include "mcp_gui.h"
 #include "mcp_sighandler.h"
+#include "misc.h"
 #include <gtk/gtk.h>
 #include <stdlib.h>
 #include <string.h>
@@ -139,18 +140,14 @@ gboolean start_recording_cb(GtkButton* button, gpointer data)
 static
 void time_window_cb(GtkComboBox* combo, gpointer user_data)
 {
-	GtkTreeModel* model;
-	GtkTreeIter iter;
-	GValue value;
+	GValue value = G_VALUE_INIT;
 	float time_length;
 	mcpanel* pan = user_data;
 
 	// Get the value set
-	memset(&value, 0, sizeof(value));
-	model = gtk_combo_box_get_model(combo);
-	gtk_combo_box_get_active_iter(combo, &iter);
-	gtk_tree_model_get_value(model, &iter, 1, &value);
+	combo_get_selected_value(combo, 1, &value);
 	time_length = g_value_get_float(&value);
+	g_value_unset(&value);
 
 	set_data_length(pan, time_length);
 }

@@ -179,6 +179,22 @@ void select_channels(GtkTreeView* treeview, int nch, int const * indices)
 }
 
 
+LOCAL_FN
+bool combo_get_selected_value(GtkComboBox* combo, int column, GValue* value)
+{
+	GtkTreeIter iter;
+	GtkTreeModel* model;
+
+	// Get the value set
+	model = gtk_combo_box_get_model(combo);
+	if (!gtk_combo_box_get_active_iter(combo, &iter))
+		return false;
+
+	gtk_tree_model_get_value(model, &iter, column, value);
+	return true;
+}
+
+
 static
 void free_path_tree(GtkTreePath *path, void* data)
 {
