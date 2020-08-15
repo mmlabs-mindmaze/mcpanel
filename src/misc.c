@@ -196,6 +196,40 @@ bool combo_get_selected_value(GtkComboBox* combo, int column, GValue* value)
 }
 
 
+/**
+ * combo_select_value() - select row of combo matching a value
+ * @combo:      pointer to combo box
+ * @column:     column in the combo model the value must match
+ * @value:      value to match
+ */
+LOCAL_FN
+bool combo_select_value(GtkComboBox* combo, int column, const GValue* target)
+{
+	GtkTreeIter iter;
+	bool loop, found;
+	GValue value = G_VALUE_INIT;
+	gpointer target_content = g_value_peek_pointer(target);
+	GtkTreeModel* model = gtk_combo_box_get_model(combo);
+
+	found = false;
+	loop = gtk_tree_model_get_iter_first(model, &iter);
+	while (loop && !found) {
+		gtk_tree_model_get_value(model, &iter, column, &value);
+
+		// Test wheter content matches
+		if (g_value_peek_pointer(&value) == target_content) {
+			gtk_combo_box_set_active_iter(combo, &iter);
+			found = true;
+		}
+
+		g_value_unset(&value);
+		loop = gtk_tree_model_iter_next(model, &iter);
+	}
+
+	return found;
+}
+
+
 static
 void free_path_tree(GtkTreePath *path, void* data)
 {

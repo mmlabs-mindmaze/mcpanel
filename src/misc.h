@@ -28,6 +28,7 @@ LOCAL_FN void fill_treeview(GtkTreeView* treeview, const char** labels);
 LOCAL_FN void fill_combo(GtkComboBox* combo, const char** labels);
 LOCAL_FN void select_channels(GtkTreeView* treeview, int nch, int const * indices);
 LOCAL_FN bool combo_get_selected_value(GtkComboBox* combo, int column, GValue* value);
+LOCAL_FN bool combo_select_value(GtkComboBox* combo, int column, const GValue* target);
 LOCAL_FN void free_selected_rows_list(GList* list);
 
 #endif /*MISC_H*/
