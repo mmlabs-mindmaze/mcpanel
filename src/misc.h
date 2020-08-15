@@ -17,6 +17,7 @@
 #define MISC_H
 
 #include <glib.h>
+#include <stdbool.h>
 
 LOCAL_FN void mcpi_key_get_dval(GKeyFile* keyfile, const char* group, const char* key, gdouble* val);
 LOCAL_FN void mcpi_key_get_ival(GKeyFile* keyfile, const char* group, const char* key, gint* val);
@@ -26,6 +27,7 @@ LOCAL_FN void mcpi_key_set_combo(GKeyFile* keyfile, const char* group, const cha
 LOCAL_FN void fill_treeview(GtkTreeView* treeview, const char** labels);
 LOCAL_FN void fill_combo(GtkComboBox* combo, const char** labels);
 LOCAL_FN void select_channels(GtkTreeView* treeview, int nch, int const * indices);
+LOCAL_FN bool combo_get_selected_value(GtkComboBox* combo, int column, GValue* value);
 LOCAL_FN void free_selected_rows_list(GList* list);
 
 #endif /*MISC_H*/

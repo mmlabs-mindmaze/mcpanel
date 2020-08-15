@@ -224,18 +224,13 @@ int run_func_in_guithread(mcpanel* pan, BCProc func, void* data)
 LOCAL_FN
 void get_initial_values(mcpanel* pan)
 {
-	GtkTreeModel* model;
-	GtkTreeIter iter;
-	GValue value;
-	GtkComboBox* combo;
+	GValue value = G_VALUE_INIT;
+	GtkComboBox* combo = GTK_COMBO_BOX(pan->gui.widgets[TIME_WINDOW_COMBO]);
 
 	// Get the display length
-	combo = GTK_COMBO_BOX(pan->gui.widgets[TIME_WINDOW_COMBO]);
-	memset(&value, 0, sizeof(value));
-	model = gtk_combo_box_get_model(combo);
-	gtk_combo_box_get_active_iter(combo, &iter);
-	gtk_tree_model_get_value(model, &iter, 1, &value);
+	combo_get_selected_value(combo, 1, &value);
 	pan->display_length = g_value_get_float(&value);
+	g_value_unset(&value);
 }
 
 

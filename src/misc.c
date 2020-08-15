@@ -19,6 +19,7 @@
 
 #include <glib.h>
 #include <gtk/gtk.h>
+#include <stdbool.h>
 #include <string.h>
 #include "misc.h"
 
@@ -176,6 +177,22 @@ void select_channels(GtkTreeView* treeview, int nch, int const * indices)
 		gtk_tree_selection_select_path(selection, path);
 		gtk_tree_path_free (path);
 	}
+}
+
+
+LOCAL_FN
+bool combo_get_selected_value(GtkComboBox* combo, int column, GValue* value)
+{
+	GtkTreeIter iter;
+	GtkTreeModel* model;
+
+	// Get the value set
+	model = gtk_combo_box_get_model(combo);
+	if (!gtk_combo_box_get_active_iter(combo, &iter))
+		return false;
+
+	gtk_tree_model_get_value(model, &iter, column, value);
+	return true;
 }
 
 

@@ -374,16 +374,12 @@ void spectrumtab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
 static
 void spectrumtab_scale_changed_cb(GtkComboBox* combo, gpointer user_data)
 {
-	GtkTreeModel* model;
-	GtkTreeIter iter;
 	GValue value = G_VALUE_INIT;
 	struct spectrumtab* sptab = user_data;
 	float scale;
 
 	// Get the value set
-	model = gtk_combo_box_get_model(combo);
-	gtk_combo_box_get_active_iter(combo, &iter);
-	gtk_tree_model_get_value(model, &iter, 1, &value);
+	combo_get_selected_value(combo, 1, &value);
 	scale = g_value_get_double(&value);
 	g_value_unset(&value);
 
@@ -396,16 +392,12 @@ void spectrumtab_scale_changed_cb(GtkComboBox* combo, gpointer user_data)
 static
 void spectrumtab_dftscale_changed_cb(GtkComboBox* combo, gpointer user_data)
 {
-	GtkTreeModel* model;
-	GtkTreeIter iter;
 	GValue value = G_VALUE_INIT;
 	struct spectrumtab* sptab = user_data;
 	int dftscale_type;
 
 	// Get the DFT scale type value set
-	model = gtk_combo_box_get_model(combo);
-	gtk_combo_box_get_active_iter(combo, &iter);
-	gtk_tree_model_get_value(model, &iter, 1, &value);
+	combo_get_selected_value(combo, 1, &value);
 	dftscale_type = g_value_get_int(&value);
 	g_value_unset(&value);
 

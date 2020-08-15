@@ -178,7 +178,7 @@ void bartab_scale_changed_cb(GtkComboBox *combo, gpointer user_data)
 {
 	GtkTreeModel* model;
 	GtkTreeIter iter;
-	GValue value;
+	GValue value = G_VALUE_INIT;
 	double scale;
 	struct bartab* brtab = user_data;
 	
@@ -187,7 +187,6 @@ void bartab_scale_changed_cb(GtkComboBox *combo, gpointer user_data)
 	gtk_combo_box_get_active_iter(combo, &iter);
 
 	// Get associated cale value
-	memset(&value, 0, sizeof(value));
 	gtk_tree_model_get_value(model, &iter, 1, &value);
 	scale = g_value_get_double(&value);
 	g_value_unset(&value);

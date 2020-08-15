@@ -410,17 +410,12 @@ void update_selected_label(struct scopetab* sctab)
 static
 void scopetab_reftype_changed_cb(GtkComboBox* combo, struct scopetab* sctab)
 {
-	GtkTreeIter iter;
-	GValue value;
-	GtkTreeModel* model;
+	GValue value = G_VALUE_INIT;
 	enum reftype ref;
 	int neednewlabel = 0;
 
 	// Get the value set
-	memset(&value, 0, sizeof(value));
-	model = gtk_combo_box_get_model(combo);
-	gtk_combo_box_get_active_iter(combo, &iter);
-	gtk_tree_model_get_value(model, &iter, 1, &value);
+	combo_get_selected_value(combo, 1, &value);
 	ref = g_value_get_int(&value);
 	gtk_widget_set_sensitive(GTK_WIDGET(sctab->widgets[ELECREF_COMBO]),
 	                          (ref == REF_ELEC)? TRUE : FALSE);
@@ -516,16 +511,11 @@ void scopetab_offset_button_cb(GtkToggleButton* button, struct scopetab* sctab)
 static
 void scopetab_scale_changed_cb(GtkComboBox* combo, struct scopetab* sctab)
 {
-	GtkTreeModel* model;
-	GtkTreeIter iter;
-	GValue value;
+	GValue value = G_VALUE_INIT;
 	double scale;
 	
 	// Get the value set
-	memset(&value, 0, sizeof(value));
-	model = gtk_combo_box_get_model(combo);
-	gtk_combo_box_get_active_iter(combo, &iter);
-	gtk_tree_model_get_value(model, &iter, 1, &value);
+	combo_get_selected_value(combo, 1, &value);
 	scale = g_value_get_double(&value);
 	g_value_unset(&value);
 
@@ -535,18 +525,13 @@ void scopetab_scale_changed_cb(GtkComboBox* combo, struct scopetab* sctab)
 static
 void scopetab_notch_changed_cb(GtkComboBox* combo, struct scopetab* sctab)
 {
-	GtkTreeModel* model;
-	GtkTreeIter iter;
-	GValue value;
+	GValue value = G_VALUE_INIT;
 	double notch;
 	struct filter* filter_50 = &sctab->filters[NOTCH50];
 	struct filter* filter_60 = &sctab->filters[NOTCH60];
 
 	// Get the value set
-	memset(&value, 0, sizeof(value));
-	model = gtk_combo_box_get_model(combo);
-	gtk_combo_box_get_active_iter(combo, &iter);
-	gtk_tree_model_get_value(model, &iter, 1, &value);
+	combo_get_selected_value(combo, 1, &value);
 	notch = g_value_get_double(&value);
 	g_value_unset(&value);
 
