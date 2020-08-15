@@ -177,3 +177,28 @@ void select_channels(GtkTreeView* treeview, int nch, int const * indices)
 		gtk_tree_path_free (path);
 	}
 }
+
+
+static
+void free_path_tree(GtkTreePath *path, void* data)
+{
+	(void)data;
+	gtk_tree_path_free(path);
+}
+
+
+/**
+ * free_selected_rows_list() - free list of selected rows of GtkTreePath
+ * @list:       pointer to list containing the path to selected rows
+ *
+ * Free result of gtk_tree_selection_get_selected_rows()
+ */
+LOCAL_FN
+void free_selected_rows_list(GList* list)
+{
+	if (!list)
+		return;
+
+	g_list_foreach(list, (GFunc)free_path_tree, NULL);
+	g_list_free(list);
+}

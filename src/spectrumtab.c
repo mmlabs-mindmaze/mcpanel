@@ -365,8 +365,7 @@ void spectrumtab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
 	// Copy the selection
 	list = gtk_tree_selection_get_selected_rows(selec, NULL);
 	selch = *gtk_tree_path_get_indices((GtkTreePath*)(list->data));
-	g_list_foreach(list, (GFunc)gtk_tree_path_free, NULL);
-	g_list_free(list);
+	free_selected_rows_list(list);
 
 	sprectrumtab_set_selch(sptab, selch);
 }

@@ -165,8 +165,7 @@ void bartab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
 		brtab->selch[i] = j;
 		elem = g_list_next(elem);
 	}
-	g_list_foreach(list, (GFunc)gtk_tree_path_free, NULL);
-	g_list_free(list);
+	free_selected_rows_list(list);
 
 	g_mutex_unlock(&brtab->tab.datlock);
 
