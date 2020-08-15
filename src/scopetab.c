@@ -5,35 +5,34 @@
 #include <rtfilter.h>
 #include <gtk/gtk.h>
 #include <stdlib.h>
-//#include "mcp_gui.h"
+#include <stdio.h>
+
 #include "scope.h"
 #include "signaltab.h"
 #include "misc.h"
 
 #define CHUNKLEN	0.1 // in seconds
 
+#define NELEM(arr)      ((int)(sizeof(arr)/sizeof(arr[0])))
 
-typedef enum {
+
+enum filter_id {
 	LOWPASS,
 	HIGHPASS,
 	NOTCH50,
 	NOTCH60,
 	NBFILTER
-}list_filters;
-
-
-typedef struct {
-	list_filters filerid;
-	const int highpass;
-} filter_param;
-
-static
-const filter_param filter_table[] = {
-	{LOWPASS, 0},
-	{HIGHPASS,1},
-	{NOTCH50, 0},
-	{NOTCH60, 0}
 };
+
+
+struct filter {
+	int modified;
+	int enabled;
+	double cutoff;
+	hfilter filt;
+	int need_reset;
+};
+
 
 enum scope_tab_widgets {
 	TAB_ROOT,
@@ -98,11 +97,8 @@ char* object_list[] = {
 
 struct scopetab {
 	struct signaltab tab;
-	hfilter filt[NBFILTER];
-	gdouble cutoff[NBFILTER];
-	gboolean filt_on[NBFILTER];
+	struct filter filters[NBFILTER];
 	gboolean offset_on;
-	int reset_filter[NBFILTER];
 	enum reftype ref;
 	unsigned int refelec;
 	float *tmpbuff, *tmpbuff2, *data, *offsetval;
@@ -119,6 +115,7 @@ struct scopetab {
 
 #define get_scopetab(p) \
 	((struct scopetab*)(((char*)(p))-offsetof(struct scopetab, tab)))
+
 
 /**************************************************************************
  *                                                                        *
@@ -153,37 +150,105 @@ void init_buffers(struct scopetab* sctab)
 	scope_set_data(sctab->scope, sctab->data, ns, sctab->nselch);
 }
 
+
 static
-void init_filter(struct scopetab* sctab, int hp)
+void filter_init(struct filter* filter, int id, double fs, int nch)
 {
-	double fc = sctab->cutoff[hp] / (double)sctab->tab.fs;
-	rtf_destroy_filter(sctab->filt[hp]);
+	hfilter filt = NULL;
+	double fc = filter->cutoff / fs;
 
+	// Destroy any possibly created filter
+	rtf_destroy_filter(filter->filt);
+	filter->filt = NULL;
 
-	int num_len_a = 3;
-	int num_len_b = 3;
+	if (!filter->enabled)
+		return;
 
-	if(hp == NOTCH50) {
-		if (sctab->filt_on[hp])
-			sctab->filt[hp] = rtf_create_filter(sctab->tab.nch, RTF_FLOAT, num_len_b,
-						weight_notch50_b, num_len_a, weight_notch50_a, RTF_DOUBLE);
-		else
-			sctab->filt[hp] = NULL;
-	}else if(hp == NOTCH60) {
-		if (sctab->filt_on[hp])
-			sctab->filt[hp] = rtf_create_filter(sctab->tab.nch, RTF_FLOAT, num_len_b,
-				weight_notch60_b, num_len_a, weight_notch60_a, RTF_DOUBLE);
-		else
-			sctab->filt[hp] = NULL;
-	}else {
-		if (sctab->filt_on[hp])
-			sctab->filt[hp] = rtf_create_butterworth(sctab->tab.nch,
-						RTF_FLOAT, fc,2, filter_table[hp].highpass);
-		else
-			sctab->filt[hp] = NULL;
+	switch (id) {
+	case LOWPASS:
+		filt = rtf_create_butterworth(nch, RTF_FLOAT, fc, 2, 0);
+		break;
+
+	case HIGHPASS:
+		filt = rtf_create_butterworth(nch, RTF_FLOAT, fc, 2, 1);
+		break;
+
+	case NOTCH50:
+		filt = rtf_create_filter(nch, RTF_FLOAT,
+		                         NELEM(weight_notch50_b), weight_notch50_b,
+		                         NELEM(weight_notch50_a), weight_notch50_a,
+		                         RTF_DOUBLE);
+		break;
+
+	case NOTCH60:
+		filt = rtf_create_filter(nch, RTF_FLOAT,
+		                         NELEM(weight_notch60_b), weight_notch60_b,
+		                         NELEM(weight_notch60_a), weight_notch60_a,
+		                         RTF_DOUBLE);
+		break;
+
+	default:
+		fprintf(stderr, "invalid filter id: %i", id);
+		return;
 	}
-	sctab->reset_filter[hp] = 1;
+
+	filter->filt = filt;
+	filter->need_reset = 1;
 }
+
+
+static
+void filter_deinit(struct filter* filter)
+{
+	rtf_destroy_filter(filter->filt);
+	filter->filt = NULL;
+}
+
+
+static
+void filter_set_cutoff(struct filter* filter, double freq)
+{
+	if (filter->cutoff == freq)
+		return;
+
+	filter->cutoff = freq;
+	filter->modified = 1;
+}
+
+
+static
+void filter_set_enabled(struct filter* filter, int enabled)
+{
+	if (filter->enabled == enabled)
+		return;
+
+	filter->enabled = enabled;
+	filter->modified = 1;
+}
+
+
+static
+void init_filters(struct scopetab* sctab, int force_init)
+{
+	int nch = sctab->tab.nch;
+	double fs = sctab->tab.fs;
+	struct filter* filter;
+	enum filter_id id;
+
+	for (id = 0; id < NBFILTER; id++) {
+		filter = &sctab->filters[id];
+		if (!filter->modified && !force_init)
+			continue;
+
+		g_mutex_lock(&sctab->tab.datlock);
+		filter_init(filter, id, fs, nch);
+		g_mutex_unlock(&sctab->tab.datlock);
+
+		// Acknowledge that filter modification
+		filter->modified = 0;
+	}
+}
+
 
 static
 void reference_car(float* data, unsigned int nch,
@@ -248,6 +313,7 @@ void process_chunk(struct scopetab* sctab, unsigned int ns, const float* in)
 {
 	unsigned int i, j;
 	float* restrict data;
+	struct filter* filter;
 	 //No worry later processing do not overwrite in
 	float* restrict infilt = (float*) in;
 	float* restrict tmpbuf = sctab->tmpbuff;
@@ -260,13 +326,14 @@ void process_chunk(struct scopetab* sctab, unsigned int ns, const float* in)
 
 	// Apply filters
 	for (i=0; i<NBFILTER; i++) {
-		if (sctab->filt[i] != NULL) {
-			if (sctab->reset_filter[i]) {
-				rtf_init_filter(sctab->filt[i], infilt);
-				sctab->reset_filter[i] = 0;
+		filter = &sctab->filters[i];
+		if (filter->filt != NULL) {
+			if (filter->need_reset) {
+				rtf_init_filter(filter->filt, infilt);
+				filter->need_reset = 0;
 			}
 				
-			rtf_filter(sctab->filt[i], infilt, tmpbuf, ns);
+			rtf_filter(filter->filt, infilt, tmpbuf, ns);
 			if (in == infilt)
 				infilt = tmpbuf2;
 			SWAP_POINTERS(infilt, tmpbuf);
@@ -311,6 +378,7 @@ void process_chunk(struct scopetab* sctab, unsigned int ns, const float* in)
  *                        Signal handlers                                 *
  *                                                                        *
  **************************************************************************/
+
 static
 void update_selected_label(struct scopetab* sctab)
 {
@@ -340,12 +408,11 @@ void update_selected_label(struct scopetab* sctab)
 
 
 static
-void scopetab_reftype_changed_cb(GtkComboBox* combo, gpointer data)
+void scopetab_reftype_changed_cb(GtkComboBox* combo, struct scopetab* sctab)
 {
 	GtkTreeIter iter;
 	GValue value;
 	GtkTreeModel* model;
-	struct scopetab* sctab = data;
 	enum reftype ref;
 	int neednewlabel = 0;
 
@@ -374,11 +441,9 @@ void scopetab_reftype_changed_cb(GtkComboBox* combo, gpointer data)
 
 
 static
-void scopetab_refelec_changed_cb(GtkComboBox* combo, gpointer data)
+void scopetab_refelec_changed_cb(GtkComboBox* combo, struct scopetab* sctab)
 {
-	struct scopetab* sctab = data;
 	unsigned int refelec = gtk_combo_box_get_active(combo);
-
 
 	g_mutex_lock(&sctab->tab.datlock);
 	sctab->refelec = refelec;
@@ -387,13 +452,12 @@ void scopetab_refelec_changed_cb(GtkComboBox* combo, gpointer data)
 
 
 static
-void scopetab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
+void scopetab_selch_cb(GtkTreeSelection* selec, struct scopetab* sctab)
 {
 	GList *list, *elem;
 	unsigned int i, j;
-	struct scopetab* sctab = user_data;
 	unsigned int num = gtk_tree_selection_count_selected_rows(selec);
-	
+
 	g_mutex_lock(&sctab->tab.datlock);
 
 	// Prepare the channel selection structure to be passed
@@ -420,49 +484,42 @@ void scopetab_selch_cb(GtkTreeSelection* selec, gpointer user_data)
 
 
 static
-void scopetab_filter_button_cb(GtkButton* button, gpointer user_data)
+void scopetab_filter_freqbutton_cb(GtkSpinButton* button, struct filter* filter)
 {
-	int hp, s;
-	double freq;
-	struct scopetab* sctab = user_data;
-
-	if (GTK_IS_SPIN_BUTTON(button)) {
-		hp = (button == (void*)sctab->widgets[HP_SPIN]) ? 1 : 0;
-		freq = gtk_spin_button_get_value(GTK_SPIN_BUTTON(button));
-		sctab->cutoff[hp] = freq;
-	} else {
-		hp = (button == (void*)sctab->widgets[HP_CHECK]) ? 1 : 0;
-		s = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
-		sctab->filt_on[hp] = s;
-	}
-
-	g_mutex_lock(&sctab->tab.datlock);
-	init_filter(sctab, hp);
-	g_mutex_unlock(&sctab->tab.datlock);
+	filter_set_cutoff(filter, gtk_spin_button_get_value(button));
 }
 
 
 static
-void scopetab_offset_button_cb(GtkButton* button, gpointer user_data)
+void scopetab_filter_checkbutton_cb(GtkToggleButton* button, struct filter* filter)
 {
-	int s;
-
-	struct scopetab* sctab = user_data;
-
-	s = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
-	sctab->offset_on = s;
-
+	filter_set_enabled(filter, gtk_toggle_button_get_active(button));
 }
 
 
 static
-void scopetab_scale_changed_cb(GtkComboBox* combo, gpointer user_data)
+void scopetab_filter_changed_cb(GtkWidget* widget, struct scopetab* sctab)
+{
+	(void)widget;
+
+	init_filters(sctab, 0);
+}
+
+
+static
+void scopetab_offset_button_cb(GtkToggleButton* button, struct scopetab* sctab)
+{
+	sctab->offset_on = gtk_toggle_button_get_active(button);
+}
+
+
+static
+void scopetab_scale_changed_cb(GtkComboBox* combo, struct scopetab* sctab)
 {
 	GtkTreeModel* model;
 	GtkTreeIter iter;
 	GValue value;
 	double scale;
-	struct scopetab* sctab = user_data;
 	
 	// Get the value set
 	memset(&value, 0, sizeof(value));
@@ -476,13 +533,14 @@ void scopetab_scale_changed_cb(GtkComboBox* combo, gpointer user_data)
 }
 
 static
-void scopetab_notch_changed_cb(GtkComboBox* combo, gpointer user_data)
+void scopetab_notch_changed_cb(GtkComboBox* combo, struct scopetab* sctab)
 {
 	GtkTreeModel* model;
 	GtkTreeIter iter;
 	GValue value;
 	double notch;
-	struct scopetab* sctab = user_data;
+	struct filter* filter_50 = &sctab->filters[NOTCH50];
+	struct filter* filter_60 = &sctab->filters[NOTCH60];
 
 	// Get the value set
 	memset(&value, 0, sizeof(value));
@@ -493,23 +551,18 @@ void scopetab_notch_changed_cb(GtkComboBox* combo, gpointer user_data)
 	g_value_unset(&value);
 
 	if (notch == 0) {
-		sctab->filt_on[NOTCH50]  = 0; // 50Hz
-		sctab->filt_on[NOTCH60]  = 0; // 60Hz
+		filter_set_enabled(filter_50, 0);
+		filter_set_enabled(filter_60, 0);
 	}else if (notch == 1) {
-		sctab->filt_on[NOTCH50]  = 1; // 50Hz
-		sctab->filt_on[NOTCH60]  = 0; // 60Hz
+		filter_set_enabled(filter_50, 1);
+		filter_set_enabled(filter_60, 0);
 	} else if (notch == 2) {
-		sctab->filt_on[NOTCH50]  = 0; // 50Hz
-		sctab->filt_on[NOTCH60]  = 1; // 60Hz
+		filter_set_enabled(filter_50, 0);
+		filter_set_enabled(filter_60, 1);
 	}else{
-		sctab->filt_on[NOTCH50]  = 1; // 50Hz
-		sctab->filt_on[NOTCH60]  = 1; // 60Hz
+		filter_set_enabled(filter_50, 1);
+		filter_set_enabled(filter_60, 1);
 	}
-
-	g_mutex_lock(&sctab->tab.datlock);
-	init_filter(sctab, NOTCH50);
-	init_filter(sctab, NOTCH60);
-	g_mutex_unlock(&sctab->tab.datlock);
 }
 
 
@@ -524,22 +577,21 @@ void setup_initial_values(struct scopetab* sctab, const struct tabconf* cf)
 	gint active;
 	GObject** widg = sctab->widgets;
 
-	sctab->filt_on[LOWPASS] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widg[LP_CHECK]));
-	sctab->filt_on[HIGHPASS] = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widg[HP_CHECK]));
-	sctab->filt_on[NOTCH50] = 0;
-	sctab->filt_on[NOTCH60] = 0;
-	sctab->cutoff[LOWPASS] = gtk_spin_button_get_value(GTK_SPIN_BUTTON(widg[LP_SPIN]));
-	sctab->cutoff[HIGHPASS] = gtk_spin_button_get_value(GTK_SPIN_BUTTON(widg[HP_SPIN]));
+	scopetab_filter_freqbutton_cb(GTK_SPIN_BUTTON(widg[LP_CHECK]), &sctab->filters[LOWPASS]);
+	scopetab_filter_freqbutton_cb(GTK_SPIN_BUTTON(widg[HP_CHECK]), &sctab->filters[HIGHPASS]);
+	scopetab_filter_checkbutton_cb(GTK_TOGGLE_BUTTON(widg[LP_SPIN]), &sctab->filters[LOWPASS]);
+	scopetab_filter_checkbutton_cb(GTK_TOGGLE_BUTTON(widg[HP_SPIN]), &sctab->filters[HIGHPASS]);
+	scopetab_notch_changed_cb(GTK_COMBO_BOX(widg[NOTCH_COMBO]), sctab);
 
-	if (sctab->cutoff[LOWPASS] <= 0.0)
-		sctab->cutoff[LOWPASS] = 100.0;
-	if (sctab->cutoff[HIGHPASS] <= 0.0)
-		sctab->cutoff[HIGHPASS] = 1.0;
+	if (sctab->filters[LOWPASS].cutoff <= 0.0)
+		sctab->filters[LOWPASS].cutoff = 100.0;
+	if (sctab->filters[HIGHPASS].cutoff <= 0.0)
+		sctab->filters[HIGHPASS].cutoff = 1.0;
 
-	mcpi_key_get_bval(cf->keyfile, cf->group, "lp-filter-on", &sctab->filt_on[0]);
-	mcpi_key_get_dval(cf->keyfile, cf->group, "lp-filter-cutoff", &sctab->cutoff[0]);
-	mcpi_key_get_bval(cf->keyfile, cf->group, "hp-filter-on", &sctab->filt_on[1]);
-	mcpi_key_get_dval(cf->keyfile, cf->group, "hp-filter-cutoff", &sctab->cutoff[1]);
+	mcpi_key_get_bval(cf->keyfile, cf->group, "lp-filter-on", &sctab->filters[LOWPASS].enabled);
+	mcpi_key_get_dval(cf->keyfile, cf->group, "lp-filter-cutoff", &sctab->filters[LOWPASS].cutoff);
+	mcpi_key_get_bval(cf->keyfile, cf->group, "hp-filter-on", &sctab->filters[HIGHPASS].enabled);
+	mcpi_key_get_dval(cf->keyfile, cf->group, "hp-filter-cutoff", &sctab->filters[HIGHPASS].cutoff);
 	mcpi_key_set_combo(cf->keyfile, cf->group, "scale", 
 	                   GTK_COMBO_BOX(widg[SCALE_COMBO]));
 	mcpi_key_set_combo(cf->keyfile, cf->group, "notch",
@@ -570,10 +622,10 @@ void initialize_widgets(struct scopetab* sctab)
 {
 	GObject** widg = sctab->widgets;
 
-	g_object_set(widg[LP_CHECK], "active", sctab->filt_on[0], NULL);
-	g_object_set(widg[LP_SPIN], "value", sctab->cutoff[0], NULL);
-	g_object_set(widg[HP_CHECK], "active", sctab->filt_on[1], NULL);
-	g_object_set(widg[HP_SPIN], "value", sctab->cutoff[1], NULL);
+	g_object_set(widg[LP_CHECK], "active", sctab->filters[LOWPASS].enabled, NULL);
+	g_object_set(widg[LP_SPIN], "value", sctab->filters[LOWPASS].cutoff, NULL);
+	g_object_set(widg[HP_CHECK], "active", sctab->filters[HIGHPASS].enabled, NULL);
+	g_object_set(widg[HP_SPIN], "value", sctab->filters[HIGHPASS].cutoff, NULL);
 	g_object_set(widg[OFFSET_CHECK], "active", sctab->offset_on, NULL);
 
 	// reference combos
@@ -595,32 +647,53 @@ void connect_widgets_signals(struct scopetab* sctab)
 	GtkTreeView* treeview;
 	GtkTreeSelection* treeselec;
 	GObject** widgets = (GObject**) sctab->widgets;
+	struct filter* lp_filter = &sctab->filters[LOWPASS];
+	struct filter* hp_filter = &sctab->filters[HIGHPASS];
 
+	// Channel selection change
 	treeview = GTK_TREE_VIEW(widgets[ELEC_TREEVIEW]);
 	treeselec = gtk_tree_view_get_selection(treeview);
 	gtk_tree_selection_set_mode(treeselec, GTK_SELECTION_MULTIPLE );
 	g_signal_connect_after(treeselec, "changed",
 	                       G_CALLBACK(scopetab_selch_cb), sctab);
 
+	// lowpass and high pass filter toggling
 	g_signal_connect_after(widgets[LP_CHECK], "toggled",
-	                      G_CALLBACK(scopetab_filter_button_cb), sctab);
+	                      G_CALLBACK(scopetab_filter_checkbutton_cb), lp_filter);
 	g_signal_connect_after(widgets[HP_CHECK], "toggled",
-	                      G_CALLBACK(scopetab_filter_button_cb), sctab);
+	                      G_CALLBACK(scopetab_filter_checkbutton_cb), hp_filter);
+	g_signal_connect_after(widgets[LP_CHECK], "toggled",
+	                      G_CALLBACK(scopetab_filter_changed_cb), sctab);
+	g_signal_connect_after(widgets[HP_CHECK], "toggled",
+	                      G_CALLBACK(scopetab_filter_changed_cb), sctab);
+
+	// offset toogle
 	g_signal_connect_after(widgets[OFFSET_CHECK], "toggled",
 	                      G_CALLBACK(scopetab_offset_button_cb), sctab);
-	g_signal_connect_after(widgets[LP_SPIN], "value-changed",
-	                      G_CALLBACK(scopetab_filter_button_cb), sctab);
-	g_signal_connect_after(widgets[HP_SPIN], "value-changed",
-	                      G_CALLBACK(scopetab_filter_button_cb), sctab);
 
+	// lowpass and high pass filter frequency changed
+	g_signal_connect_after(widgets[LP_SPIN], "value-changed",
+	                      G_CALLBACK(scopetab_filter_freqbutton_cb), lp_filter);
+	g_signal_connect_after(widgets[HP_SPIN], "value-changed",
+	                      G_CALLBACK(scopetab_filter_freqbutton_cb), hp_filter);
+	g_signal_connect_after(widgets[LP_SPIN], "value-changed",
+	                      G_CALLBACK(scopetab_filter_changed_cb), sctab);
+	g_signal_connect_after(widgets[HP_SPIN], "value-changed",
+	                      G_CALLBACK(scopetab_filter_changed_cb), sctab);
+
+	// scale, reference and reference electrode change
 	g_signal_connect(widgets[REFTYPE_COMBO], "changed", 
 	                 G_CALLBACK(scopetab_reftype_changed_cb), sctab);
 	g_signal_connect(widgets[ELECREF_COMBO], "changed",
 	                 G_CALLBACK(scopetab_refelec_changed_cb), sctab);
 	g_signal_connect(widgets[SCALE_COMBO], "changed",
 	                 G_CALLBACK(scopetab_scale_changed_cb), sctab);
+
+	// notch combo change
 	g_signal_connect(widgets[NOTCH_COMBO], "changed",
 	                 G_CALLBACK(scopetab_notch_changed_cb), sctab);
+	g_signal_connect_after(widgets[NOTCH_COMBO], "changed",
+	                      G_CALLBACK(scopetab_filter_changed_cb), sctab);
 }
 
 
@@ -698,13 +771,12 @@ static
 void scopetab_destroy(struct signaltab* tab)
 {
 	struct scopetab* sctab = get_scopetab(tab);
+	int id;
 
 	g_strfreev(sctab->labels);
 
-	rtf_destroy_filter(sctab->filt[LOWPASS]);
-	rtf_destroy_filter(sctab->filt[HIGHPASS]);
-	rtf_destroy_filter(sctab->filt[NOTCH50]);
-	rtf_destroy_filter(sctab->filt[NOTCH60]);
+	for (id = 0; id < NBFILTER; id++)
+		filter_deinit(&sctab->filters[id]);
 
 	g_free(sctab->data);
 	g_free(sctab->tmpbuff);
@@ -725,14 +797,13 @@ void scopetab_define_input(struct signaltab* tab, const char** labels)
 	g_mutex_unlock(&sctab->tab.datlock);
 	fill_treeview(GTK_TREE_VIEW(sctab->widgets[ELEC_TREEVIEW]), labels);
 	fill_combo(GTK_COMBO_BOX(sctab->widgets[ELECREF_COMBO]), labels);
+	init_filters(sctab, 1);
 	g_mutex_lock(&sctab->tab.datlock);
 
 	sctab->chunkns = (CHUNKLEN * sctab->tab.fs) + 1;
 	sctab->ns_total = 0;
 	scope_reset_events(sctab->scope);
 	init_buffers(sctab);
-	init_filter(sctab, 0);
-	init_filter(sctab, 1);
 	scopetab_set_xticks(sctab, sctab->wndlen);
 }
 
