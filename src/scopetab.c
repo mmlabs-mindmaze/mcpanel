@@ -6,10 +6,15 @@
 #include <gtk/gtk.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "scope.h"
 #include "signaltab.h"
 #include "misc.h"
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 #define CHUNKLEN	0.1 // in seconds
 
@@ -129,10 +134,37 @@ struct scopetab {
  *                                                                        *
  **************************************************************************/
 // Coefficients Notch filters
-static const double weight_notch50_a[3] = {1.000000000000000, -1.939170825861565, 0.962994050950216};
-static const double weight_notch50_b[3] = {0.981497025475108, -1.939170825861565, 0.981497025475108};
-static const double weight_notch60_a[3] = {1.000000000000000, -1.928566634775778, 0.962994050950216};
-static const double weight_notch60_b[3] = {0.981497025475108, -1.928566634775778, 0.981497025475108};
+static double weight_notch_a[3];
+static double weight_notch_b[3];
+
+/*
+* compute_notch_coefficient() - compute the coefficients of a Notch filter
+* This function is based on the resources available here: http://www.dspguide.com/ch19/3.htm
+* @notch_freq: the frequency to reject
+* @bw: the width of the rejected frequency band
+* @fs : the signal sampling rate
+* a: the denominator coefficents of the IIR filter
+* b: the numerator "feed-forward" coefficients
+*
+* Return:
+*/
+static
+void compute_notch_coefficients(int notch_freq, int bw, double fs, double a[3], double b[3]){
+
+        float R = 1 - 3 * bw/fs;
+        float numerator = 1 - 2 * R * cos(2 * M_PI * notch_freq/fs) + (R * R);
+        float denumerator = 2 - 2 * cos(2 * M_PI * notch_freq/fs);
+        float K = numerator / denumerator;
+
+        b[0] = K;
+        b[1] =  - 2 * K * cos(2 * M_PI * notch_freq/fs);
+        b[2] = K;
+
+        a[0] = 1;
+        a[1] =  -2 * R * cos(2 * M_PI * notch_freq/ fs);
+        a[2] = R * R;
+
+}
 
 
 static
@@ -181,17 +213,19 @@ void filter_init(struct filter* filter, int id, double fs, int nch)
 		break;
 
 	case NOTCH50:
-		filt = rtf_create_filter(nch, RTF_FLOAT,
-		                         NELEM(weight_notch50_b), weight_notch50_b,
-		                         NELEM(weight_notch50_a), weight_notch50_a,
-		                         RTF_DOUBLE);
-		break;
+                compute_notch_coefficients(50, 4, fs, weight_notch_a, weight_notch_b);
+                filt = rtf_create_filter(nch, RTF_FLOAT,
+                                         NELEM(weight_notch_b), weight_notch_b,
+                                         NELEM(weight_notch_a), weight_notch_a,
+                                         RTF_DOUBLE);
+                break;
 
-	case NOTCH60:
-		filt = rtf_create_filter(nch, RTF_FLOAT,
-		                         NELEM(weight_notch60_b), weight_notch60_b,
-		                         NELEM(weight_notch60_a), weight_notch60_a,
-		                         RTF_DOUBLE);
+        case NOTCH60:
+                compute_notch_coefficients(60, 4, fs, weight_notch_a, weight_notch_b);
+                filt = rtf_create_filter(nch, RTF_FLOAT,
+                                         NELEM(weight_notch_b), weight_notch_b,
+                                         NELEM(weight_notch_a), weight_notch_a,
+                                         RTF_DOUBLE);
 		break;
 
 	default:
