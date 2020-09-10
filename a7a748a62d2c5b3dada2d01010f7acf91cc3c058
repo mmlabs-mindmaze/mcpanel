@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "67ef0d71_9ac7a045",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1018289
+      },
+      "writtenOn": "2020-09-10T14:30:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a16df21e_a0c3776a",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 52
+      },
+      "revId": "a7a748a62d2c5b3dada2d01010f7acf91cc3c058",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "414af0dd_a83d2ed1",
         "filename": "src/scopetab.c",
         "patchSetId": 1
@@ -60,6 +84,30 @@
       "writtenOn": "2020-09-10T10:37:01Z",
       "side": 1,
       "message": "I don\u0027t have any reference about the choice  of the bandwidth. Are you sure about this one?",
+      "range": {
+        "startLine": 177,
+        "startChar": 49,
+        "endLine": 177,
+        "endChar": 53
+      },
+      "revId": "a7a748a62d2c5b3dada2d01010f7acf91cc3c058",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b894da86_8a4e9d7f",
+        "filename": "src/scopetab.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1018289
+      },
+      "writtenOn": "2020-09-10T14:30:42Z",
+      "side": 1,
+      "message": "The previous hardcoded coefficients where from a Butterworth filter with bandstop bandwidth of 12Hz, e.g., in python: scipy.signal.butter(N\u003d1, Wn\u003d[44/2000, 56/2000], btype\u003d\u0027bandstop\u0027)\n\nI used 4Hz because that was the default value for the Mask Notch filters. \nI put back 12Hz.",
+      "parentUuid": "414af0dd_a83d2ed1",
       "range": {
         "startLine": 177,
         "startChar": 49,
