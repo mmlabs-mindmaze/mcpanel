@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c56b2f5e_2a985cb7",
+        "filename": "src/scopetab.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1017133
+      },
+      "writtenOn": "2020-09-10T14:10:04Z",
+      "side": 1,
+      "message": "??? ... Please give either in the code or more simply here a quick explanation about how this value has been chosen...",
+      "range": {
+        "startLine": 177,
+        "startChar": 49,
+        "endLine": 177,
+        "endChar": 54
+      },
+      "revId": "cf2821f1e64e0394109e9c7baf800cb3b4e82d02",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": true
+    }
+  ]
+}
