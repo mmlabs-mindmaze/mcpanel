@@ -128,13 +128,6 @@ struct scopetab {
  *                          Signal processing                             *
  *                                                                        *
  **************************************************************************/
-// Coefficients Notch filters
-static const double weight_notch50_a[3] = {1.000000000000000, -1.939170825861565, 0.962994050950216};
-static const double weight_notch50_b[3] = {0.981497025475108, -1.939170825861565, 0.981497025475108};
-static const double weight_notch60_a[3] = {1.000000000000000, -1.928566634775778, 0.962994050950216};
-static const double weight_notch60_b[3] = {0.981497025475108, -1.928566634775778, 0.981497025475108};
-
-
 static
 void init_buffers(struct scopetab* sctab)
 {
@@ -181,17 +174,11 @@ void filter_init(struct filter* filter, int id, double fs, int nch)
 		break;
 
 	case NOTCH50:
-		filt = rtf_create_filter(nch, RTF_FLOAT,
-		                         NELEM(weight_notch50_b), weight_notch50_b,
-		                         NELEM(weight_notch50_a), weight_notch50_a,
-		                         RTF_DOUBLE);
+		filt = rtf_create_notch(nch, RTF_FLOAT, 50/fs, 4/fs);
 		break;
 
 	case NOTCH60:
-		filt = rtf_create_filter(nch, RTF_FLOAT,
-		                         NELEM(weight_notch60_b), weight_notch60_b,
-		                         NELEM(weight_notch60_a), weight_notch60_a,
-		                         RTF_DOUBLE);
+		filt = rtf_create_notch(nch, RTF_FLOAT, 60/fs, 4/fs);
 		break;
 
 	default:
