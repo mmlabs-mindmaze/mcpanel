@@ -3,6 +3,7 @@
 #endif
 #include <string.h>
 #include <rtfilter.h>
+#include <rtf_common.h>
 #include <gtk/gtk.h>
 #include <stdlib.h>
 #include <stdio.h>
